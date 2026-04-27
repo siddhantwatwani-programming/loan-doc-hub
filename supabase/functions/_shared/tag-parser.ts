@@ -2352,6 +2352,33 @@ export function replaceMergeTags(
         rebuilt += result.substring(scanFrom, winStart);
         let windowXml = result.substring(winStart, winEnd);
 
+        // Defense-in-depth: sanitize stray TEXT inside <w:rPr> for EVERY
+        // <w:sdt> block in the section window. The RE851A v5+ template has
+        // literal ☑ glyph text typed inside the <w:rPr> children of both
+        // <w:sdtPr> and <w:sdtContent><w:r>. Word renders that text outside
+        // <w:t>, producing phantom glyphs no toggle can affect. We strip
+        // bare text only — all child tags (rFonts, color, sz, etc.) are
+        // preserved bit-for-bit. Scoped to the subordination section window.
+        let sanitizedSdts = 0;
+        windowXml = windowXml.replace(
+          /<w:sdt\b(?:(?!<w:sdt\b)[\s\S])*?<\/w:sdt>/g,
+          (sdtBlock) => {
+            if (!/<w14:checkbox\b/.test(sdtBlock)) return sdtBlock;
+            const cleaned = sdtBlock.replace(
+              /(<w:rPr\b[^>]*>)([\s\S]*?)(<\/w:rPr>)/g,
+              (_m, open, inner, close) => {
+                const stripped = inner.replace(
+                  /(<[^>]+>)|[^<]+/g,
+                  (seg: string) => (seg.startsWith("<") ? seg : ""),
+                );
+                return `${open}${stripped}${close}`;
+              },
+            );
+            if (cleaned !== sdtBlock) sanitizedSdts++;
+            return cleaned;
+          },
+        );
+
         // Native Word SDT checkboxes — both label orientations.
         windowXml = forceSdtBeforeWord(windowXml, "Yes", yesChecked);
         windowXml = forceSdtBeforeWord(windowXml, "No", noChecked);
@@ -2363,6 +2390,10 @@ export function replaceMergeTags(
         windowXml = forceGlyphBeforeWord(windowXml, "No", noGlyph);
         windowXml = forceGlyphAfterWord(windowXml, "Yes", yesGlyph);
         windowXml = forceGlyphAfterWord(windowXml, "No", noGlyph);
+
+        console.log(
+          `[tag-parser] Subordination Provision safety pass executed: isSubordination=${isSubordination}, windowLen=${winEnd - winStart}, sanitizedSdts=${sanitizedSdts}`,
+        );
 
         rebuilt += windowXml;
         scanFrom = winEnd;
