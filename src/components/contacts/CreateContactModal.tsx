@@ -787,9 +787,16 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
         {contactType === 'borrower' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
-            {/* Column 1: Name / Details */}
+            {/* Column 1: Borrower Details */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Borrower Details</h3>
+
+              {/* Borrower ID */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Borrower ID</Label>
+                <Input value={form['borrower_id'] || ''} onChange={(e) => set('borrower_id', e.target.value)} maxLength={50} className="h-7 text-xs flex-1" />
+              </div>
+
               {/* Borrower Type - required */}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Borrower Type</Label>
@@ -802,10 +809,10 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
               {borrowerErrors['borrower_type'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['borrower_type']}</p>}
 
-              {/* Full Name - alpha+spaces, max 100, required */}
+              {/* Entity Name (was Full Name) - alpha+spaces, max 100, required */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Full Name</Label>
-                <Input value={form['full_name'] || ''} onChange={(e) => { set('full_name', e.target.value); clrBErr('full_name'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('full_name', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => { const v = (form['full_name'] || '').trim(); set('full_name', v); if (!v) setBErr('full_name', 'Full Name is required'); else clrBErr('full_name'); }} maxLength={100} className={cn("h-7 text-xs flex-1", borrowerErrors['full_name'] && "border-destructive")} />
+                <Label className="w-[100px] shrink-0 text-xs">Entity Name</Label>
+                <Input value={form['full_name'] || ''} onChange={(e) => { set('full_name', e.target.value); clrBErr('full_name'); }} onKeyDown={alphaSpaceKD} onPaste={(e) => { e.preventDefault(); set('full_name', e.clipboardData.getData('text').replace(/[^A-Za-z ]/g, '')); }} onBlur={() => { const v = (form['full_name'] || '').trim(); set('full_name', v); if (!v) setBErr('full_name', 'Entity Name is required'); else clrBErr('full_name'); }} maxLength={100} className={cn("h-7 text-xs flex-1", borrowerErrors['full_name'] && "border-destructive")} />
               </div>
               {borrowerErrors['full_name'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['full_name']}</p>}
 
@@ -829,49 +836,36 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
               {borrowerErrors['last_name'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['last_name']}</p>}
 
+              {/* Capacity */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Capacity</Label>
+                <Select value={form['capacity'] || ''} onValueChange={(v) => set('capacity', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {BORROWER_CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Email */}
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => { set('email', v); clrBErr('email'); }} className="h-7 text-xs" />
               </div>
               {borrowerErrors['email'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['email']}</p>}
 
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">DOB</Label>
-                <Popover open={borrowerDobOpen} onOpenChange={setBorrowerDobOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("h-7 text-xs flex-1 justify-start font-normal", !form['dob'] && "text-muted-foreground", borrowerErrors['dob'] && "border-destructive")}>
-                      <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                      {form['dob'] || 'MM/DD/YYYY'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                    <EnhancedCalendar
-                      mode="single"
-                      selected={form['dob'] ? new Date(form['dob']) : undefined}
-                      onSelect={(date) => {
-                        if (date && date >= new Date()) {
-                          setBErr('dob', 'Enter valid date of birth');
-                          set('dob', format(date, 'MM/dd/yyyy'));
-                        } else {
-                          set('dob', date ? format(date, 'MM/dd/yyyy') : '');
-                          clrBErr('dob');
-                        }
-                        setBorrowerDobOpen(false);
-                      }}
-                      onClear={() => { set('dob', ''); clrBErr('dob'); setBorrowerDobOpen(false); }}
-                      onToday={() => { set('dob', format(new Date(), 'MM/dd/yyyy')); setBErr('dob', 'Enter valid date of birth'); setBorrowerDobOpen(false); }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+              {/* Delivery Options - placed below Email per Borrower form */}
+              <div className="pt-2">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Delivery Options</h4>
+                <div className="flex items-center gap-4">
+                  {renderCheckbox('Print', 'delivery_print')}
+                  {renderCheckbox('Email', 'delivery_email')}
+                  {renderCheckbox('SMS', 'delivery_sms')}
+                </div>
               </div>
-              {borrowerErrors['dob'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['dob']}</p>}
 
               <div className="pt-2 space-y-1">
-                {renderCheckbox('Hold', 'hold')}
-                {renderCheckbox('ACH', 'ach')}
                 {renderCheckbox('Agreement on File', 'agreement_on_file')}
-                {renderCheckbox('Send 1099', 'issue_1099')}
               </div>
             </div>
 
@@ -930,7 +924,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
 
-            {/* Column 3: Phone + Tax Info */}
+            {/* Column 3: Phone (with second Home + Preferred) */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between border-b border-border pb-1 mb-2">
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
@@ -942,54 +936,27 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 className="space-y-1.5"
               >
                 {[
-                  { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home' },
-                  { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work' },
-                  { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell' },
-                  { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax' },
-                ].map((p) => (
-                  <div key={p.label} className="flex items-center gap-2">
+                  { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home', hasPref: true },
+                  { label: 'Home', phoneKey: 'phone.home2', prefKey: '', hasPref: false },
+                  { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work', hasPref: true },
+                  { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell', hasPref: true },
+                  { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax', hasPref: true },
+                ].map((p, idx) => (
+                  <div key={`${p.phoneKey}-${idx}`} className="flex items-center gap-2">
                     <Label className="w-[40px] shrink-0 text-xs">{p.label}</Label>
                     <PhoneInput
                       value={form[p.phoneKey] || ''}
                       onValueChange={(v) => set(p.phoneKey, v)}
                       className="h-7 text-xs flex-1"
                     />
-                    <RadioGroupItem value={p.prefKey} id={`borrower-${p.prefKey}`} />
+                    {p.hasPref ? (
+                      <RadioGroupItem value={p.prefKey} id={`borrower-${p.prefKey}`} />
+                    ) : (
+                      <div className="w-4 h-4" />
+                    )}
                   </div>
                 ))}
               </RadioGroup>
-              <div className="pt-2 space-y-1">
-                <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Tax Info</h3>
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">Tax ID Type</Label>
-                  <Select value={form['tax_id_type'] || ''} onValueChange={(v) => { set('tax_id_type', v); clrBErr('tax_id_type'); set('tax_id', ''); }}>
-                    <SelectTrigger className={cn("h-7 text-xs flex-1", borrowerErrors['tax_id_type'] && "border-destructive")}><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[200]">
-                      {TAX_ID_TYPE_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                {borrowerErrors['tax_id_type'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['tax_id_type']}</p>}
-
-                {/* TIN with SSN/EIN formatting */}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[100px] shrink-0 text-xs">TIN</Label>
-                  <Input
-                    value={fmtTIN(form['tax_id'] || '', form['tax_id_type'] || '')}
-                    onChange={(e) => { const digits = e.target.value.replace(/\D/g, '').slice(0, 9); set('tax_id', digits); clrBErr('tax_id'); }}
-                    onKeyDown={digitOnlyKD}
-                    onPaste={(e) => { e.preventDefault(); set('tax_id', e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 9)); }}
-                    onBlur={() => { const d = (form['tax_id'] || '').replace(/\D/g, ''); if (d && d.length !== 9) setBErr('tax_id', 'Enter valid TIN (9 digits)'); else clrBErr('tax_id'); }}
-                    maxLength={11}
-                    className={cn("h-7 text-xs flex-1", borrowerErrors['tax_id'] && "border-destructive")}
-                  />
-                </div>
-                {borrowerErrors['tax_id'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['tax_id']}</p>}
-
-                {renderCheckbox('TIN Verified', 'tin_verified')}
-              </div>
             </div>
           </div>
         )}
