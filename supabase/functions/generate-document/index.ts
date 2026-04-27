@@ -942,7 +942,10 @@ async function generateSingleDocument(
       (servicingAgentRaw === "other servicer" || servicingAgentRaw === "other") ? "Other Servicer" :
       "";
     fieldValues.set("sv_p_servicingAgent", { rawValue: canonicalServicingAgent, dataType: "text" });
-    console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}, sv_p_servicingAgent="${canonicalServicingAgent}"`);
+    // Also publish under the oo_svc_* prefix (Other Origination → Servicing) used
+    // by newer RE851A template revisions: {{#if (eq oo_svc_servicingAgent "Broker")}}.
+    fieldValues.set("oo_svc_servicingAgent", { rawValue: canonicalServicingAgent, dataType: "text" });
+    console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}, sv_p_servicingAgent="${canonicalServicingAgent}", oo_svc_servicingAgent="${canonicalServicingAgent}"`);
 
 
     // Build all_properties_list and multi-property pr_p_address
