@@ -486,68 +486,45 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
           </PopoverContent>
         </Popover>
 
-        {/* Per ($ / %) */}
+        {/* Fees Assessed */}
         <div className="flex items-center gap-2 border-l border-border pl-4">
-          <Label className="text-sm font-medium shrink-0">Per ($ / %):</Label>
-          <DirtyFieldWrapper fieldKey="loan_terms.servicing.per_month">
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={bv('loan_terms.servicing.per_month')}
-                onCheckedChange={(c) => sbv('loan_terms.servicing.per_month', !!c)}
-                disabled={disabled}
-                className="h-4 w-4"
-              />
-              <Label className="text-xs cursor-pointer">Month</Label>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey="loan_terms.servicing.per_year">
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={bv('loan_terms.servicing.per_year')}
-                onCheckedChange={(c) => sbv('loan_terms.servicing.per_year', !!c)}
-                disabled={disabled}
-                className="h-4 w-4"
-              />
-              <Label className="text-xs cursor-pointer">Year</Label>
-            </div>
+          <Label className="text-sm font-medium shrink-0">Fees Assessed:</Label>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.fees_assessed">
+            <Select
+              value={v('loan_terms.servicing.fees_assessed') || undefined}
+              onValueChange={(val) => sv('loan_terms.servicing.fees_assessed', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-xs w-[120px]">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="Monthly">Monthly</SelectItem>
+                <SelectItem value="Quarterly">Quarterly</SelectItem>
+                <SelectItem value="Annually">Annually</SelectItem>
+              </SelectContent>
+            </Select>
           </DirtyFieldWrapper>
         </div>
 
         {/* Payable */}
         <div className="flex items-center gap-2 border-l border-border pl-4">
           <Label className="text-sm font-medium shrink-0">Payable:</Label>
-          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_monthly">
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={bv('loan_terms.servicing.payable_monthly')}
-                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_monthly', !!c)}
-                disabled={disabled}
-                className="h-4 w-4"
-              />
-              <Label className="text-xs cursor-pointer">Monthly</Label>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_annually">
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={bv('loan_terms.servicing.payable_annually')}
-                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_annually', !!c)}
-                disabled={disabled}
-                className="h-4 w-4"
-              />
-              <Label className="text-xs cursor-pointer">Annually</Label>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable_quarterly">
-            <div className="flex items-center gap-1.5">
-              <Checkbox
-                checked={bv('loan_terms.servicing.payable_quarterly')}
-                onCheckedChange={(c) => sbv('loan_terms.servicing.payable_quarterly', !!c)}
-                disabled={disabled}
-                className="h-4 w-4"
-              />
-              <Label className="text-xs cursor-pointer">Quarterly</Label>
-            </div>
+          <DirtyFieldWrapper fieldKey="loan_terms.servicing.payable">
+            <Select
+              value={v('loan_terms.servicing.payable') || undefined}
+              onValueChange={(val) => sv('loan_terms.servicing.payable', val)}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-7 text-xs w-[120px]">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="Monthly">Monthly</SelectItem>
+                <SelectItem value="Quarterly">Quarterly</SelectItem>
+                <SelectItem value="Annually">Annually</SelectItem>
+              </SelectContent>
+            </Select>
           </DirtyFieldWrapper>
         </div>
       </div>
