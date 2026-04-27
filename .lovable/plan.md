@@ -1,37 +1,53 @@
-# RE851A: Amortization → Interest Only / Other Checkboxes
+# RE851A Servicing Checkboxes — Bind Labels to Derived Booleans
 
-## Goal
-When generating the RE851A document, populate the **Interest Only** and **Other** checkboxes in the Amortization section based on the value selected in the CSR → Loan → Amortization dropdown.
+## Diagnosis
+The derivation logic for the Servicing section is already wired correctly in `supabase/functions/generate-document/index.ts` (lines 894–924). It reads the Servicing Agent dropdown and publishes mutually-exclusive boolean + glyph aliases:
 
-## Context
-- The Amortization dropdown persists under `ln_p_amortiza` (legacy key) / `loan_terms.amortization`.
-- The engine already derives `ln_p_amortized` and `ln_p_amortizedPartially` from this same dropdown in `supabase/functions/generate-document/index.ts` (around line 815).
-- Field dictionary already has `ln_p_interestOnly` and `ln_p_other` (Boolean).
-- No template, schema, dropdown, or UI changes required.
+- `sv_p_noServicingArrangements*` → Lender
+- `sv_p_brokerIsServicingAgent*` → Broker
+- `sv_p_anotherQualifiedParty*` → Company / Other Servicer
 
-## Change
+What's missing is the **template-side binding**. Looking at the screenshot, each Servicing line has a static `☐` glyph immediately before the label text. The doc-gen engine can flip that exact glyph automatically — but only if it knows which `fieldKey` belongs to which label. This is the same mechanism already used for the broker A/B checkboxes (`effectiveLabelMap` at lines 1610–1651). No such entries exist yet for the Servicing labels, so the boxes never toggle even though the booleans are derived correctly. Result matches what the screenshot shows: a check appears somewhere on the row, but the static `☐` glyph in front of the actual label stays unchecked.
 
-Extend the existing Amortization derivation block in `supabase/functions/generate-document/index.ts` to also publish booleans + glyph aliases for the two new checkboxes:
+## Fix
+Extend the in-memory `effectiveLabelMap` block in `supabase/functions/generate-document/index.ts` (right after the existing broker A/B entries, before the closing `};` on line 1651) with label→fieldKey bindings for the three Servicing labels, including realistic wording variants captured from the live template:
 
-- If dropdown value (lowercased, trimmed) is `interest only` / `interest_only`:
-  - `ln_p_interestOnly = true`, `ln_p_other = false`
-- If dropdown value is `other`:
-  - `ln_p_other = true`, `ln_p_interestOnly = false`
-- Otherwise both remain `false`.
+```ts
+// RE851A Servicing section labels → derived boolean keys.
+// Mirrors the broker A/B pattern above so the static ☐ glyph that
+// sits immediately before each label flips to ☑ when the matching
+// boolean is true. No template edits required.
+"THERE ARE NO SERVICING ARRANGEMENTS":              { fieldKey: "sv_p_noServicingArrangements" },
+"THERE ARE NO SERVICING ARRANGEMENTS (Does not apply to multi-lender transactions.)":
+                                                    { fieldKey: "sv_p_noServicingArrangements" },
+"THERE ARE NO SERVICING ARRANGEMENTS  (Does not apply to multi-lender transactions.)":
+                                                    { fieldKey: "sv_p_noServicingArrangements" },
 
-Also publish glyph aliases (`ln_p_interestOnlyGlyph`, `ln_p_otherGlyph` → `☑` / `☐`) for templates that use direct merge tags instead of `{{#if}}` conditionals — same pattern used for the Servicing Agent and Broker Capacity checkboxes.
+"BROKER IS THE SERVICING AGENT":                    { fieldKey: "sv_p_brokerIsServicingAgent" },
+"BROKER IS THE SERVICING AGENT  -See attached \"Notes\"":
+                                                    { fieldKey: "sv_p_brokerIsServicingAgent" },
+"BROKER IS THE SERVICING AGENT -See attached \"Notes\"":
+                                                    { fieldKey: "sv_p_brokerIsServicingAgent" },
 
-Mutual exclusivity is guaranteed because both flags are derived from the single dropdown value.
+"ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN":    { fieldKey: "sv_p_anotherQualifiedParty" },
+"ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER":
+                                                    { fieldKey: "sv_p_anotherQualifiedParty" },
+```
 
-## Files Touched
-- `supabase/functions/generate-document/index.ts` — append derivation lines inside the existing Amortization block (no other code paths modified).
+That's the only code change. The variants cover the trailing parenthetical/notes/spacing seen in the screenshot. The processor already normalises minor whitespace, but providing the most common variants makes the match deterministic.
 
-## Out of Scope
-- No changes to the RE851A `.docx` template.
-- No changes to the field dictionary, UI form, save/load APIs, or dropdown options.
-- No changes to other RE851A merge tags or checkbox blocks.
+## Why This Honours The Constraints
+- **No template edit, no field mapping change, no schema change.**
+- **No layout shift.** The label-binding mechanism only flips the existing static `☐` glyph (or SDT checkbox state) directly preceding the label — placement, spacing, and alignment are preserved.
+- **No impact on other RE851A sections** — labels are scoped to exact Servicing wording.
+- **Mutual exclusivity** is already guaranteed by the existing derivation logic; only one of the three booleans is ever `true`.
 
-## Acceptance
-- Selecting **Interest Only** → only the Interest Only checkbox is checked in the generated RE851A.
-- Selecting **Other** → only the Other checkbox is checked.
-- Document generates successfully with no layout/format change.
+## File Touched
+- `supabase/functions/generate-document/index.ts` — append three label entries inside the existing `effectiveLabelMap` literal (≈10–15 added lines, no other changes).
+
+## Acceptance Criteria
+- Servicing Agent = **Lender** → only "THERE ARE NO SERVICING ARRANGEMENTS" box is checked.
+- Servicing Agent = **Broker** → only "BROKER IS THE SERVICING AGENT" box is checked.
+- Servicing Agent = **Company** or **Other Servicer** → only "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN" box is checked.
+- The previously-visible spurious check disappears; the box directly in front of each label is the one that toggles.
+- Document generates without corruption; no other RE851A checkboxes/fields are affected.

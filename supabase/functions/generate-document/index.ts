@@ -1648,6 +1648,34 @@ async function generateSingleDocument(
       "B. *Principal as a borrower": {
         fieldKey: "or_p_brkCapacityPrincipal",
       },
+      // RE851A Servicing section labels → derived boolean keys.
+      // Mirrors the broker A/B pattern above so the static ☐ glyph that
+      // sits immediately before each label flips to ☑ when the matching
+      // boolean is true. No template edits required.
+      "THERE ARE NO SERVICING ARRANGEMENTS": {
+        fieldKey: "sv_p_noServicingArrangements",
+      },
+      "THERE ARE NO SERVICING ARRANGEMENTS (Does not apply to multi-lender transactions.)": {
+        fieldKey: "sv_p_noServicingArrangements",
+      },
+      "THERE ARE NO SERVICING ARRANGEMENTS  (Does not apply to multi-lender transactions.)": {
+        fieldKey: "sv_p_noServicingArrangements",
+      },
+      "BROKER IS THE SERVICING AGENT": {
+        fieldKey: "sv_p_brokerIsServicingAgent",
+      },
+      "BROKER IS THE SERVICING AGENT -See attached \"Notes\"": {
+        fieldKey: "sv_p_brokerIsServicingAgent",
+      },
+      "BROKER IS THE SERVICING AGENT  -See attached \"Notes\"": {
+        fieldKey: "sv_p_brokerIsServicingAgent",
+      },
+      "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN": {
+        fieldKey: "sv_p_anotherQualifiedParty",
+      },
+      "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER": {
+        fieldKey: "sv_p_anotherQualifiedParty",
+      },
     };
 
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
