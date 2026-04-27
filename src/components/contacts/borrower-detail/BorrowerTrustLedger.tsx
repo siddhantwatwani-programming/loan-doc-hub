@@ -308,7 +308,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
                 </TableCell>
               </TableRow>
             ) : filteredData.map((entry, idx) => (
-              <TableRow key={entry.id} className={`hover:bg-muted/30 ${idx === 0 ? 'bg-accent/20' : ''}`}>
+              <TableRow key={entry.id} onClick={() => openEditDialog(entry)} className={`hover:bg-muted/30 cursor-pointer ${idx === 0 ? 'bg-accent/20' : ''}`}>
                 <TableCell onClick={e => e.stopPropagation()} className="w-[40px]">
                   <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} />
                 </TableCell>
