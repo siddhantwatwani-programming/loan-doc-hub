@@ -41,6 +41,7 @@ const FIELD_KEYS = {
   extra_label_2: 'origination_app.borrower.extra_label_2',
   extra_value_2: 'origination_app.borrower.extra_value_2',
   info_provided_by: 'origination_app.borrower.info_provided_by',
+  source_of_information: 'origination_app.borrower.source_of_information',
   is_borrower_also_broker: 'origination_app.borrower.is_borrower_also_broker',
   employer_contact_name: 'origination_app.borrower.employer_contact_name',
 
