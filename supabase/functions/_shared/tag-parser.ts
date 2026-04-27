@@ -2725,15 +2725,26 @@ export function replaceMergeTags(
   }
 
   // RE851A Part 3 — Amortization (CHECK ONE) safety pass.
+  //
   // The Amortization dropdown (ln_p_amortiza / loan_terms.amortization) drives
   // a derived set of mutually-exclusive booleans (ln_p_amortized,
   // ln_p_amortizedPartially, ln_p_interestOnly, ln_p_constantAmortization,
   // ln_p_addOnInterest, ln_p_other). After all merge-tag, conditional, and
-  // label replacements have run, force the static glyph immediately preceding
-  // each Amortization label to match the derived state. This ensures the
-  // selected dropdown value always populates exactly one checked box and all
-  // other Amortization checkboxes remain unchecked. Other RE851A sections,
-  // labels, formatting, and XML structure are preserved unchanged.
+  // label replacements have run, force the checkbox immediately preceding
+  // each Amortization label to match the derived state. This guarantees
+  // exactly one checked box and all other Amortization checkboxes unchecked.
+  //
+  // Label-collision safety: the bare label "AMORTIZED" is matched with a
+  // negative lookahead so it can NEVER target the line containing
+  // "AMORTIZED PARTIALLY". Labels are also processed longest-first as a
+  // defense-in-depth measure. The pass updates two checkbox shapes only:
+  //   (a) a checkbox glyph (☐/☑/☒) inside the most recent <w:t> before the
+  //       label, OR
+  //   (b) the most recent native <w:sdt><w14:checkbox>…</w:sdt> block before
+  //       the label (both the w14:checked state and the visible glyph).
+  //
+  // Other RE851A sections, labels, formatting, and XML structure are
+  // preserved unchanged.
   {
     const readBool = (key: string): boolean | null => {
       const d = getFieldData(key, fieldValues)?.data;
@@ -2768,13 +2779,48 @@ export function replaceMergeTags(
           .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
           .join("(?:\\s|<[^>]+>)*");
 
-      const forceGlyphForLabel = (xml: string, label: string, glyph: string): string => {
+      // Right-context guard. For the bare "AMORTIZED" label we MUST refuse to
+      // match anything that is followed (after optional XML/whitespace) by
+      // the word "PARTIALLY", otherwise this pass would overwrite the
+      // Partially Amortized checkbox state set by its own (longer-label)
+      // pass earlier in this loop.
+      const rightGuard = (label: string): string => {
+        if (label.toUpperCase() === "AMORTIZED") {
+          return "(?!(?:\\s|<[^>]+>)+PARTIALLY\\b)(?![A-Za-z])";
+        }
+        return "(?![A-Za-z])";
+      };
+
+      // Update the w14:checked state + visible display glyph inside the
+      // most recent native SDT checkbox block found before the label.
+      // Scoped to a single <w:sdt>…</w:sdt> block — never touches sibling
+      // SDTs or surrounding content.
+      const updateSdtBlock = (sdt: string, isChecked: boolean): string => {
+        const checkedVal = isChecked ? "1" : "0";
+        const glyphChar = isChecked ? "\u2611" : "\u2610";
+        let next = sdt.replace(
+          /(<w14:checked\s+w14:val=")[01](")/i,
+          `$1${checkedVal}$2`,
+        );
+        // Update the visible glyph inside <w:sdtContent>...<w:t>X</w:t>...
+        next = next.replace(
+          /(<w:sdtContent\b[\s\S]*?<w:t[^>]*>)[☐☑☒](<\/w:t>[\s\S]*?<\/w:sdtContent>)/,
+          `$1${glyphChar}$2`,
+        );
+        return next;
+      };
+
+      const forceCheckboxForLabel = (xml: string, label: string, isChecked: boolean): string => {
         const labelPattern = buildXmlFlex(label);
         if (!labelPattern) return xml;
+        const guard = rightGuard(label);
+        const glyph = isChecked ? "\u2611" : "\u2610";
 
         // 1) Glyph inside <w:t> followed by the label across XML/whitespace.
+        //    Only the glyph character is rewritten — surrounding text and
+        //    formatting runs are untouched.
         const glyphInWt = new RegExp(
-          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})${guard}`,
           "gi",
         );
         let next = xml.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
@@ -2783,18 +2829,32 @@ export function replaceMergeTags(
 
         // 2) Plain-text glyph (no <w:t> wrapper) directly before the label.
         const glyphPlain = new RegExp(
-          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})${guard}`,
           "gi",
         );
         next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
           `${glyph}${mid}${labelText}`,
         );
+
+        // 3) Native Word SDT checkbox immediately before the label. We
+        //    rewrite the SDT's w14:checked state AND its visible glyph so
+        //    Word renders the correct selection. The match is anchored with
+        //    a backreference-free full SDT block (depth-1; no nested SDTs in
+        //    the RE851A amortization area).
+        const sdtBeforeLabel = new RegExp(
+          `(<w:sdt\\b(?:(?!<w:sdt\\b)[\\s\\S])*?<w14:checkbox\\b[\\s\\S]*?<\\/w:sdt>)((?:\\s|<[^>]+>)*?${labelPattern})${guard}`,
+          "gi",
+        );
+        next = next.replace(sdtBeforeLabel, (_m, sdtBlock, labelPart) =>
+          `${updateSdtBlock(sdtBlock, isChecked)}${labelPart}`,
+        );
+
         return next;
       };
 
-      // Sort labels longest-first so "AMORTIZED PARTIALLY" is processed before
-      // "AMORTIZED" — preventing the shorter label from also matching the
-      // longer label's text.
+      // Sort labels longest-first so "AMORTIZED PARTIALLY" is processed
+      // before "AMORTIZED" — combined with the negative lookahead in
+      // rightGuard("AMORTIZED"), this fully isolates the two labels.
       const ordered = amortStates
         .flatMap(({ key, labels }) => labels.map((label) => ({ key, label })))
         .sort((a, b) => b.label.length - a.label.length);
@@ -2802,12 +2862,11 @@ export function replaceMergeTags(
       for (const { key, label } of ordered) {
         const state = readBool(key);
         if (state === null) continue;
-        const glyph = state ? "☑" : "☐";
-        result = forceGlyphForLabel(result, label, glyph);
+        result = forceCheckboxForLabel(result, label, state);
       }
 
       console.log(
-        `[generate-document] Forced RE851A Amortization glyphs: ${amortStates
+        `[generate-document] Forced RE851A Amortization checkboxes: ${amortStates
           .map(({ key }) => `${key}=${readBool(key)}`)
           .join(", ")}`,
       );
