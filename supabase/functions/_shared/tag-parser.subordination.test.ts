@@ -135,6 +135,28 @@ function runHandlebars(value: "true" | "false"): string {
   return replaceMergeTags(buildHandlebarsFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
 }
 
+function runHandlebarsSameParagraph(value: "true" | "false"): string {
+  const fieldValues = new Map<string, FieldValueData>([
+    ["ln_p_subordinationProvision", { rawValue: value, dataType: "boolean" }],
+    ["loan_terms.subordination_provision", { rawValue: value, dataType: "boolean" }],
+  ]);
+  const fieldTransforms = new Map<string, string>();
+  const mergeTagMap: Record<string, string> = {};
+  const labelMap: Record<string, LabelMapping> = {};
+  const validFieldKeys = new Set<string>([
+    "ln_p_subordinationProvision",
+    "loan_terms.subordination_provision",
+  ]);
+  const fixture = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
+<w:body>
+<w:p><w:r><w:t xml:space="preserve">There are subordination provisions.</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes</w:t></w:r><w:r><w:br/></w:r><w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No</w:t></w:r></w:p>
+<w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
+</w:body></w:document>`;
+  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+}
+
 function visibleGlyphsBeforeLabel(xml: string, label: string): string {
   const idx = xml.indexOf(` ${label}`);
   if (idx < 0) return "";
@@ -160,4 +182,15 @@ Deno.test("RE851A subordination provision (Handlebars text) — unchecked: only 
   const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
   assertEquals(yesGlyphs.slice(-1), "☐", `Yes label expected ☐, got "${yesGlyphs}"`);
   assertEquals(noGlyphs.slice(-1), "☑", `No label expected ☑, got "${noGlyphs}"`);
+});
+
+Deno.test("RE851A subordination provision (same paragraph text) — unchecked: Yes=☐, No=☑", () => {
+  const out = runHandlebarsSameParagraph("false");
+  const yesGlyphs = visibleGlyphsBeforeLabel(out, "Yes");
+  const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
+  assertEquals(yesGlyphs.slice(-1), "☐", `Yes label expected ☐, got "${yesGlyphs}"`);
+  assertEquals(noGlyphs.slice(-1), "☑", `No label expected ☑, got "${noGlyphs}"`);
+  if (out.includes("{{#if") || out.includes("{{/if}}") || out.includes("{{else}}")) {
+    throw new Error("Handlebars markers should be stripped from same-paragraph rendered output");
+  }
 });

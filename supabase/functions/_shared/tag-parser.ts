@@ -2270,9 +2270,10 @@ export function replaceMergeTags(
         glyph: string,
       ): string => {
         const wordRe = `\\b${word}\\b`;
+        const inlineXmlOnly = `(?:\\s|<(?!w:sdt\\b|\\/w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?`;
         // 1) Glyph inside <w:t> followed by the word.
         const glyphInWt = new RegExp(
-          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${wordRe})`,
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)(${inlineXmlOnly}${wordRe})`,
           "g",
         );
         let next = windowXml.replace(
@@ -2282,7 +2283,7 @@ export function replaceMergeTags(
         );
         // 2) Plain-text glyph (no <w:t> wrapper) directly before the word.
         const glyphPlain = new RegExp(
-          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${wordRe})`,
+          `([☐☑☒])(${inlineXmlOnly})(${wordRe})`,
           "g",
         );
         next = next.replace(
@@ -2299,8 +2300,9 @@ export function replaceMergeTags(
         glyph: string,
       ): string => {
         const wordRe = `\\b${word}\\b`;
+        const inlineXmlOnly = `(?:\\s|<(?!w:sdt\\b|\\/w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?`;
         const glyphInWt = new RegExp(
-          `(${wordRe})((?:\\s|<[^>]+>)*?<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)`,
+          `(${wordRe})(${inlineXmlOnly}<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)`,
           "g",
         );
         let next = windowXml.replace(
@@ -2309,7 +2311,7 @@ export function replaceMergeTags(
             `${head}${mid}${pre}${glyph}${wtTail}`,
         );
         const glyphPlain = new RegExp(
-          `(${wordRe})((?:\\s|<[^>]+>)*?)([☐☑☒])`,
+          `(${wordRe})(${inlineXmlOnly})([☐☑☒])`,
           "g",
         );
         next = next.replace(
