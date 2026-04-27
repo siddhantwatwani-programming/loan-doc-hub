@@ -2271,12 +2271,21 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const inlineXmlOnly = `(?:\\s|<(?!w:sdt\\b|\\/w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?`;
-        // 1) Glyph inside <w:t> followed by the word.
+        // 0) Glyph and label inside the SAME <w:t> run (e.g. "☐ Yes").
+        const glyphSameWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])(\\s*${wordRe}[^<]*</w:t>)`,
+          "g",
+        );
+        let next = windowXml.replace(
+          glyphSameWt,
+          (_m, wtOpen, pre, _g, tail) => `${wtOpen}${pre}${glyph}${tail}`,
+        );
+        // 1) Glyph inside <w:t> followed by the word in a later run.
         const glyphInWt = new RegExp(
           `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)(${inlineXmlOnly}${wordRe})`,
           "g",
         );
-        let next = windowXml.replace(
+        next = next.replace(
           glyphInWt,
           (_m, wtOpen, pre, _g, wtTail, labelPart) =>
             `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
