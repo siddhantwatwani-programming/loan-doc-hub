@@ -231,6 +231,23 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               </Select>
             </div>)}
 
+            {wrapField('status', <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Status</Label>
+              <Select
+                value={getValue('status') || undefined}
+                onValueChange={(value) => handleChange('status', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="On Hold">On Hold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>)}
+
             {wrapField('fullName', <div className="flex items-start gap-3">
               <div className="min-w-[140px] shrink-0 pt-1">
                 <Label className="text-sm text-muted-foreground text-left">Full Name:</Label>
