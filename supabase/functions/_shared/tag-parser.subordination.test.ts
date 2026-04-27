@@ -194,3 +194,51 @@ Deno.test("RE851A subordination provision (same paragraph text) — unchecked: Y
     throw new Error("Handlebars markers should be stripped from same-paragraph rendered output");
   }
 });
+
+// ---------------------------------------------------------------------------
+// Live RE851A layout (uploaded screenshot): Yes already has ☐ but No has NO
+// checkbox glyph at all in the authored template. Each label sits in its own
+// paragraph with no Handlebars markers and no SDT block. The safety pass
+// must inject the correct glyph before the bare "No" label so the unchecked
+// state visibly shows "☑ No".
+// ---------------------------------------------------------------------------
+
+function runBareNoLabel(value: "true" | "false"): string {
+  const fieldValues = new Map<string, FieldValueData>([
+    ["ln_p_subordinationProvision", { rawValue: value, dataType: "boolean" }],
+    ["loan_terms.subordination_provision", { rawValue: value, dataType: "boolean" }],
+  ]);
+  const fieldTransforms = new Map<string, string>();
+  const mergeTagMap: Record<string, string> = {};
+  const labelMap: Record<string, LabelMapping> = {};
+  const validFieldKeys = new Set<string>([
+    "ln_p_subordinationProvision",
+    "loan_terms.subordination_provision",
+  ]);
+  const fixture = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
+<w:body>
+<w:p><w:r><w:t xml:space="preserve">There are subordination provisions.</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">If YES, explain here or on an attachment.</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">☐ Yes</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">No</w:t></w:r></w:p>
+<w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
+</w:body></w:document>`;
+  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+}
+
+Deno.test("RE851A subordination provision (bare No label) — unchecked: Yes=☐, No=☑", () => {
+  const out = runBareNoLabel("false");
+  const yesGlyphs = visibleGlyphsBeforeLabel(out, "Yes");
+  const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
+  assertEquals(yesGlyphs.slice(-1), "☐", `Yes label expected ☐, got "${yesGlyphs}"`);
+  assertEquals(noGlyphs.slice(-1), "☑", `No label expected ☑, got "${noGlyphs}"`);
+});
+
+Deno.test("RE851A subordination provision (bare No label) — checked: Yes=☑, No=☐", () => {
+  const out = runBareNoLabel("true");
+  const yesGlyphs = visibleGlyphsBeforeLabel(out, "Yes");
+  const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
+  assertEquals(yesGlyphs.slice(-1), "☑", `Yes label expected ☑, got "${yesGlyphs}"`);
+  assertEquals(noGlyphs.slice(-1), "☐", `No label expected ☐, got "${noGlyphs}"`);
+});
