@@ -44,7 +44,7 @@ const FK = {
   fee_payable: 'origination_svc.broker_fee.payable',
 };
 
-const AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender'];
+const AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
 const PERIOD_OPTIONS = ['Monthly', 'Quarterly', 'Annually', 'Other'];
 
 export const OriginationServicingForm: React.FC<OriginationServicingFormProps> = ({
