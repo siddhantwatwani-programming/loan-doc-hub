@@ -27,10 +27,12 @@ import {
 
 const SERVICING_AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
 const ASSESSED_OPTIONS = ['Yes', 'No', 'N/A'];
+const PAYABLE_OPTIONS = ['Yes', 'No', 'N/A'];
 
 const AGENT_FK = {
   servicing_agent: 'origination_svc.servicing_agent',
   assessed: 'origination_svc.assessed',
+  payable: 'origination_svc.payable',
   tp_name: 'origination_svc.third_party.name',
   tp_street: 'origination_svc.third_party.street',
   tp_city: 'origination_svc.third_party.city',
