@@ -2118,12 +2118,14 @@ export function replaceMergeTags(
   }
 
   // RE851A — Subordination Provision Yes/No safety pass.
-  // Strictly scoped to the literal row beginning with
+  // Strictly scoped to the literal row containing
   // "There are subordination provisions". Within that local XML window only,
-  // force the glyph immediately preceding "Yes" and "No" to the correct state
-  // derived from ln_p_subordinationProvision (CSR persists this under
+  // force the Yes/No checkbox state to match the CSR value of
+  // ln_p_subordinationProvision (CSR persists this under
   // loan_terms.subordination_provision; both keys are normalized upstream).
-  // No other Yes/No checkbox pairs in RE851A are touched.
+  // Supports both static glyphs (☐/☑/☒) and native Word SDT checkboxes
+  // (<w:sdt>/<w14:checkbox>), with the checkbox appearing before OR after
+  // the Yes/No label. No other Yes/No checkbox pairs in RE851A are touched.
   {
     const subData =
       getFieldData("ln_p_subordinationProvision", fieldValues)?.data
@@ -2147,24 +2149,99 @@ export function replaceMergeTags(
     if (isSubordination !== null) {
       const yesGlyph = isSubordination ? "☑" : "☐";
       const noGlyph = isSubordination ? "☐" : "☑";
+      const yesChecked = isSubordination;
+      const noChecked = !isSubordination;
 
-      // Locate the row anchor "There are subordination provisions" — tolerate
-      // intervening XML/whitespace between words. Operate only on a local
-      // window starting at the anchor and extending up to ~3000 chars (enough
-      // to cover the Yes / No labels in the same row, far less than a page).
+      // Locate the anchor "There are subordination provisions", tolerant of
+      // intervening XML/whitespace between the words.
       const anchorParts = ["There", "are", "subordination", "provisions"];
       const anchorPattern = anchorParts
         .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
         .join("(?:\\s|<[^>]+>)*");
       const anchorRe = new RegExp(anchorPattern, "gi");
 
+      // Toggle a single <w:sdt>...</w:sdt> checkbox block to the desired state.
+      // Updates BOTH the internal w14:checked value and the displayed glyph
+      // inside <w:sdtContent>. If <w14:checked> is missing entirely (some
+      // templates omit it for the unchecked default), inject it inside the
+      // <w14:checkbox> element so Word reflects the new state.
+      const toggleSdtBlock = (sdtBlock: string, isChecked: boolean): string => {
+        if (!/<w14:checkbox\b/.test(sdtBlock)) return sdtBlock;
+        const checkedVal = isChecked ? "1" : "0";
+        const displayChar = isChecked ? "\u2611" : "\u2610";
+
+        let updated = sdtBlock;
+        // Self-closing form: <w14:checked w14:val="0"/>
+        const selfClosing = /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/;
+        // Open/close form: <w14:checked w14:val="0"></w14:checked>
+        const openClose = /(<w14:checked\s+w14:val=")([^"]*)(">\s*<\/w14:checked>)/;
+        if (selfClosing.test(updated)) {
+          updated = updated.replace(selfClosing, `$1${checkedVal}$3`);
+        } else if (openClose.test(updated)) {
+          updated = updated.replace(openClose, `$1${checkedVal}$3`);
+        } else {
+          // <w14:checked> missing — inject it as the first child of the
+          // <w14:checkbox> element. Handles both <w14:checkbox> and
+          // <w14:checkbox ...> opening forms.
+          updated = updated.replace(
+            /(<w14:checkbox\b[^>]*>)/,
+            `$1<w14:checked w14:val="${checkedVal}"/>`,
+          );
+        }
+
+        // Update the displayed glyph inside <w:sdtContent> (first <w:t>).
+        updated = updated.replace(
+          /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
+          `$1${displayChar}$3`,
+        );
+        return updated;
+      };
+
+      // Force any <w:sdt> checkbox immediately preceding the literal word
+      // (Yes/No) — across XML/whitespace only — to the desired state.
+      const forceSdtBeforeWord = (
+        windowXml: string,
+        word: "Yes" | "No",
+        isChecked: boolean,
+      ): string => {
+        const wordRe = `\\b${word}\\b`;
+        const sdtBeforeWord = new RegExp(
+          `(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)((?:\\s|<[^>]+>)*?${wordRe})`,
+          "g",
+        );
+        return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
+          return `${toggleSdtBlock(sdtBlock, isChecked)}${tail}`;
+        });
+      };
+
+      // Force any <w:sdt> checkbox immediately following the literal word
+      // (Yes/No) — across XML/whitespace only — to the desired state.
+      // Some RE851A authoring renders the visible glyph after its label,
+      // and Word may also persist the SDT in run-after-label order even when
+      // the visual layout shows it before.
+      const forceSdtAfterWord = (
+        windowXml: string,
+        word: "Yes" | "No",
+        isChecked: boolean,
+      ): string => {
+        const wordRe = `\\b${word}\\b`;
+        const sdtAfterWord = new RegExp(
+          `(${wordRe})((?:\\s|<[^>]+>)*?)(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)`,
+          "g",
+        );
+        return windowXml.replace(sdtAfterWord, (_m, head, mid, sdtBlock) => {
+          return `${head}${mid}${toggleSdtBlock(sdtBlock, isChecked)}`;
+        });
+      };
+
+      // Force a static glyph (☐/☑/☒) immediately before the word.
       const forceGlyphBeforeWord = (
         windowXml: string,
         word: "Yes" | "No",
         glyph: string,
       ): string => {
         const wordRe = `\\b${word}\\b`;
-        // 1) Glyph inside <w:t> followed by the word (across XML/whitespace).
+        // 1) Glyph inside <w:t> followed by the word.
         const glyphInWt = new RegExp(
           `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${wordRe})`,
           "g",
@@ -2174,7 +2251,6 @@ export function replaceMergeTags(
           (_m, wtOpen, pre, _g, wtTail, labelPart) =>
             `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
         );
-
         // 2) Plain-text glyph (no <w:t> wrapper) directly before the word.
         const glyphPlain = new RegExp(
           `([☐☑☒])((?:\\s|<[^>]+>)*?)(${wordRe})`,
@@ -2187,39 +2263,31 @@ export function replaceMergeTags(
         return next;
       };
 
-      // Native Word SDT checkbox toggle, scoped to the same row window.
-      // Some RE851A templates render the Yes/No boxes as <w:sdt> blocks
-      // containing a <w14:checkbox>. Glyph-only replacement does not flip
-      // the internal `w14:checked` state, so the box still renders unchecked
-      // in Word. This pass finds each <w:sdt>...</w:sdt> block whose visible
-      // run text is followed (across XML/whitespace) by the literal "Yes" or
-      // "No" word and rewrites BOTH the `w14:checked` attribute and the
-      // displayed glyph inside <w:sdtContent>. No surrounding text, layout,
-      // or other SDTs in the document are touched.
-      const forceSdtBeforeWord = (
+      // Force a static glyph (☐/☑/☒) immediately after the word.
+      const forceGlyphAfterWord = (
         windowXml: string,
         word: "Yes" | "No",
-        isChecked: boolean,
+        glyph: string,
       ): string => {
         const wordRe = `\\b${word}\\b`;
-        const checkedVal = isChecked ? "1" : "0";
-        const displayChar = isChecked ? "\u2611" : "\u2610";
-        const sdtBeforeWord = new RegExp(
-          `(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)((?:\\s|<[^>]+>)*?${wordRe})`,
+        const glyphInWt = new RegExp(
+          `(${wordRe})((?:\\s|<[^>]+>)*?<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)`,
           "g",
         );
-        return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
-          if (!/<w14:checkbox\b/.test(sdtBlock)) return `${sdtBlock}${tail}`;
-          let updated = sdtBlock.replace(
-            /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/,
-            `$1${checkedVal}$3`,
-          );
-          updated = updated.replace(
-            /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
-            `$1${displayChar}$3`,
-          );
-          return `${updated}${tail}`;
-        });
+        let next = windowXml.replace(
+          glyphInWt,
+          (_m, head, mid, pre, _g, wtTail) =>
+            `${head}${mid}${pre}${glyph}${wtTail}`,
+        );
+        const glyphPlain = new RegExp(
+          `(${wordRe})((?:\\s|<[^>]+>)*?)([☐☑☒])`,
+          "g",
+        );
+        next = next.replace(
+          glyphPlain,
+          (_m, head, mid, _g) => `${head}${mid}${glyph}`,
+        );
+        return next;
       };
 
       const WINDOW_SIZE = 3000;
@@ -2231,13 +2299,21 @@ export function replaceMergeTags(
       while ((anchorMatch = anchorRe.exec(result)) !== null) {
         const winStart = anchorMatch.index;
         const winEnd = Math.min(result.length, winStart + WINDOW_SIZE);
-        // Append untouched chunk before window
         rebuilt += result.substring(scanFrom, winStart);
         let windowXml = result.substring(winStart, winEnd);
-        windowXml = forceSdtBeforeWord(windowXml, "Yes", isSubordination);
-        windowXml = forceSdtBeforeWord(windowXml, "No", !isSubordination);
+
+        // Native Word SDT checkboxes — both label orientations.
+        windowXml = forceSdtBeforeWord(windowXml, "Yes", yesChecked);
+        windowXml = forceSdtBeforeWord(windowXml, "No", noChecked);
+        windowXml = forceSdtAfterWord(windowXml, "Yes", yesChecked);
+        windowXml = forceSdtAfterWord(windowXml, "No", noChecked);
+
+        // Static glyphs — both label orientations.
         windowXml = forceGlyphBeforeWord(windowXml, "Yes", yesGlyph);
         windowXml = forceGlyphBeforeWord(windowXml, "No", noGlyph);
+        windowXml = forceGlyphAfterWord(windowXml, "Yes", yesGlyph);
+        windowXml = forceGlyphAfterWord(windowXml, "No", noGlyph);
+
         rebuilt += windowXml;
         scanFrom = winEnd;
         anchorRe.lastIndex = winEnd;
