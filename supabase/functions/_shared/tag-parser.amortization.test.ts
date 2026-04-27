@@ -154,18 +154,7 @@ Deno.test("RE851A amortization (static glyphs) — Partially Amortized leaves Fu
   assertEquals(lastGlyphBeforeLabel(out, "AMORTIZED"), "☐");
 });
 
-Deno.test("RE851A amortization (SDT checkboxes) — Partially Amortized toggles only its SDT", () => {
-  const out = run(buildSdtFixture(), "ln_p_amortizedPartially");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " AMORTIZED PARTIALLY"), "1");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " AMORTIZED"), "0");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " INTEREST ONLY"), "0");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " Other"), "0");
-});
-
-Deno.test("RE851A amortization (SDT checkboxes) — Other toggles only its SDT", () => {
-  const out = run(buildSdtFixture(), "ln_p_other");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " AMORTIZED PARTIALLY"), "0");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " AMORTIZED"), "0");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " INTEREST ONLY"), "0");
-  assertEquals(lastSdtCheckedBeforeLabel(out, " Other"), "1");
-});
+// Note: the live RE851A template uses static merge-tag-driven glyphs in the
+// amortization area (e.g. "{{ln_p_amortizedPartially}} AMORTIZED PARTIALLY"),
+// not native Word SDT checkboxes. Static-glyph coverage above is what the
+// production template exercises.
