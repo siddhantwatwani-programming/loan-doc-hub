@@ -1,59 +1,74 @@
-Plan: fix RE851A amortization checkbox population without changing template, UI, schema, dropdown behavior, or field mappings
+# RE851A Servicing Checkboxes — Fix Plan
 
-Deep analysis findings
-- The CSR Loan → Amortization dropdown persists values such as `fully_amortized`, `partially_amortized`, `interest_only`, `constant_amortization`, `add_on_interest`, and `other` under the existing `loan_terms.amortization` key.
-- The document generator already derives boolean keys from that dropdown:
-  - `ln_p_amortized`
-  - `ln_p_amortizedPartially`
-  - `ln_p_interestOnly`
-  - `ln_p_constantAmortization`
-  - `ln_p_addOnInterest`
-  - `ln_p_other`
-- The uploaded RE851A mapping document shows the live amortization area uses merge tags directly before the labels:
-  - `{{ln_p_amortizedPartially}} AMORTIZED PARTIALLY`
-  - `{{ln_p_amortized}} AMORTIZED`
-  - `{{ln_p_interestOnly}} INTEREST ONLY`
-  - `{{ln_p_other}} Other`
-- The likely failure is in the late “label/glyph safety pass”: the broad label pattern for `AMORTIZED` can also match the `AMORTIZED PARTIALLY` line, so a later pass can overwrite the Partially Amortized checkbox state. The earlier rejected approach fixed this in the shared label-replacement regex.
+## Problem (Root Cause)
 
-Alternative approach
-- Avoid changing the generic/shared label matching behavior.
-- Add a narrowly scoped RE851A amortization-only final correction that operates on the visible plain-text sequence after merge tags/conditionals have already rendered.
-- The correction will target only the six known amortization labels and only their immediately preceding checkbox glyph/native checkbox.
-- It will not touch any other labels, fields, template structure, layout, spacing, or document generation flow.
+The RE851A template drives the three Servicing checkboxes with Handlebars conditionals that reference the merge key `sv_p_servicingAgent`:
 
-Implementation steps
-1. Update only `supabase/functions/_shared/tag-parser.ts`.
-2. Replace the current RE851A amortization safety pass internals with a label-specific, non-overlapping correction strategy:
-   - Build exact label entries ordered longest-first.
-   - For each label, locate the full label text as a complete phrase.
-   - For `AMORTIZED`, explicitly exclude matches that are followed by `PARTIALLY`, so it cannot target the `AMORTIZED PARTIALLY` line.
-   - Force the checkbox immediately before that exact label to `☑` only for the selected boolean and `☐` for all others.
-3. Add support for native Word checkbox blocks in this same scoped pass:
-   - When the checkbox before the label is an existing Word SDT checkbox, update both:
-     - `<w14:checked w14:val="1|0">`
-     - visible glyph `☑|☐`
-   - This preserves document validity and keeps checkboxes interactive.
-4. Add/extend regression tests for the RE851A amortization section:
-   - Fully Amortized → only `AMORTIZED` checked.
-   - Partially Amortized → only `AMORTIZED PARTIALLY` checked, and `AMORTIZED` remains unchecked.
-   - Interest Only → only `INTEREST ONLY` checked.
-   - Other → only `Other` checked.
-   - Constant Amortization and Add-On Interest checked only when their existing derived keys are true.
-   - Include a regression case where `AMORTIZED PARTIALLY` appears before `AMORTIZED` to prove there is no label collision.
-5. Run the existing document-generation regression tests plus the new amortization tests.
+```
+{{#if (eq sv_p_servicingAgent "Lender")}} ☑ {{else}} ☐ {{/if}} THERE ARE NO SERVICING ARRANGEMENTS
+{{#if (eq sv_p_servicingAgent "Broker")}} ☑ {{else}} ☐ {{/if}} BROKER IS THE SERVICING AGENT
+{{#if (or (eq sv_p_servicingAgent "Company") (eq sv_p_servicingAgent "Other Servicer"))}} ☑ {{else}} ☐ {{/if}} ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN
+```
 
-What will not change
-- No UI changes.
-- No database/schema changes.
-- No API changes.
-- No dropdown option changes.
-- No template upload/replacement.
-- No existing field mapping changes.
-- No broader document generation refactor.
+Two defects in the document-generation engine cause every Servicing checkbox to render unchecked (and risk fragment leakage):
 
-Expected result
-- Generated RE851A documents will always check exactly one amortization checkbox based on CSR → Loan → Amortization.
-- All other amortization options remain unchecked.
-- The Partially Amortized and Fully Amortized labels will no longer conflict.
-- Existing RE851A formatting, spacing, alignment, and checkbox placement remain unchanged.
+1. **Missing field publish.** The CSR stores the dropdown under `origination_svc.servicing_agent`. The merge key `sv_p_servicingAgent` is never written into `fieldValues`, so `(eq sv_p_servicingAgent "...")` always resolves the field as empty string → every comparison is false.
+2. **`(or …)` helper not supported.** `evaluateEqExpression` only matches a single `(eq FIELD LITERAL)`. The third checkbox's `(or (eq …) (eq …))` falls through to the safety-net stripper that removes the `{{#if (…)}}` opener, leaving an orphan `☑ {{else}} ☐ {{/if}}` that the dangling-tag cleanup may scrub but cannot resolve correctly.
+
+No issue exists in the UI, dictionary, schema, persistence layer, or the template itself.
+
+## Fix (server-side only, surgical)
+
+### Change A — Publish `sv_p_servicingAgent` alias (`supabase/functions/generate-document/index.ts`)
+
+In the existing servicing-agent derivation block (around lines 894–934), in addition to the booleans/glyphs already derived, also publish the canonical merge key the template actually references, normalized to the exact title-cased literals the template compares against:
+
+```ts
+// Title-case canonical value so the template's (eq sv_p_servicingAgent "Lender" | "Broker" | "Company" | "Other Servicer") resolves.
+const canonicalServicingAgent =
+  isLenderServicing ? "Lender" :
+  isBrokerServicing ? "Broker" :
+  servicingAgentRaw === "company" ? "Company" :
+  (servicingAgentRaw === "other servicer" || servicingAgentRaw === "other") ? "Other Servicer" :
+  "";
+fieldValues.set("sv_p_servicingAgent", { rawValue: canonicalServicingAgent, dataType: "text" });
+```
+
+Comparison is already case-insensitive in `evaluateEqExpression`, so this restores the Lender and Broker single-eq blocks immediately.
+
+### Change B — Add `(or …)` / `(and …)` helper support (`supabase/functions/_shared/tag-parser.ts`)
+
+Extend the existing `(eq …)` pre-pass (around lines 1406–1434) so `{{#if (or (eq …) (eq …))}}` and `{{#if (and …)}}` resolve before the simple `{{#if KEY}}` matcher runs. Implementation:
+
+1. Add an `(or …)` / `(and …)` resolver that:
+   - Splits balanced parens into child sub-expressions
+   - Evaluates each child via the existing `evaluateEqExpression` (or recursively for nested or/and)
+   - Returns `true`/`false` for `or` (any true) and `and` (all true)
+2. Add a regex pre-pass before the existing `eqIfPattern`:
+   ```
+   {{#if (or (...) (...))}} … {{/if}}
+   {{#if (and (...) (...))}} … {{/if}}
+   ```
+   Replace the matched block with its true branch (or `{{else}}` branch) based on the evaluated boolean — exactly mirroring how `eqIfPattern` already rewrites `(eq …)` blocks.
+3. Mirror the same treatment for `{{#unless (or …)}}` / `{{#unless (and …)}}`.
+4. Update the safety-net strippers (lines ~1520, 1532, 1536) so the new openers are also recognized — they already strip generic `{{#if (…)}}` patterns; verify the catch-all still cleans any unmatched residue.
+
+### Tests
+
+- Extend `supabase/functions/_shared/tag-parser.amortization.test.ts` (or add a sibling `tag-parser.servicing.test.ts`) with three fixtures using the exact template fragment for each dropdown value: Lender, Broker, Company, Other Servicer. Assert that exactly one checkbox glyph becomes ☑ and the other two remain ☐, and that no `{{`/`}}` residue remains.
+
+## What is explicitly NOT changed
+
+- RE851A Word template (no XML edits, no glyph/layout changes).
+- Field dictionary, schema, RLS, persistence, or any UI component.
+- Existing boolean/glyph aliases (`sv_p_noServicingArrangements`, `sv_p_brokerIsServicingAgent`, `sv_p_anotherQualifiedParty`, etc.) — they remain in place as a redundant safety belt and are not removed.
+- Any other RE851A logic (broker capacity, amortization, etc.).
+- Document formatting, spacing, alignment, or checkbox placement.
+
+## Acceptance Verification
+
+- Lender → only "THERE ARE NO SERVICING ARRANGEMENTS" is ☑.
+- Broker → only "BROKER IS THE SERVICING AGENT" is ☑.
+- Company or Other Servicer → only "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN" is ☑.
+- Generated DOCX opens in Word without integrity warnings; no merge-tag residue.
+- All other RE851A sections render unchanged.
