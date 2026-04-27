@@ -11,12 +11,14 @@ type Mode = "Lender" | "Broker" | "Company" | "Other Servicer";
 
 function buildFixture(): string {
   // Mimic the live RE851A run/SDT fragmentation: each glyph is in its own
-  // <w:r>/<w:t>, the label follows in the next run, and one <w:sdt> sentinel
-  // appears in the doc so replaceMergeTags enters the post-processing path.
+  // <w:r>/<w:t>, the label follows in the next run, and a <w:sdt> with
+  // <w14:checkbox> sentinel appears in the doc so replaceMergeTags enters
+  // its post-processing path (it short-circuits when no merge markers,
+  // checkboxes, or relevant labels are present).
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
 <w:body>
-<w:sdt><w:sdtPr><w:tag w:val="sentinel"/></w:sdtPr><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>
+<w:sdt><w:sdtPr><w14:checkbox><w14:checked w14:val="0"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> THERE ARE NO SERVICING ARRANGEMENTS</w:t></w:r></w:p>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> BROKER IS THE SERVICING AGENT</w:t></w:r></w:p>
 <w:p><w:r><w:t>☐</w:t></w:r><w:r><w:t xml:space="preserve"> ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN</w:t></w:r></w:p>
