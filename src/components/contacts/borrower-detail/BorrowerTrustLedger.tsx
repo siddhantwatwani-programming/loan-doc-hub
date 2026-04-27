@@ -327,9 +327,9 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
         </div>
       )}
 
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+      <Dialog open={addDialogOpen} onOpenChange={(open) => { setAddDialogOpen(open); if (!open) { setEditingId(null); setNewEntry(EMPTY_ENTRY); } }}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Edit Trust Ledger Entry' : 'Add Trust Ledger Entry'}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: 'date', label: 'Date', type: 'date' },
