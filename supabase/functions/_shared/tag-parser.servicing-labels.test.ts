@@ -35,11 +35,18 @@ function glyphBefore(xml: string, label: string): string {
 
 function runCase(mode: Mode): { ok: boolean; reason?: string } {
   const xml = buildFixture();
-  const fieldValues = new Map<string, { rawValue: unknown; dataType: string }>();
+  const fieldValues = new Map<string, FieldValueData>();
   fieldValues.set("sv_p_servicingAgent", { rawValue: mode, dataType: "text" });
   fieldValues.set("oo_svc_servicingAgent", { rawValue: mode, dataType: "text" });
 
-  const out = replaceMergeTags(xml, fieldValues);
+  const out = replaceMergeTags(
+    xml,
+    fieldValues,
+    new Map<string, string>(),
+    {},
+    {} as Record<string, LabelMapping>,
+    new Set<string>(["sv_p_servicingAgent", "oo_svc_servicingAgent"]),
+  );
 
   const expected = {
     lender: mode === "Lender" ? "☑" : "☐",
