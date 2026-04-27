@@ -41,6 +41,7 @@ const FIELD_KEYS = {
   extra_label_2: 'origination_app.borrower.extra_label_2',
   extra_value_2: 'origination_app.borrower.extra_value_2',
   info_provided_by: 'origination_app.borrower.info_provided_by',
+  source_of_information: 'origination_app.borrower.source_of_information',
   is_borrower_also_broker: 'origination_app.borrower.is_borrower_also_broker',
   employer_contact_name: 'origination_app.borrower.employer_contact_name',
 
@@ -339,6 +340,25 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
                   <SelectItem value="Borrower">Borrower</SelectItem>
                   <SelectItem value="Public Record">Public Record</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.source_of_information}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Source of Information</Label>
+              <Select
+                value={getValue(FIELD_KEYS.source_of_information) || undefined}
+                onValueChange={(val) => setValue(FIELD_KEYS.source_of_information, val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="Borrower">Borrower</SelectItem>
+                  <SelectItem value="Broker">Broker</SelectItem>
+                  <SelectItem value="Credit Report">Credit Report</SelectItem>
                 </SelectContent>
               </Select>
             </div>
