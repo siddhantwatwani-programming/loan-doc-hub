@@ -681,10 +681,6 @@ export const BROKER_INFO_KEYS = {
   ford6: 'broker.ford.6',
   ford7: 'broker.ford.7',
   ford8: 'broker.ford.8',
-  ford1Text: 'broker.ford.1_text',
-  ford2Text: 'broker.ford.2_text',
-  ford3Text: 'broker.ford.3_text',
-  ford4Text: 'broker.ford.4_text',
 } as const;
 
 export const BROKER_BANKING_KEYS = {
