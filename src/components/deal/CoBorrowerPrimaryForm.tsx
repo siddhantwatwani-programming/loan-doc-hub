@@ -295,10 +295,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={fk('full_name')}>
             <div className="flex items-center gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">Full Name</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
-              </div>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
               <div className="flex-1">
                 <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
