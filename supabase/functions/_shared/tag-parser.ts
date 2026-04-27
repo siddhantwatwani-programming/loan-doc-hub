@@ -2795,6 +2795,9 @@ export function replaceMergeTags(
 
       result = forceGlyphBeforeLabel(result, aPattern, aGlyph);
       result = forceGlyphBeforeLabel(result, bPattern, bGlyph);
+      console.log(
+        `[generate-document] Forced RE851A broker-capacity glyphs: isBrkBorrower=${isBrkBorrower}, A=${aGlyph}, B=${bGlyph}`,
+      );
 
       // Local paragraph-scoped dedup: collapse two adjacent glyphs separated
       // only by intra-paragraph XML/whitespace into the FIRST one (which we
