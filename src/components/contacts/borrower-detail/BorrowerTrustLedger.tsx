@@ -254,6 +254,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             <TabsTrigger value="all" className="text-xs px-3 py-1">All Transactions</TabsTrigger>
             <TabsTrigger value="reserve" className="text-xs px-3 py-1">Reserve</TabsTrigger>
             <TabsTrigger value="impound" className="text-xs px-3 py-1">Impound</TabsTrigger>
+            <TabsTrigger value="suspense" className="text-xs px-3 py-1">Suspense</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
