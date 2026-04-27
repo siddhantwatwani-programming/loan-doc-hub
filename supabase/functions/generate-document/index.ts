@@ -947,6 +947,42 @@ async function generateSingleDocument(
     fieldValues.set("oo_svc_servicingAgent", { rawValue: canonicalServicingAgent, dataType: "text" });
     console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}, sv_p_servicingAgent="${canonicalServicingAgent}", oo_svc_servicingAgent="${canonicalServicingAgent}"`);
 
+    // Loan -> Servicing Details -> Payable (Monthly / Quarterly / Annually).
+    // CSR persists the dropdown under loan_terms.servicing.payable (and the
+    // legacy `origination_svc.payable`). The RE851A template references
+    // `loan_terms.servicing.payable_annually` inside its
+    // {{#if (eq loan_terms.servicing.payable_annually "Monthly")}} /
+    // {{#if (eq loan_terms.servicing.payable_annually "Annually")}} blocks.
+    // Publish a canonical (title-cased) alias under the template's expected
+    // key so those blocks resolve correctly without altering the template,
+    // the UI field key, or the database mapping. Also publish boolean +
+    // glyph aliases for downstream consumers, mirroring the Servicing Agent
+    // pattern above.
+    const payableRaw = (
+      fieldValues.get("loan_terms.servicing.payable")?.rawValue ??
+      fieldValues.get("origination_svc.payable")?.rawValue ??
+      fieldValues.get("loan_terms.servicing.payable_annually")?.rawValue ??
+      ""
+    ).toString().trim().toLowerCase();
+    const isPayableMonthly = payableRaw === "monthly";
+    const isPayableQuarterly = payableRaw === "quarterly";
+    const isPayableAnnually = payableRaw === "annually" || payableRaw === "annual" || payableRaw === "yearly";
+    const canonicalPayable =
+      isPayableMonthly ? "Monthly" :
+      isPayableQuarterly ? "Quarterly" :
+      isPayableAnnually ? "Annually" :
+      "";
+    if (canonicalPayable) {
+      fieldValues.set("loan_terms.servicing.payable_annually", { rawValue: canonicalPayable, dataType: "text" });
+      fieldValues.set("loan_terms.servicing.payable", { rawValue: canonicalPayable, dataType: "text" });
+      fieldValues.set("origination_svc.payable", { rawValue: canonicalPayable, dataType: "text" });
+      setBool("sv_p_payableMonthly", isPayableMonthly);
+      setBool("sv_p_payableAnnually", isPayableAnnually);
+      setGlyph("sv_p_payableMonthlyGlyph", isPayableMonthly);
+      setGlyph("sv_p_payableAnnuallyGlyph", isPayableAnnually);
+    }
+    console.log(`[generate-document] Derived payable-frequency checkboxes from "${payableRaw}": monthly=${isPayableMonthly}, annually=${isPayableAnnually}, canonical="${canonicalPayable}"`);
+
 
     // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {

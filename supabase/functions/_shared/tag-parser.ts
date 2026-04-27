@@ -3075,6 +3075,75 @@ export function replaceMergeTags(
     }
   }
 
+  // RE851A — Payable (Monthly / Annually) safety pass.
+  // Strictly scoped to the literal RE851A "Monthly" and "Annually" labels.
+  // After all merge-tag, conditional, label, bracket, broker-capacity, and
+  // servicing-agent logic has run, force the glyph immediately preceding
+  // each label to the correct state derived from the CSR Loan -> Servicing
+  // Details -> Payable dropdown:
+  //   Monthly   → ☑ "Monthly",  ☐ "Annually"
+  //   Annually  → ☐ "Monthly",  ☑ "Annually"
+  // Other dropdown values (e.g. Quarterly) leave the Monthly/Annually
+  // glyphs untouched. Surrounding text, formatting, and XML structure are
+  // preserved unchanged — only the glyph character toggles.
+  {
+    const payableRaw =
+      getFieldData("loan_terms.servicing.payable_annually", fieldValues)?.data?.rawValue
+      ?? getFieldData("loan_terms.servicing.payable", fieldValues)?.data?.rawValue
+      ?? getFieldData("origination_svc.payable", fieldValues)?.data?.rawValue
+      ?? "";
+    const payable = String(payableRaw).trim().toLowerCase();
+    let payableMode: "monthly" | "annually" | null = null;
+    if (payable === "monthly") payableMode = "monthly";
+    else if (payable === "annually" || payable === "annual" || payable === "yearly") payableMode = "annually";
+
+    if (payableMode !== null) {
+      const monthlyGlyph  = payableMode === "monthly"  ? "☑" : "☐";
+      const annuallyGlyph = payableMode === "annually" ? "☑" : "☐";
+
+      const buildXmlFlex = (label: string) =>
+        label.split(/\s+/).filter(Boolean)
+          .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("(?:\\s|<[^>]+>)*");
+
+      // Word-boundary guards on BOTH sides so we never match "Monthly" as
+      // part of a longer word (e.g. "Bimonthly", "Annually" as part of
+      // "Semiannually") or match labels where the preceding character is a
+      // letter (avoiding accidental hits inside other paragraphs that may
+      // contain the word).
+      const monthlyPattern  = `(?<![A-Za-z])${buildXmlFlex("Monthly")}(?![A-Za-z])`;
+      const annuallyPattern = `(?<![A-Za-z])${buildXmlFlex("Annually")}(?![A-Za-z])`;
+
+      const forceGlyphBeforeLabel = (xml: string, labelPattern: string, glyph: string): string => {
+        // 1) Glyph inside a <w:t> immediately followed (across XML/whitespace)
+        //    by the literal label. Replace ONLY the glyph character.
+        const glyphInWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})`,
+          "gi",
+        );
+        let next = xml.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+          `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+        );
+
+        // 2) Plain-text glyph (no <w:t> wrapper) directly before the label.
+        const glyphPlain = new RegExp(
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})`,
+          "gi",
+        );
+        next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
+          `${glyph}${mid}${labelText}`,
+        );
+        return next;
+      };
+
+      result = forceGlyphBeforeLabel(result, monthlyPattern,  monthlyGlyph);
+      result = forceGlyphBeforeLabel(result, annuallyPattern, annuallyGlyph);
+
+      console.log(
+        `[generate-document] Forced RE851A Payable glyphs: payable="${payable}", monthly=${monthlyGlyph}, annually=${annuallyGlyph}`,
+      );
+    }
+  }
 
   // RE851A Part 2 — broker-capacity A/B paragraph-split normalization.
   //
