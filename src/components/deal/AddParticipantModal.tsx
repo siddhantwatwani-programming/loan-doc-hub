@@ -68,14 +68,6 @@ const EXTENDED_TYPE_LABELS: Record<string, string> = {
 };
 const NATIVE_ROLES = new Set(['borrower', 'lender', 'broker', 'other']);
 
-const CAPACITY_OPTIONS: Record<string, string[]> = {
-  borrower: [
-    'Borrower (Primary)', 'Co-Borrower', 'Trustee', 'Co-Trustee',
-    'Managing Member', 'Authorized Signer', 'Additional Guarantor',
-  ],
-  lender: ['Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party'],
-};
-
 export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   open,
   onOpenChange,
