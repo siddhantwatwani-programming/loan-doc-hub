@@ -33,13 +33,6 @@ const FIELD_KEYS = {
   notes: 'borrower.tax_info.notes',
 } as const;
 
-const DESIGNATED_RECIPIENT_OPTIONS = [
-  { value: 'primary', label: 'Borrower' },
-  { value: 'co-borrower', label: 'Co-borrower' },
-  { value: 'additional_guarantor', label: 'Additional Guarantor' },
-  { value: 'other', label: 'Other' },
-];
-
 const TIN_TYPE_OPTIONS = [
   { value: '0', label: '0 - Unknown' },
   { value: '1', label: '1 - EIN' },
