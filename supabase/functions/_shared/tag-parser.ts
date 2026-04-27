@@ -2129,15 +2129,14 @@ export function replaceMergeTags(
     // already present in the template (e.g., "☑☐ Label" → "☑ Label").
     //
     // SCOPING: Restrict the dedup so the gap between the two glyphs may NOT
-    // cross a paragraph boundary (`</w:p>` or a new `<w:p>` start). Without
-    // this guard, two glyphs that legitimately belong to *different*
-    // paragraphs but are separated only by XML markup (which is common —
-    // e.g., the RE851A Part 2 A./B. broker-capacity rows where each glyph
-    // is its own conditional in its own paragraph) would be collapsed,
-    // silently dropping the second glyph and leaving Option B unchecked
-    // even when "IS BROKER ALSO A BORROWER?" is selected.
+    // cross a paragraph boundary (`</w:p>` / new `<w:p>` start) OR a soft
+    // line break (`<w:br/>`). Without this guard, two glyphs that
+    // legitimately belong to *different* logical lines but live in the same
+    // paragraph (e.g., the RE851A "Is Broker also a Borrower?" A./B. row
+    // where each {{#if}} block is on its own line separated by Shift+Enter)
+    // would be collapsed, silently dropping Option B's checkbox.
     result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])/g,
       (_m, g1, mid, _g2) => `${g1}${mid}`
     );
   }
@@ -2895,7 +2894,7 @@ export function replaceMergeTags(
       // both a static glyph AND a conditionally-rendered glyph on the same
       // A/B line.
       result = result.replace(
-        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)(A\.(?:\s|<[^>]+>)*Agent|B\.(?:\s|<[^>]+>)*\*?(?:\s|<[^>]+>)*Principal)/g,
+        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)(A\.(?:\s|<[^>]+>)*Agent|B\.(?:\s|<[^>]+>)*\*?(?:\s|<[^>]+>)*Principal)/g,
         (_m, g1, mid1, _g2, mid2, labelHead) => `${g1}${mid1}${mid2}${labelHead}`,
       );
     }
