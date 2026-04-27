@@ -25,12 +25,12 @@ function buildFixture(): string {
 }
 
 function glyphBefore(xml: string, label: string): string {
-  // Find label, then walk back to the nearest checkbox glyph.
-  const idx = xml.indexOf(label);
+  const plain = xml.replace(/<[^>]*>/g, "");
+  const idx = plain.indexOf(label);
   if (idx < 0) return "MISSING-LABEL";
-  const before = xml.slice(0, idx);
-  const m = before.match(/[☐☑☒](?!.*[☐☑☒])/s);
-  return m ? m[0] : "NO-GLYPH";
+  const region = plain.substring(0, idx);
+  const matches = region.match(/[☐☑☒]/g);
+  return matches ? matches[matches.length - 1] : "NO-GLYPH";
 }
 
 function runCase(mode: Mode): { ok: boolean; reason?: string } {
