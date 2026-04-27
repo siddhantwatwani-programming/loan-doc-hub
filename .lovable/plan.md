@@ -1,53 +1,60 @@
-# RE851A Servicing Checkboxes — Bind Labels to Derived Booleans
+# Update Borrower → Authorized Party Form to Match Screenshot
 
-## Diagnosis
-The derivation logic for the Servicing section is already wired correctly in `supabase/functions/generate-document/index.ts` (lines 894–924). It reads the Servicing Agent dropdown and publishes mutually-exclusive boolean + glyph aliases:
+## Scope
+Update only the `Contacts > Borrower > Authorized Party` form to match the attached layout. No schema changes, no new tables, no changes to any other form, save flow, or API.
 
-- `sv_p_noServicingArrangements*` → Lender
-- `sv_p_brokerIsServicingAgent*` → Broker
-- `sv_p_anotherQualifiedParty*` → Company / Other Servicer
+## What Changes vs. The Current Form
 
-What's missing is the **template-side binding**. Looking at the screenshot, each Servicing line has a static `☐` glyph immediately before the label text. The doc-gen engine can flip that exact glyph automatically — but only if it knows which `fieldKey` belongs to which label. This is the same mechanism already used for the broker A/B checkboxes (`effectiveLabelMap` at lines 1610–1651). No such entries exist yet for the Servicing labels, so the boxes never toggle even though the booleans are derived correctly. Result matches what the screenshot shows: a check appears somewhere on the row, but the static `☐` glyph in front of the actual label stays unchecked.
+| Area | Current | New (from screenshot) |
+|---|---|---|
+| Name column | First, Middle, Last, Capacity, Email | First, Middle, Last, **Capacity**, **Email**, **Date Authorized** (new) |
+| Capacity dropdown | Attorney, CFO/CPA, Broker, Family, Bankruptcy Trustee, Other | **Corporate Officer, Attorney, Power of Attorney, Accountant / CPA, Family, Bankruptcy Trustee, Other** |
+| Address column | Street, City, State, ZIP | unchanged |
+| Phone column | Home, Work, Cell, Fax | unchanged |
+| Preferred column | not present | **NEW 4th column** with Preferred checkbox aligned to Home, Work, Cell rows (no checkbox for Fax) |
+| Send section | Payment Notification, Borrower Statement, Late Notice, Maturity Notice | **Payment Confirmation, Coupon Book, Payment Statement, Late Notice, Maturity Notice** |
+| Delivery section | Email, Mail, SMS | **Online, Mail, SMS** (renamed "Delivery Options") |
+| Layout (bottom row) | 3 cols: Send / Delivery / Details | 2 zones: left panel combines `Delivery Options` (Online/Mail/SMS, stacked left) with `Send` checkboxes (5 items) flowing to its right; `Details` textarea on the right |
 
-## Fix
-Extend the in-memory `effectiveLabelMap` block in `supabase/functions/generate-document/index.ts` (right after the existing broker A/B entries, before the closing `};` on line 1651) with label→fieldKey bindings for the three Servicing labels, including realistic wording variants captured from the live template:
+## Field Keys (added to `BORROWER_AUTHORIZED_PARTY_KEYS`)
+All persist into `contacts.contact_data` JSONB through the existing `onSave` path — no schema/dictionary work required.
 
-```ts
-// RE851A Servicing section labels → derived boolean keys.
-// Mirrors the broker A/B pattern above so the static ☐ glyph that
-// sits immediately before each label flips to ☑ when the matching
-// boolean is true. No template edits required.
-"THERE ARE NO SERVICING ARRANGEMENTS":              { fieldKey: "sv_p_noServicingArrangements" },
-"THERE ARE NO SERVICING ARRANGEMENTS (Does not apply to multi-lender transactions.)":
-                                                    { fieldKey: "sv_p_noServicingArrangements" },
-"THERE ARE NO SERVICING ARRANGEMENTS  (Does not apply to multi-lender transactions.)":
-                                                    { fieldKey: "sv_p_noServicingArrangements" },
-
-"BROKER IS THE SERVICING AGENT":                    { fieldKey: "sv_p_brokerIsServicingAgent" },
-"BROKER IS THE SERVICING AGENT  -See attached \"Notes\"":
-                                                    { fieldKey: "sv_p_brokerIsServicingAgent" },
-"BROKER IS THE SERVICING AGENT -See attached \"Notes\"":
-                                                    { fieldKey: "sv_p_brokerIsServicingAgent" },
-
-"ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN":    { fieldKey: "sv_p_anotherQualifiedParty" },
-"ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER":
-                                                    { fieldKey: "sv_p_anotherQualifiedParty" },
+```
+dateAuthorized        : borrower.authorized_party.date_authorized
+preferredHome         : borrower.authorized_party.preferred.home
+preferredWork         : borrower.authorized_party.preferred.work
+preferredCell         : borrower.authorized_party.preferred.cell
+sendPaymentConfirmation : borrower.authorized_party.send_pref.payment_confirmation
+sendCouponBook          : borrower.authorized_party.send_pref.coupon_book
+sendPaymentStatement    : borrower.authorized_party.send_pref.payment_statement
+deliveryOnline          : borrower.authorized_party.delivery.online
 ```
 
-That's the only code change. The variants cover the trailing parenthetical/notes/spacing seen in the screenshot. The processor already normalises minor whitespace, but providing the most common variants makes the match deterministic.
+Existing keys reused unchanged: firstName, middleName, lastName, capacity, email, street, city, state, zip, phoneHome, phoneWork, phoneCell, phoneFax, sendLateNotice, sendMaturityNotice, deliveryMail, deliverySms, details.
 
-## Why This Honours The Constraints
-- **No template edit, no field mapping change, no schema change.**
-- **No layout shift.** The label-binding mechanism only flips the existing static `☐` glyph (or SDT checkbox state) directly preceding the label — placement, spacing, and alignment are preserved.
-- **No impact on other RE851A sections** — labels are scoped to exact Servicing wording.
-- **Mutual exclusivity** is already guaranteed by the existing derivation logic; only one of the three booleans is ever `true`.
+Removed (UI-only — no DB cleanup): `sendPaymentNotification`, `sendBorrowerStatement`, `deliveryEmail`. (Old persisted values for these keys remain in JSONB harmlessly; they simply stop being rendered.)
 
-## File Touched
-- `supabase/functions/generate-document/index.ts` — append three label entries inside the existing `effectiveLabelMap` literal (≈10–15 added lines, no other changes).
+## Implementation
+Two files touched:
 
-## Acceptance Criteria
-- Servicing Agent = **Lender** → only "THERE ARE NO SERVICING ARRANGEMENTS" box is checked.
-- Servicing Agent = **Broker** → only "BROKER IS THE SERVICING AGENT" box is checked.
-- Servicing Agent = **Company** or **Other Servicer** → only "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN" box is checked.
-- The previously-visible spurious check disappears; the box directly in front of each label is the one that toggles.
-- Document generates without corruption; no other RE851A checkboxes/fields are affected.
+1. **`src/lib/fieldKeyMap.ts`** — extend `BORROWER_AUTHORIZED_PARTY_KEYS` with the 8 new entries listed above (drop the 3 deprecated ones).
+2. **`src/components/deal/BorrowerAuthorizedPartyForm.tsx`** — restructure to the 4-column top row + 2-zone bottom row exactly as shown:
+   - Add `Date Authorized` row in Name column using the standard `EnhancedCalendar` popover pattern (MM/dd/yyyy display, `yyyy-MM-dd` storage), per the project's date-format standard.
+   - Update `CAPACITY_OPTIONS` to the new list.
+   - Add 4th `Preferred` column: small heading + 3 right-aligned checkboxes vertically aligned with Home/Work/Cell rows; Fax row has no checkbox.
+   - Replace bottom row with the new layout: `Delivery Options` (3 stacked checkboxes) + `Send` (5 checkboxes in a 2-col mini-grid) inside a single left panel, with `Details` textarea on the right.
+   - Continue wrapping each input in `DirtyFieldWrapper` and use the existing `Checkbox`, `Select`, `Popover` patterns already used in `BorrowerBankingForm` for the date picker.
+
+## What Is NOT Changing
+- No change to `ContactBorrowerDetailLayout.tsx`, save logic, dirty tracking, permissions, RLS, or any API.
+- No schema migrations, no `field_dictionary` rows, no `templates`/document-generation changes.
+- No changes to any other form (Lender Authorized Party, Broker Authorized Party, Deal Borrower form, etc.).
+
+## Acceptance
+- Form layout visually matches the attached screenshot (4-col top row, Delivery Options + Send merged left panel, Details right).
+- New Capacity options appear and persist.
+- Date Authorized opens the standard date popover; selected date persists and re-renders MM/DD/YYYY.
+- Preferred Home/Work/Cell checkboxes persist independently.
+- Send: Payment Confirmation / Coupon Book / Payment Statement / Late Notice / Maturity Notice each persist as booleans.
+- Delivery Options: Online / Mail / SMS each persist as booleans.
+- Save uses the existing `onSave` flow; no schema or RLS changes.
