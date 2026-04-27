@@ -3310,11 +3310,9 @@ export function replaceMergeTags(
         return next;
       };
 
-      if ((globalThis as any).__DEBUG_SVC__) console.log("[DBG svc-pass IN]", JSON.stringify(result));
       result = forceGlyphBeforeLabel(result, lenderPattern, lenderGlyph);
       result = forceGlyphBeforeLabel(result, brokerPattern, brokerGlyph);
       result = forceGlyphBeforeLabel(result, otherPattern,  otherGlyph);
-      if ((globalThis as any).__DEBUG_SVC__) console.log("[DBG svc-pass OUT]", JSON.stringify(result));
 
       console.log(
         `[generate-document] Forced RE851A servicing-agent glyphs: agent="${agent}", lender=${lenderGlyph}, broker=${brokerGlyph}, other=${otherGlyph}`,
