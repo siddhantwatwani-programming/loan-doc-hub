@@ -3076,6 +3076,93 @@ export function replaceMergeTags(
   }
 
 
+  // RE851A Part 2 — broker-capacity A/B paragraph-split normalization.
+  //
+  // When the RE851A template authors place the A. Agent / B. Principal
+  // checkbox lines inside the SAME <w:p> separated only by a soft line
+  // break (<w:br/>, Shift+Enter), the post-processing pipeline (SDT
+  // conversion, label-based replacement, deduplication) is fragile because
+  // both glyphs share a single paragraph context. The user-reported failure
+  // mode is that Option B's checkbox is missing or never flips to ☑ when
+  // or_p_isBrkBorrower=true.
+  //
+  // To make rendering robust REGARDLESS of how the template author broke
+  // the line, we promote any soft break that sits between the literal
+  // "A. Agent in arranging a loan" and "B. ... Principal as a borrower"
+  // labels into a real paragraph boundary. The original <w:pPr> (if any)
+  // is cloned onto both halves so paragraph formatting is preserved, and
+  // we explicitly enforce 0pt before/after with single line spacing per
+  // requirement so no extra spacing is introduced between A and B.
+  //
+  // Strictly scoped to this single A./B. row — no other paragraphs or
+  // sections of the document are touched.
+  {
+    const splitParaRe = /<w:p\b([^>]*)>([\s\S]*?)<\/w:p>/g;
+    result = result.replace(splitParaRe, (full, pAttrs, inner) => {
+      // Plain text of the paragraph — used to detect both labels are present.
+      const plain = inner.replace(/<[^>]*>/g, "");
+      const hasA = /A\.\s*Agent in arranging a loan/i.test(plain);
+      const hasB = /B\.\s*\*?\s*Principal as a borrower/i.test(plain);
+      if (!hasA || !hasB) return full;
+      // Must contain at least one soft break to split on.
+      if (!/<w:br\b[^>]*\/>/i.test(inner)) return full;
+
+      // Extract <w:pPr> (paragraph properties) if present so we can clone it.
+      const pPrMatch = inner.match(/^(\s*<w:pPr>[\s\S]*?<\/w:pPr>)/);
+      const pPr = pPrMatch ? pPrMatch[1] : "";
+      const body = pPr ? inner.slice(pPr.length) : inner;
+
+      // Split the body on the FIRST <w:br/> that sits between A and B.
+      // We look for a <w:br/> whose left side contains "A. Agent..." and
+      // right side contains "B. ... Principal...". The simplest reliable
+      // approach: split on every <w:br/> and find the boundary where the
+      // accumulated left plain-text contains the A label and the right
+      // plain-text contains the B label.
+      const brSplit = body.split(/(<w:br\b[^>]*\/>)/i);
+      let splitIdx = -1;
+      for (let i = 1; i < brSplit.length; i += 2) {
+        const left = brSplit.slice(0, i).join("").replace(/<[^>]*>/g, "");
+        const right = brSplit.slice(i + 1).join("").replace(/<[^>]*>/g, "");
+        if (
+          /A\.\s*Agent in arranging a loan/i.test(left) &&
+          /B\.\s*\*?\s*Principal as a borrower/i.test(right)
+        ) {
+          splitIdx = i;
+          break;
+        }
+      }
+      if (splitIdx < 0) return full;
+
+      const leftBody = brSplit.slice(0, splitIdx).join("");
+      const rightBody = brSplit.slice(splitIdx + 1).join("");
+
+      // Build a paragraph-properties block that enforces:
+      //   • Spacing Before = 0 pt
+      //   • Spacing After  = 0 pt
+      //   • Line spacing   = Single (240 twentieths of a point, auto rule)
+      // If the original paragraph had its own <w:pPr>, merge our spacing
+      // override INTO it so other formatting (alignment, indentation, run
+      // properties etc.) is preserved unchanged.
+      const spacingTag = `<w:spacing w:before="0" w:after="0" w:line="240" w:lineRule="auto"/>`;
+      let mergedPPr: string;
+      if (pPr) {
+        if (/<w:spacing\b[^/]*\/>/.test(pPr)) {
+          mergedPPr = pPr.replace(/<w:spacing\b[^/]*\/>/, spacingTag);
+        } else {
+          mergedPPr = pPr.replace(/<w:pPr>/, `<w:pPr>${spacingTag}`);
+        }
+      } else {
+        mergedPPr = `<w:pPr>${spacingTag}</w:pPr>`;
+      }
+
+      return (
+        `<w:p${pAttrs}>${mergedPPr}${leftBody}</w:p>` +
+        `<w:p${pAttrs}>${mergedPPr}${rightBody}</w:p>`
+      );
+    });
+  }
+
+
   // RE851A Part 2 — broker-capacity A/B safety pass.
   // Strictly scoped to the literal "A. Agent in arranging..." and
   // "B. [optional *]Principal as a borrower..." labels. After all merge-tag,
