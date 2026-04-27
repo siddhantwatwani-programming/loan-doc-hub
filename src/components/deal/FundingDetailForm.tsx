@@ -198,18 +198,25 @@ export const FundingDetailForm: React.FC<FundingDetailFormProps> = ({
         </div>
       </div>
 
-      {/* Lender Rate (auto-prefilled from Sold Rate; disabled when Sold Rate exists). Override has its own editable input. */}
+      {/* Lender Rate resolution rules:
+          - Sold Rate NOT checked (rateSoldValue empty) → Lender Rate = Note Rate
+          - Sold Rate checked (rateSoldValue present)   → Lender Rate = Sold Rate
+          - Override enabled                            → Lender Rate = User Input (overrideVal)
+          The main Lender Rate input is read-only when a linked source (Sold/Note) is providing
+          the value, and becomes editable via the Override sub-field. */}
       {(() => {
         const soldRateVal = (data.rateSoldValue || '').trim();
         const noteRateVal = (data.rateNoteValue || '').trim();
-        const linkedRate = soldRateVal !== '' ? soldRateVal : noteRateVal;
-        const hasLinkedRate = linkedRate !== '' && !isNaN(parseFloat(linkedRate));
-        // Note, Sold, and Lender Rate are dynamically linked. Lender Rate mirrors the
-        // linked source (Sold → Note fallback) and is non-editable unless Override is on.
-        const lenderRateDisabled = hasLinkedRate;
-        const displayRate = hasLinkedRate ? linkedRate : (data.lenderRate || '');
         const isOn = !!data.lenderRateOverride;
         const overrideVal = data.lenderRateOverrideValue || '';
+        // Source rate per spec: Sold (when checked/non-empty) else Note.
+        const linkedRate = soldRateVal !== '' ? soldRateVal : noteRateVal;
+        const hasLinkedRate = linkedRate !== '' && !isNaN(parseFloat(linkedRate));
+        // When override is on, the displayed Lender Rate reflects user input.
+        const displayRate = isOn
+          ? (overrideVal || data.lenderRate || linkedRate || '')
+          : (hasLinkedRate ? linkedRate : (data.lenderRate || ''));
+        const lenderRateDisabled = hasLinkedRate || isOn;
         return (
           <div className="flex items-center gap-6 flex-wrap mt-1">
             <div className="flex items-center gap-2">
