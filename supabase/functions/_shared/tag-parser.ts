@@ -2187,6 +2187,41 @@ export function replaceMergeTags(
         return next;
       };
 
+      // Native Word SDT checkbox toggle, scoped to the same row window.
+      // Some RE851A templates render the Yes/No boxes as <w:sdt> blocks
+      // containing a <w14:checkbox>. Glyph-only replacement does not flip
+      // the internal `w14:checked` state, so the box still renders unchecked
+      // in Word. This pass finds each <w:sdt>...</w:sdt> block whose visible
+      // run text is followed (across XML/whitespace) by the literal "Yes" or
+      // "No" word and rewrites BOTH the `w14:checked` attribute and the
+      // displayed glyph inside <w:sdtContent>. No surrounding text, layout,
+      // or other SDTs in the document are touched.
+      const forceSdtBeforeWord = (
+        windowXml: string,
+        word: "Yes" | "No",
+        isChecked: boolean,
+      ): string => {
+        const wordRe = `\\b${word}\\b`;
+        const checkedVal = isChecked ? "1" : "0";
+        const displayChar = isChecked ? "\u2611" : "\u2610";
+        const sdtBeforeWord = new RegExp(
+          `(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)((?:\\s|<[^>]+>)*?${wordRe})`,
+          "g",
+        );
+        return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
+          if (!/<w14:checkbox\b/.test(sdtBlock)) return `${sdtBlock}${tail}`;
+          let updated = sdtBlock.replace(
+            /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/,
+            `$1${checkedVal}$3`,
+          );
+          updated = updated.replace(
+            /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
+            `$1${displayChar}$3`,
+          );
+          return `${updated}${tail}`;
+        });
+      };
+
       const WINDOW_SIZE = 3000;
       let scanFrom = 0;
       let rebuilt = "";
