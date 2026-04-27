@@ -2725,6 +2725,96 @@ export function replaceMergeTags(
     }
   }
 
+  // RE851A Part 3 — Amortization (CHECK ONE) safety pass.
+  // The Amortization dropdown (ln_p_amortiza / loan_terms.amortization) drives
+  // a derived set of mutually-exclusive booleans (ln_p_amortized,
+  // ln_p_amortizedPartially, ln_p_interestOnly, ln_p_constantAmortization,
+  // ln_p_addOnInterest, ln_p_other). After all merge-tag, conditional, and
+  // label replacements have run, force the static glyph immediately preceding
+  // each Amortization label to match the derived state. This ensures the
+  // selected dropdown value always populates exactly one checked box and all
+  // other Amortization checkboxes remain unchecked. Other RE851A sections,
+  // labels, formatting, and XML structure are preserved unchanged.
+  {
+    const readBool = (key: string): boolean | null => {
+      const d = getFieldData(key, fieldValues)?.data;
+      if (!d) return null;
+      const raw = d.rawValue;
+      if (raw === null || raw === "") return null;
+      if (typeof raw === "string") {
+        const v = raw.trim().toLowerCase();
+        if (["true", "yes", "y", "1", "checked", "on"].includes(v)) return true;
+        if (["false", "no", "n", "0", "unchecked", "off"].includes(v)) return false;
+        return null;
+      }
+      if (typeof raw === "number") return raw !== 0;
+      return Boolean(raw);
+    };
+
+    const amortStates: Array<{ key: string; labels: string[] }> = [
+      { key: "ln_p_amortized", labels: ["FULLY AMORTIZED", "AMORTIZED"] },
+      { key: "ln_p_amortizedPartially", labels: ["AMORTIZED PARTIALLY", "PARTIALLY AMORTIZED"] },
+      { key: "ln_p_interestOnly", labels: ["INTEREST ONLY"] },
+      { key: "ln_p_constantAmortization", labels: ["CONSTANT AMORTIZATION"] },
+      { key: "ln_p_addOnInterest", labels: ["ADD-ON INTEREST", "ADD ON INTEREST"] },
+      { key: "ln_p_other", labels: ["Other"] },
+    ];
+
+    // Only apply the safety pass when at least one derived boolean is present
+    // (i.e. the dropdown was set). Otherwise leave the template untouched.
+    const anyDerived = amortStates.some(({ key }) => readBool(key) !== null);
+    if (anyDerived) {
+      const buildXmlFlex = (label: string) =>
+        label.split(/\s+/).filter(Boolean)
+          .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("(?:\\s|<[^>]+>)*");
+
+      const forceGlyphForLabel = (xml: string, label: string, glyph: string): string => {
+        const labelPattern = buildXmlFlex(label);
+        if (!labelPattern) return xml;
+
+        // 1) Glyph inside <w:t> followed by the label across XML/whitespace.
+        const glyphInWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        let next = xml.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+          `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+        );
+
+        // 2) Plain-text glyph (no <w:t> wrapper) directly before the label.
+        const glyphPlain = new RegExp(
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
+          `${glyph}${mid}${labelText}`,
+        );
+        return next;
+      };
+
+      // Sort labels longest-first so "AMORTIZED PARTIALLY" is processed before
+      // "AMORTIZED" — preventing the shorter label from also matching the
+      // longer label's text.
+      const ordered = amortStates
+        .flatMap(({ key, labels }) => labels.map((label) => ({ key, label })))
+        .sort((a, b) => b.label.length - a.label.length);
+
+      for (const { key, label } of ordered) {
+        const state = readBool(key);
+        if (state === null) continue;
+        const glyph = state ? "☑" : "☐";
+        result = forceGlyphForLabel(result, label, glyph);
+      }
+
+      console.log(
+        `[generate-document] Forced RE851A Amortization glyphs: ${amortStates
+          .map(({ key }) => `${key}=${readBool(key)}`)
+          .join(", ")}`,
+      );
+    }
+  }
+
 
   // RE851A Part 2 — broker-capacity A/B safety pass.
   // Strictly scoped to the literal "A. Agent in arranging..." and
