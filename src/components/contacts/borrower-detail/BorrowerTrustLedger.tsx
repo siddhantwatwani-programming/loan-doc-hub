@@ -112,6 +112,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newEntry, setNewEntry] = useState(EMPTY_ENTRY);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!contactDbId) return;
@@ -147,6 +148,17 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
   } = useGridSelection(filteredData);
 
   const handleAddEntry = async () => {
+    if (editingId) {
+      const updated = entries.map(e => e.id === editingId ? { ...newEntry, id: editingId } as LedgerEntry : e);
+      setEntries(updated);
+      await persistEntries(updated);
+      setNewEntry(EMPTY_ENTRY);
+      setEditingId(null);
+      setAddDialogOpen(false);
+      toast.success('Entry updated');
+      logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Updated', oldValue: '', newValue: newEntry.reference || newEntry.memo || 'Entry' }]);
+      return;
+    }
     const entry: LedgerEntry = { ...newEntry, id: crypto.randomUUID() };
     const updated = [...entries, entry];
     setEntries(updated);
@@ -155,6 +167,14 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
     setAddDialogOpen(false);
     toast.success('Entry added');
     logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Added', oldValue: '', newValue: entry.reference || entry.memo || 'New entry' }]);
+  };
+
+  const openEditDialog = (entry: LedgerEntry) => {
+    if (disabled) return;
+    const { id, ...rest } = entry;
+    setNewEntry(rest as typeof EMPTY_ENTRY);
+    setEditingId(id);
+    setAddDialogOpen(true);
   };
 
   const handleBulkDelete = async () => {
@@ -288,7 +308,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
                 </TableCell>
               </TableRow>
             ) : filteredData.map((entry, idx) => (
-              <TableRow key={entry.id} className={`hover:bg-muted/30 ${idx === 0 ? 'bg-accent/20' : ''}`}>
+              <TableRow key={entry.id} onClick={() => openEditDialog(entry)} className={`hover:bg-muted/30 cursor-pointer ${idx === 0 ? 'bg-accent/20' : ''}`}>
                 <TableCell onClick={e => e.stopPropagation()} className="w-[40px]">
                   <Checkbox checked={selectedIds.has(entry.id)} onCheckedChange={() => toggleOne(entry.id)} />
                 </TableCell>
@@ -307,9 +327,9 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
         </div>
       )}
 
-      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+      <Dialog open={addDialogOpen} onOpenChange={(open) => { setAddDialogOpen(open); if (!open) { setEditingId(null); setNewEntry(EMPTY_ENTRY); } }}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Trust Ledger Entry</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingId ? 'Edit Trust Ledger Entry' : 'Add Trust Ledger Entry'}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             {[
               { key: 'date', label: 'Date', type: 'date' },
@@ -376,8 +396,8 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddEntry}>Add Entry</Button>
+            <Button variant="outline" size="sm" onClick={() => { setAddDialogOpen(false); setEditingId(null); setNewEntry(EMPTY_ENTRY); }}>Cancel</Button>
+            <Button size="sm" onClick={handleAddEntry}>{editingId ? 'Update Entry' : 'Add Entry'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
