@@ -1,57 +1,60 @@
-# Contacts > Borrower — Additional Guarantor + Authorized Party
+## Plan: Fix RE851A Amortization checkbox population
 
-## Scope (strictly limited)
+### Goal
+When generating RE851A, the Amortization dropdown value from CSR → Loan → Amortization will check exactly one matching checkbox in the document and leave all others unchecked.
 
-Two changes only, all other functionality, schema, APIs, and styles untouched.
+### Confirmed cause
+The dropdown value is being saved (example current deal has `ln_p_amortiza = other`) and the generation function already derives boolean values. However, the uploaded/generated RE851A document uses visible static checkbox markers next to labels such as `AMORTIZED PARTIALLY`, `AMORTIZED`, `INTEREST ONLY`, and `Other`. The existing label fallback only has partial label coverage and does not reliably force all Amortization labels, so the static document checkbox stays unchecked.
 
-### 1. Add "Additional Guarantor" sidebar entry above "Authorized Party"
+### Implementation steps
+1. **Keep UI, database, APIs, template, and existing mappings unchanged**
+   - No schema changes.
+   - No template formatting or placement changes.
+   - No dropdown behavior changes.
 
-File: `src/components/contacts/borrower-detail/BorrowerDetailSidebar.tsx`
-- Extend the `BorrowerSection` union with `'additional-guarantor'`.
-- Insert `{ id: 'additional-guarantor', label: 'Additional Guarantor', icon: UserCheck }` in the `SECTIONS` array immediately before the existing `authorized-party` row (use the existing `Users` or `UserPlus` icon from lucide-react to differentiate).
+2. **Constrain the fix to document generation**
+   - Update only the document-generation checkbox logic for RE851A Amortization.
+   - Continue using existing source field `ln_p_amortiza` / `loan_terms.amortization`.
 
-File: `src/components/contacts/borrower-detail/ContactBorrowerDetailLayout.tsx`
-- Add a new `case 'additional-guarantor':` in `renderContent()` that renders the existing `BorrowerAdditionalGuarantorForm` with the standard props (`fields={emptyFields}`, `values`, `onValueChange={handleValueChange}`, `disabled={isReadOnly}`).
-- The `NON_BORROWER_PREFIXES` array already includes `'borrower.guarantor.'`, so persistence through `onSave` works without any other change.
+3. **Strengthen dropdown value normalization**
+   - Normalize casing, spaces, underscores, hyphens, and punctuation so all saved variants match:
+     - Fully Amortized
+     - Partially Amortized
+     - Interest Only
+     - Constant Amortization
+     - Add-On Interest
+     - Other
+   - Preserve the CHECK ONE behavior by setting all known Amortization booleans false except the selected option.
 
-No new component is created — the existing `BorrowerAdditionalGuarantorForm` (which already matches the screenshot column layout exactly: Name | Primary Address | Phone | Preferred + Delivery / Send + Borrower Type legend) is simply mounted in the contact view.
+4. **Add RE851A Amortization label bindings at generation time**
+   - Add runtime-only label mappings for the visible RE851A labels:
+     - `AMORTIZED PARTIALLY` → `ln_p_amortizedPartially`
+     - `AMORTIZED` / `FULLY AMORTIZED` → `ln_p_amortized`
+     - `INTEREST ONLY` → `ln_p_interestOnly`
+     - `Other` → `ln_p_other`
+     - If field dictionary keys exist later for Constant Amortization / Add-On Interest, include those labels without creating schema.
+   - This mirrors the existing broker-capacity and servicing checkbox fallback approach.
 
-### 2. Rebuild the Authorized Party form to match the screenshot layout
+5. **Add a narrow final safety pass for the RE851A Amortization row**
+   - In the local XML window around `INTEREST RATE` / `(CHECK ONE)` / `PAYMENT FREQUENCY`, force only the Amortization checkbox glyphs or native checkbox states to match the derived booleans.
+   - Preserve surrounding text, spacing, table structure, alignment, and document formatting.
+   - Do not touch other RE851A checkbox sections.
 
-File: `src/components/deal/BorrowerAuthorizedPartyForm.tsx`
+6. **Regression check**
+   - Add/adjust a focused test using an XML fixture shaped like the RE851A Amortization row to verify:
+     - Fully Amortized checks only `AMORTIZED`
+     - Partially Amortized checks only `AMORTIZED PARTIALLY`
+     - Interest Only checks only `INTEREST ONLY`
+     - Other checks only `Other`
+   - Confirm the document-generation code path still produces valid DOCX XML.
 
-Refactor the JSX (only the JSX — file imports, hooks, and persistence logic stay) to mirror the column structure used by `BorrowerAdditionalGuarantorForm`:
+### Files expected to change
+- `supabase/functions/generate-document/index.ts`
+- `supabase/functions/_shared/tag-parser.ts`
+- Possibly one focused regression test under `supabase/functions/_shared/`
 
-- **Column 1 — Name**: Borrower ID, Borrower Type (dropdown), Full Name (If Entity, Use Entity), First (If Entity, Use Signer), Middle, Last, Capacity, Email, Tax ID Type (dropdown: 0 - Unknown / 1 - EIN / 2 - SSN), TIN, Issue 1098 (checkbox), Date Authorized (existing EnhancedCalendar — preserved).
-- **Column 2 — Primary Address**: Street / City / State / ZIP. Below it **Mailing Address** with "Same as Primary" checkbox, Street / City / State / ZIP. Below it **Delivery**: Online, Mail.
-- **Column 3 — Phone**: Home, Home (2nd), Work, Cell, Fax. Below it **Send**: Payment Notification, Borrower Statement, Late Notice, Maturity Notice. Below it **FORD**: 4 dropdown + free-text rows.
-- **Column 4 — Preferred**: a checkbox aligned to each phone row.
-- Right-side **Borrower Type** legend (read-only list) and **Tax ID Type** legend (read-only) shown to the right of the grid (matches screenshot).
-- Existing fields (firstName, middleName, lastName, capacity, email, dateAuthorized, address, phones, preferred*, send*, delivery*, details) are reused with their current `BORROWER_AUTHORIZED_PARTY_KEYS` mappings.
-- Bottom **Details** textarea is preserved.
-
-File: `src/lib/fieldKeyMap.ts`
-- Extend `BORROWER_AUTHORIZED_PARTY_KEYS` with the new keys required by the new layout. All keys use the `borrower.authorized_party.*` prefix so they are persisted by the existing save flow without schema changes:
-  - `borrowerId`, `borrowerType`, `fullName`, `taxIdType`, `tin`, `issue1098`
-  - `primaryStreet/City/State/Zip` (alias of existing street/city/state/zip retained)
-  - `mailingSameAsPrimary`, `mailingStreet/City/State/Zip`
-  - `phoneHome2`, `preferredHome2`, `preferredFax`
-  - `sendPaymentNotification`, `sendBorrowerStatement`
-  - `ford1`–`ford8`
-
-Existing keys already present (firstName, middleName, lastName, capacity, email, dateAuthorized, deliveryOnline, deliveryMail, deliverySms, sendPaymentConfirmation, sendCouponBook, sendPaymentStatement, sendLateNotice, sendMaturityNotice, preferredHome/Work/Cell, address.*, phone.*) remain unchanged.
-
-## What is NOT changed
-
-- `BorrowerAdditionalGuarantorForm` itself (used as-is).
-- Database schema, RLS, edge functions, document templates, document generation flow.
-- The deal-level (CSR) `ContactBorrowerSubNav` (already lists Additional Guarantor — untouched).
-- Save / update API: persistence flows through the existing `onSave` in `ContactBorrowerDetailLayout`, which already handles the `borrower.guarantor.*` and `borrower.authorized_party.*` prefixes.
-- All other borrower forms, banking, 1098, trust ledger, attachments, dashboards.
-
-## Acceptance
-
-- Contacts > Borrower sidebar shows "Additional Guarantor" directly above "Authorized Party".
-- Selecting it renders the existing Additional Guarantor form; values persist on Save.
-- Selecting "Authorized Party" shows the redesigned form whose column structure matches the attached screenshot (Name / Primary + Mailing Address / Phone / Preferred + Delivery, Send, FORD, Details, plus Borrower Type & Tax ID Type legends).
-- All Authorized Party fields persist using the existing contact save API under `borrower.authorized_party.*` keys.
+### Explicit non-goals
+- No changes to Contacts, Borrower, Loan UI layout, dropdown options, or save behavior.
+- No database table, field dictionary, or migration changes.
+- No RE851A template edits.
+- No changes to unrelated document generation sections.
