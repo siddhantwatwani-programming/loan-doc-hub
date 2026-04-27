@@ -31,11 +31,11 @@ function buildSoftBreakFixture(): string {
 <w:p><w:r><w:t xml:space="preserve">PART 2  BROKER CAPACITY IN TRANSACTION</w:t></w:r></w:p>
 <w:p>
 <w:pPr><w:jc w:val="left"/></w:pPr>
-<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">☐ </w:t></w:r>
-<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">A. Agent in arranging a loan on behalf of another</w:t></w:r>
+<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t>☐</w:t></w:r>
+<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve"> A. Agent in arranging a loan on behalf of another</w:t></w:r>
 <w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:br/></w:r>
-<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">☐ </w:t></w:r>
-<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">B. *Principal as a borrower on funds from which broker will directly or indirectly benefit</w:t></w:r>
+<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t>☐</w:t></w:r>
+<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve"> B. *Principal as a borrower on funds from which broker will directly or indirectly benefit</w:t></w:r>
 </w:p>
 <w:p><w:sdt><w:sdtPr><w14:checkbox><w14:checked w14:val="0"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:t>☐</w:t></w:r></w:sdtContent></w:sdt><w:r><w:t xml:space="preserve"> sentinel</w:t></w:r></w:p>
 <w:p><w:r><w:t>PART 3 LOAN INFORMATION</w:t></w:r></w:p>
