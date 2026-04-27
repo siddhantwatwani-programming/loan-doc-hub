@@ -20,6 +20,7 @@ const SECTIONS: { id: BorrowerSection; label: string; icon: React.ElementType }[
   { id: 'additional-guarantor', label: 'Additional Guarantor', icon: UserPlus },
   { id: 'authorized-party', label: 'Authorized Party', icon: UserCheck },
   { id: 'trust-ledger', label: 'Trust Ledger', icon: BookOpen },
+  { id: 'tax-info', label: 'Tax Info', icon: Receipt },
   { id: 'conversation-log', label: 'Conversation Log', icon: MessageSquare },
   { id: 'attachments', label: 'Attachments', icon: Paperclip },
   { id: 'events-journal', label: 'Events Journal', icon: ScrollText },
