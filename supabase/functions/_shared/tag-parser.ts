@@ -2238,7 +2238,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtBeforeWord = new RegExp(
-          `(${SINGLE_SDT})((?:\\s|<(?!w:sdt\\b)[^>]+>)*?${wordRe})`,
+          `(${SINGLE_SDT})((?:\\s|<(?!w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?${wordRe})`,
           "g",
         );
         return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
@@ -2247,10 +2247,7 @@ export function replaceMergeTags(
       };
 
       // Force any <w:sdt> checkbox immediately following the literal word
-      // (Yes/No) — across XML/whitespace only — to the desired state.
-      // Some RE851A authoring renders the visible glyph after its label,
-      // and Word may also persist the SDT in run-after-label order even when
-      // the visual layout shows it before.
+      // (Yes/No) — across XML/whitespace only, never crossing a paragraph.
       const forceSdtAfterWord = (
         windowXml: string,
         word: "Yes" | "No",
@@ -2258,7 +2255,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtAfterWord = new RegExp(
-          `(${wordRe})((?:\\s|<(?!w:sdt\\b)[^>]+>)*?)(${SINGLE_SDT})`,
+          `(${wordRe})((?:\\s|<(?!w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?)(${SINGLE_SDT})`,
           "g",
         );
         return windowXml.replace(sdtAfterWord, (_m, head, mid, sdtBlock) => {
@@ -2391,8 +2388,97 @@ export function replaceMergeTags(
         windowXml = forceGlyphAfterWord(windowXml, "Yes", yesGlyph);
         windowXml = forceGlyphAfterWord(windowXml, "No", noGlyph);
 
+        // Final-final pass — paragraph-scoped Yes/No glyph normalization.
+        // Some RE851A authoring leaves the Subordination Provision row using
+        // clean Handlebars text checkboxes ({{#if KEY}}☑{{else}}☐{{/if}} Yes)
+        // that Word may split across runs in shapes the cross-run consolidator
+        // does not catch. After conditional eval + the existing safety net
+        // strips control markers, the paragraph can end up with BOTH branch
+        // glyphs (☑ AND ☐) present before the literal "Yes" or "No". The
+        // forceGlyph* helpers above only touch the closest glyph to the label;
+        // if a stray opposite glyph survives elsewhere in the same paragraph
+        // the user sees a wrong checkbox. Here we walk every <w:p> inside the
+        // section window that ends in " Yes" or " No" (after stripping XML),
+        // remove ALL checkbox glyphs from it, then re-insert exactly the
+        // desired glyph immediately before the label run. Any leftover
+        // {{#if/else/#if/.../if}} text remnants are also scrubbed. Scoped
+        // strictly to this row — no other paragraph is touched.
+        let normalizedParas = 0;
+        windowXml = windowXml.replace(
+          /<w:p\b[\s\S]*?<\/w:p>/g,
+          (para) => {
+            const plain = para.replace(/<[^>]*>/g, "");
+            // Match paragraphs whose visible text ends with " Yes" or " No"
+            // (allow trailing whitespace / punctuation), and contains no other
+            // significant text beyond the label + a checkbox glyph cluster.
+            const trimmed = plain.replace(/\s+/g, " ").trim();
+            const isYes = /(^|\s|[☐☑☒])Yes\.?$/.test(trimmed);
+            const isNo = /(^|\s|[☐☑☒])No\.?$/.test(trimmed);
+            if (!isYes && !isNo) return para;
+            // Skip paragraphs that already use native Word SDT checkboxes —
+            // those are fully handled by the SDT-toggle helpers above and
+            // must not be touched by the text-glyph normalizer.
+            if (/<w:sdt\b/.test(para)) return para;
+            // Bail if the paragraph contains a different sentence (long text)
+            // — only normalize tight Yes/No checkbox cells. The RE851A row is
+            // ≤ ~10 visible chars (e.g. "☑ Yes", "☑☐ Yes", "{{#if x}}☑..Yes").
+            // Strip Handlebars markers from visible-text length check so
+            // pre-conditional-eval shapes still qualify.
+            const lenWithoutHbs = trimmed
+              .replace(/\{\{[^}]*\}\}/g, "")
+              .trim().length;
+            if (lenWithoutHbs > 40) return para;
+
+            const desired = isYes ? yesGlyph : noGlyph;
+
+            let p = para;
+            // Strip any residual Handlebars control/text that survived earlier
+            // passes inside <w:t> runs of THIS paragraph only.
+            p = p.replace(
+              /<w:t([^>]*)>([^<]*)<\/w:t>/g,
+              (m, attrs, text) => {
+                let cleaned = text;
+                cleaned = cleaned.replace(/\{\{\s*#if\s+[A-Za-z0-9_.]+\s*\}\}/g, "");
+                cleaned = cleaned.replace(/\{\{\s*\/if\s*\}\}/g, "");
+                cleaned = cleaned.replace(/\{\{\s*else\s*\}\}/g, "");
+                cleaned = cleaned.replace(/\{\{\s*#unless\s+[A-Za-z0-9_.]+\s*\}\}/g, "");
+                cleaned = cleaned.replace(/\{\{\s*\/unless\s*\}\}/g, "");
+                if (cleaned === text) return m;
+                return `<w:t${attrs}>${cleaned}</w:t>`;
+              },
+            );
+            // Remove ALL checkbox glyphs inside <w:t> in this paragraph.
+            p = p.replace(
+              /<w:t([^>]*)>([^<]*)<\/w:t>/g,
+              (m, attrs, text) => {
+                if (!/[☐☑☒]/.test(text)) return m;
+                const cleaned = text.replace(/[☐☑☒]/g, "");
+                return `<w:t${attrs}>${cleaned}</w:t>`;
+              },
+            );
+            // Inject the desired glyph immediately before the label word in
+            // its own minimal <w:r>/<w:t> run, preserving the existing label
+            // run's formatting context.
+            const labelWord = isYes ? "Yes" : "No";
+            const labelRunRe = new RegExp(
+              `(<w:r\\b[^>]*>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?\\s*<w:t(?:\\s[^>]*)?>)([^<]*\\b${labelWord}\\b[^<]*)(<\\/w:t>\\s*<\\/w:r>)`,
+            );
+            if (labelRunRe.test(p)) {
+              p = p.replace(labelRunRe, (_m, head, txt, tail) => {
+                // Prepend the glyph directly to the label text, preserving
+                // any leading whitespace already present (e.g. " Yes").
+                const leadWs = (txt.match(/^\s*/) || [""])[0];
+                const rest = txt.substring(leadWs.length);
+                return `${head}${leadWs}${desired} ${rest}${tail}`;
+              });
+              normalizedParas++;
+            }
+            return p;
+          },
+        );
+
         console.log(
-          `[tag-parser] Subordination Provision safety pass executed: isSubordination=${isSubordination}, windowLen=${winEnd - winStart}, sanitizedSdts=${sanitizedSdts}`,
+          `[tag-parser] Subordination Provision safety pass executed: isSubordination=${isSubordination}, windowLen=${winEnd - winStart}, sanitizedSdts=${sanitizedSdts}, normalizedParas=${normalizedParas}`,
         );
 
         rebuilt += windowXml;

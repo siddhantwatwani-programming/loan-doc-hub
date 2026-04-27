@@ -81,3 +81,83 @@ Deno.test("RE851A subordination provision — unchecked: Yes=☐, No=☑", () =>
   assertEquals(states.yes, "0", "Yes checkbox should be unchecked");
   assertEquals(states.no, "1", "No checkbox should be checked");
 });
+
+// ---------------------------------------------------------------------------
+// Clean Handlebars text-checkbox shape — the user's pasted RE851A snippet:
+//   {{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
+//   {{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
+// Reproduces a Word run split where both branch glyphs survive into the
+// safety pass. The new paragraph-scoped Yes/No normalizer must remove the
+// wrong glyph and leave exactly the correct one immediately before the label.
+// ---------------------------------------------------------------------------
+
+function buildHandlebarsFixture(): string {
+  const yesRow =
+    `<w:p>` +
+    `<w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}</w:t></w:r>` +
+    `<w:r><w:t>☑</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve">{{else}}</w:t></w:r>` +
+    `<w:r><w:t>☐</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve">{{/if}}</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve"> Yes</w:t></w:r>` +
+    `</w:p>`;
+  const noRow =
+    `<w:p>` +
+    `<w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}</w:t></w:r>` +
+    `<w:r><w:t>☐</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve">{{else}}</w:t></w:r>` +
+    `<w:r><w:t>☑</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve">{{/if}}</w:t></w:r>` +
+    `<w:r><w:t xml:space="preserve"> No</w:t></w:r>` +
+    `</w:p>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
+<w:body>
+<w:p><w:r><w:t xml:space="preserve">There are subordination provisions.</w:t></w:r></w:p>
+${yesRow}
+${noRow}
+<w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
+</w:body></w:document>`;
+}
+
+function runHandlebars(value: "true" | "false"): string {
+  const fieldValues = new Map<string, FieldValueData>([
+    ["ln_p_subordinationProvision", { rawValue: value, dataType: "boolean" }],
+    ["loan_terms.subordination_provision", { rawValue: value, dataType: "boolean" }],
+  ]);
+  const fieldTransforms = new Map<string, string>();
+  const mergeTagMap: Record<string, string> = {};
+  const labelMap: Record<string, LabelMapping> = {};
+  const validFieldKeys = new Set<string>([
+    "ln_p_subordinationProvision",
+    "loan_terms.subordination_provision",
+  ]);
+  return replaceMergeTags(buildHandlebarsFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+}
+
+function visibleGlyphsBeforeLabel(xml: string, label: string): string {
+  const idx = xml.indexOf(` ${label}`);
+  if (idx < 0) return "";
+  const region = xml.substring(Math.max(0, idx - 500), idx);
+  const plain = region.replace(/<[^>]*>/g, "");
+  return (plain.match(/[☐☑☒]/g) || []).join("");
+}
+
+Deno.test("RE851A subordination provision (Handlebars text) — checked: only ☑ before Yes, only ☐ before No", () => {
+  const out = runHandlebars("true");
+  const yesGlyphs = visibleGlyphsBeforeLabel(out, "Yes");
+  const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
+  assertEquals(yesGlyphs.slice(-1), "☑", `Yes label expected ☑, got "${yesGlyphs}"`);
+  assertEquals(noGlyphs.slice(-1), "☐", `No label expected ☐, got "${noGlyphs}"`);
+  if (out.includes("{{#if") || out.includes("{{/if}}") || out.includes("{{else}}")) {
+    throw new Error("Handlebars markers should be stripped from rendered output");
+  }
+});
+
+Deno.test("RE851A subordination provision (Handlebars text) — unchecked: only ☐ before Yes, only ☑ before No", () => {
+  const out = runHandlebars("false");
+  const yesGlyphs = visibleGlyphsBeforeLabel(out, "Yes");
+  const noGlyphs = visibleGlyphsBeforeLabel(out, "No");
+  assertEquals(yesGlyphs.slice(-1), "☐", `Yes label expected ☐, got "${yesGlyphs}"`);
+  assertEquals(noGlyphs.slice(-1), "☑", `No label expected ☑, got "${noGlyphs}"`);
+});
