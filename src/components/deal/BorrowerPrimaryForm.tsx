@@ -140,8 +140,9 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
     }
   }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
-  const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string }[] = [
+  const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
+    { key: 'phoneHome2', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome2', hasPreferred: false },
     { key: 'phoneWork', prefKey: 'preferredWork', label: 'Work', prefId: 'prefWork' },
     { key: 'phoneCell', prefKey: 'preferredCell', label: 'Cell', prefId: 'prefCell' },
     { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax' },
@@ -167,7 +168,7 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name</Label>
               <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -202,6 +203,30 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           <InlineField label="Email" fieldKey={FIELD_KEYS.email}>
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
+
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+            <div className="flex items-center gap-4">
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryPrint}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="borrower-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                  <Label htmlFor="borrower-deliveryPrint" className="text-sm font-normal">Print</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="borrower-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                  <Label htmlFor="borrower-deliveryEmail" className="text-sm font-normal">Email</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliverySms}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="borrower-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                  <Label htmlFor="borrower-deliverySms" className="text-sm font-normal">SMS</Label>
+                </div>
+              </DirtyFieldWrapper>
+            </div>
+          </div>
 
           <div className="h-0.5" />
 
@@ -263,31 +288,8 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send - stacked, inline checkboxes */}
+          {/* Send - inline checkboxes */}
           <div className="pt-2 space-y-2">
-            <div>
-              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-4">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryPrint}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliveryPrint" className="text-sm font-normal">Print</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliveryEmail" className="text-sm font-normal">Email</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliverySms}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliverySms" className="text-sm font-normal">SMS</Label>
-                  </div>
-                </DirtyFieldWrapper>
-              </div>
-            </div>
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
@@ -368,12 +370,16 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             className="space-y-0"
             disabled={disabled}
           >
-            {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
-              <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
-                <div className="flex items-center justify-center h-7">
-                  <RadioGroupItem id={`borrower-${prefId}`} value={prefKey} disabled={disabled} />
-                </div>
-              </DirtyFieldWrapper>
+            {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ key, prefKey, prefId, hasPreferred }) => (
+              hasPreferred === false ? (
+                <div key={prefId} className="flex items-center justify-center h-7" />
+              ) : (
+                <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
+                  <div className="flex items-center justify-center h-7">
+                    <RadioGroupItem id={`borrower-${prefId}`} value={prefKey} disabled={disabled} />
+                  </div>
+                </DirtyFieldWrapper>
+              )
             ))}
             {/* Fax has no preferred slot — render spacer to keep alignment */}
             <div className="h-7" />

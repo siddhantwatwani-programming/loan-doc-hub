@@ -130,8 +130,9 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
     }
   }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
-  const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string }[] = [
+  const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
+    { key: 'phoneHome2', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome2', hasPreferred: false },
     { key: 'phoneWork', prefKey: 'preferredWork', label: 'Work', prefId: 'prefWork' },
     { key: 'phoneCell', prefKey: 'preferredCell', label: 'Cell', prefId: 'prefCell' },
     { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax' },
@@ -157,7 +158,7 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name</Label>
               <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -192,6 +193,24 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           <InlineField label="Email" fieldKey={FIELD_KEYS.email}>
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
+
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
+              </div>
+            </div>
+          </div>
 
         </div>
 
@@ -245,25 +264,8 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send - stacked, inline checkboxes */}
+          {/* Send - inline checkboxes */}
           <div className="pt-2 space-y-2">
-            <div>
-              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
-                </div>
-              </div>
-            </div>
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
@@ -320,10 +322,14 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
         {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
-            <div key={prefId} className="flex items-center justify-center h-7">
-              <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-            </div>
+          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId, hasPreferred }) => (
+            hasPreferred === false ? (
+              <div key={prefId} className="flex items-center justify-center h-7" />
+            ) : (
+              <div key={prefId} className="flex items-center justify-center h-7">
+                <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
+              </div>
+            )
           ))}
           {/* Fax has no preferred slot — render spacer to keep alignment */}
           <div className="h-7" />

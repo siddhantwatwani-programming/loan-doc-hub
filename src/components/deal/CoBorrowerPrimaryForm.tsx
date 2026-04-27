@@ -268,8 +268,9 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
     }
   }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
-  const phoneRows = [
+  const phoneRows: { key: string; label: string; prefKey: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
+    { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome2', hasPreferred: false },
     { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
     { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
     { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
@@ -295,7 +296,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={fk('full_name')}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name</Label>
               <div className="flex-1">
                 <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
@@ -334,6 +335,30 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
           <InlineField label="Email" fieldKey={fk('email')}>
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
+
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+            <div className="flex items-center gap-4">
+              <DirtyFieldWrapper fieldKey={fk('delivery_print')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryPrint-c1" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryPrint-c1" className="text-sm font-normal">Print</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={fk('delivery_email')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryEmail-c1" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryEmail-c1" className="text-sm font-normal">Email</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={fk('delivery_sms')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliverySms-c1" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliverySms-c1" className="text-sm font-normal">SMS</Label>
+                </div>
+              </DirtyFieldWrapper>
+            </div>
+          </div>
 
         </div>
 
@@ -387,31 +412,8 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <ZipInput value={getValue('mailing_address.zip')} onValueChange={(v) => handleChange('mailing_address.zip', v)} disabled={disabled || getBoolValue('mailing_same_as_primary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send */}
+          {/* Send */}
           <div className="pt-2 space-y-2">
-            <div>
-              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-4">
-                <DirtyFieldWrapper fieldKey={fk('delivery_print')}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="coborrower-deliveryPrint" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
-                    <Label htmlFor="coborrower-deliveryPrint" className="text-sm font-normal">Print</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={fk('delivery_email')}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="coborrower-deliveryEmail" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
-                    <Label htmlFor="coborrower-deliveryEmail" className="text-sm font-normal">Email</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={fk('delivery_sms')}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="coborrower-deliverySms" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
-                    <Label htmlFor="coborrower-deliverySms" className="text-sm font-normal">SMS</Label>
-                  </div>
-                </DirtyFieldWrapper>
-              </div>
-            </div>
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
