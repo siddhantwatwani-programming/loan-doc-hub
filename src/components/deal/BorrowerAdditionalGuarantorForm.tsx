@@ -2,9 +2,9 @@ import React, { useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { EmailInput } from '@/components/ui/email-input';
 import { ZipInput } from '@/components/ui/zip-input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -15,26 +15,15 @@ import {
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
+import { STATE_OPTIONS } from '@/lib/usStates';
+import { BORROWER_GUARANTOR_KEYS } from '@/lib/fieldKeyMap';
 
 const FORD_DROPDOWN_OPTIONS = [
-  { value: 'Spouse, Kids, Grandkids', label: 'Spouse, Kids, Grandkids' },
-  { value: 'Big Dream', label: 'Big Dream' },
-  { value: 'Sports Teams', label: 'Sports Teams' },
-  { value: 'Hobbies / Collections', label: 'Hobbies / Collections' },
-  { value: 'Goals / Achievements', label: 'Goals / Achievements' },
-  { value: 'Favorite Restaurant, Food, Drinks', label: 'Favorite Restaurant, Food, Drinks' },
-  { value: 'Pet(s)', label: 'Pet(s)' },
-  { value: 'Vacation Spot', label: 'Vacation Spot' },
-  { value: 'Job / Occupation', label: 'Job / Occupation' },
-  { value: 'Music / Bands', label: 'Music / Bands' },
-  { value: 'College', label: 'College' },
-  { value: 'Hometown / Childhood', label: 'Hometown / Childhood' },
-  { value: 'TV / Movies / Books', label: 'TV / Movies / Books' },
-  { value: 'Anniversary', label: 'Anniversary' },
-  { value: 'Challenges / Frustrations', label: 'Challenges / Frustrations' },
-  { value: 'Charity / Personal Causes', label: 'Charity / Personal Causes' },
-  { value: 'Upcoming Event - What / When', label: 'Upcoming Event - What / When' },
-  { value: 'Celebration - What / When', label: 'Celebration - What / When' },
+  'Spouse, Kids, Grandkids', 'Big Dream', 'Sports Teams', 'Hobbies / Collections',
+  'Goals / Achievements', 'Favorite Restaurant, Food, Drinks', 'Pet(s)', 'Vacation Spot',
+  'Job / Occupation', 'Music / Bands', 'College', 'Hometown / Childhood',
+  'TV / Movies / Books', 'Anniversary', 'Challenges / Frustrations',
+  'Charity / Personal Causes', 'Upcoming Event - What / When', 'Celebration - What / When',
 ];
 
 const BORROWER_TYPE_OPTIONS = [
@@ -42,16 +31,17 @@ const BORROWER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
+const TAX_ID_TYPE_OPTIONS = [
+  { value: '0 - Unknown', label: '0 - Unknown' },
+  { value: '1 - EIN', label: '1 - EIN' },
+  { value: '2 - SSN', label: '2 - SSN' },
+];
+
 const CAPACITY_OPTIONS = [
   'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
   'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
 
-import { STATE_OPTIONS } from '@/lib/usStates';
-
-import { BORROWER_GUARANTOR_KEYS } from '@/lib/fieldKeyMap';
-
-// Use central field key map
 const FIELD_KEYS = BORROWER_GUARANTOR_KEYS;
 
 interface BorrowerAdditionalGuarantorFormProps {
@@ -63,34 +53,26 @@ interface BorrowerAdditionalGuarantorFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const InlineField = ({ label, children, labelWidth = 'min-w-[140px]', fieldKey }: { label: string; children: React.ReactNode; labelWidth?: string; fieldKey?: string }) => {
+const InlineField = ({
+  label, children, labelWidth = 'min-w-[140px]', fieldKey,
+}: { label: string; children: React.ReactNode; labelWidth?: string; fieldKey?: string }) => {
   const content = (
     <div className="flex items-center gap-3">
       <Label className={`text-sm text-muted-foreground ${labelWidth} text-left shrink-0`}>{label}</Label>
       <div className="flex-1">{children}</div>
     </div>
   );
-  if (fieldKey) {
-    return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
-  }
+  if (fieldKey) return <DirtyFieldWrapper fieldKey={fieldKey}>{content}</DirtyFieldWrapper>;
   return content;
 };
 
 export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarantorFormProps> = ({
-  fields,
   values,
   onValueChange,
-  showValidation = false,
   disabled = false,
 }) => {
-  const getValue = (key: keyof typeof FIELD_KEYS): string => {
-    return values[FIELD_KEYS[key]] || '';
-  };
-
-  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
-    return values[FIELD_KEYS[key]] === 'true';
-  };
-
+  const getValue = (key: keyof typeof FIELD_KEYS): string => values[FIELD_KEYS[key]] || '';
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => values[FIELD_KEYS[key]] === 'true';
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
     onValueChange(FIELD_KEYS[key], String(value));
   };
@@ -128,20 +110,22 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
         if (getValue(dst) !== srcVal) handleChange(dst, srcVal);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
+  // Phone rows match screenshot order: Home, Home, Work, Cell, Fax (Fax has NO preferred checkbox)
   const phoneRows: { key: keyof typeof FIELD_KEYS; prefKey: keyof typeof FIELD_KEYS; label: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phoneHome', prefKey: 'preferredHome', label: 'Home', prefId: 'prefHome' },
     { key: 'phoneHome2', prefKey: 'preferredHome2', label: 'Home', prefId: 'prefHome2' },
     { key: 'phoneWork', prefKey: 'preferredWork', label: 'Work', prefId: 'prefWork' },
     { key: 'phoneCell', prefKey: 'preferredCell', label: 'Cell', prefId: 'prefCell' },
-    { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax' },
+    { key: 'phoneFax', prefKey: 'preferredFax', label: 'Fax', prefId: 'prefFax', hasPreferred: false },
   ];
 
   return (
     <div className="p-4">
-      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.2fr 1.2fr 1.2fr auto' }}>
-        {/* Column 1 - Name + Tax Info */}
+      <div className="grid gap-x-4 gap-y-0" style={{ gridTemplateColumns: '1.3fr 1.2fr 1.3fr auto' }}>
+        {/* Column 1 - Name */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Name</h4>
 
@@ -157,8 +141,11 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           </InlineField>
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name</Label>
+            <div className="flex items-start gap-3">
+              <div className="min-w-[140px] text-left shrink-0">
+                <Label className="text-sm text-muted-foreground">Full Name</Label>
+                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
+              </div>
               <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -194,27 +181,30 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="pt-2">
-            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5">
-                <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
-                <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
-              </div>
-            </div>
-          </div>
+          <InlineField label="Tax ID Type" fieldKey={FIELD_KEYS.taxIdType}>
+            <Select value={getValue('taxIdType')} onValueChange={(v) => handleChange('taxIdType', v)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((o) => (<SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>))}</SelectContent>
+            </Select>
+          </InlineField>
 
+          <InlineField label="TIN" fieldKey={FIELD_KEYS.tin}>
+            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+          </InlineField>
+
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.issue1098}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Issue 1098</Label>
+              <Checkbox
+                checked={getBoolValue('issue1098')}
+                onCheckedChange={(checked) => handleChange('issue1098', !!checked)}
+                disabled={disabled}
+              />
+            </div>
+          </DirtyFieldWrapper>
         </div>
 
-        {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
+        {/* Column 2 - Primary Address + Mailing Address + Delivery */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Primary Address</h4>
 
@@ -240,99 +230,127 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           <h4 className="font-semibold text-sm text-foreground pb-1 pt-2 flex items-center gap-3">
             Mailing Address
             <div className="flex items-center gap-1.5 ml-4">
-              <Checkbox id="guarantor-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleSameAsPrimaryChange(!!checked)} disabled={disabled} />
+              <Checkbox
+                id="guarantor-mailingSameAsPrimary"
+                checked={isSameAsPrimary}
+                onCheckedChange={(checked) => handleSameAsPrimaryChange(!!checked)}
+                disabled={disabled}
+              />
               <Label htmlFor="guarantor-mailingSameAsPrimary" className="text-xs font-normal text-muted-foreground">Same as Primary</Label>
             </div>
           </h4>
 
           <InlineField label="Street" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingStreet}>
-            <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
+            <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || isSameAsPrimary} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="City" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingCity}>
-            <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
+            <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || isSameAsPrimary} className="h-7 text-sm" />
           </InlineField>
 
           <InlineField label="State" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingState}>
-            <Select value={getValue('mailingState')} onValueChange={(value) => handleChange('mailingState', value)} disabled={disabled || getBoolValue('mailingSameAsPrimary')}>
+            <Select value={getValue('mailingState')} onValueChange={(value) => handleChange('mailingState', value)} disabled={disabled || isSameAsPrimary}>
               <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
               <SelectContent>{STATE_OPTIONS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}</SelectContent>
             </Select>
           </InlineField>
 
           <InlineField label="ZIP" labelWidth="min-w-[60px]" fieldKey={FIELD_KEYS.mailingZip}>
-            <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
+            <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || isSameAsPrimary} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Send - inline checkboxes */}
-          <div className="pt-2 space-y-2">
-            <div>
-              <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
-              <div className="flex items-center gap-4 flex-wrap">
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery</h4>
+            <div className="flex items-center gap-4 flex-wrap">
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryOnline}>
                 <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                  <Checkbox id="guarantor-deliveryOnline" checked={getBoolValue('deliveryOnline')} onCheckedChange={(checked) => handleChange('deliveryOnline', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-deliveryOnline" className="text-sm font-normal">Online</Label>
                 </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryMail}>
                 <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+                  <Checkbox id="guarantor-deliveryMail" checked={getBoolValue('deliveryMail')} onCheckedChange={(checked) => handleChange('deliveryMail', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-deliveryMail" className="text-sm font-normal">Mail</Label>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Checkbox id="guarantor-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
-                  <Label htmlFor="guarantor-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
-                </div>
-              </div>
+              </DirtyFieldWrapper>
             </div>
           </div>
         </div>
 
-        {/* Column 3 - Phone + Vesting + FORD */}
+        {/* Column 3 - Phone + Send + FORD */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Phone</h4>
           {phoneRows.map(({ key, label }) => (
             <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
               <div className="flex items-center gap-2">
                 <Label className="text-sm text-muted-foreground min-w-[40px] text-left shrink-0">{label}</Label>
-                <Input value={getValue(key)} onChange={(e) => handleChange(key, e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+                <PhoneInput value={getValue(key)} onValueChange={(v) => handleChange(key, v)} disabled={disabled} className="h-7 text-sm flex-1" />
               </div>
             </DirtyFieldWrapper>
           ))}
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">Vesting</h4>
-          <Textarea value={getValue('vesting')} onChange={(e) => handleChange('vesting', e.target.value)} disabled={disabled} className="text-sm min-h-[80px] resize-none" />
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Send:</h4>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendPaymentNotification}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendBorrowerStatement}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendLateNotice}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendMaturityNotice}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="guarantor-sendMaturityNotice" checked={getBoolValue('sendMaturityNotice')} onCheckedChange={(checked) => handleChange('sendMaturityNotice', !!checked)} disabled={disabled} />
+                  <Label htmlFor="guarantor-sendMaturityNotice" className="text-sm font-normal">Maturity Notice</Label>
+                </div>
+              </DirtyFieldWrapper>
+            </div>
+          </div>
 
-          <h4 className="font-semibold text-sm text-foreground pb-1 pt-2">FORD</h4>
-          <div className="space-y-1">
-            {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as [keyof typeof FIELD_KEYS, keyof typeof FIELD_KEYS][]).map(([dropdownKey, inputKey], idx) => (
-              <div key={idx} className="grid grid-cols-2 gap-1">
-                <Select value={getValue(dropdownKey)} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>{FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
-                </Select>
-                <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-7 text-sm" />
-              </div>
-            ))}
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">FORD</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={getValue('ford1')} onValueChange={(v) => handleChange('ford1', v)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>{FORD_DROPDOWN_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}</SelectContent>
+              </Select>
+              <Input value={getValue('ford2')} onChange={(e) => handleChange('ford2', e.target.value)} disabled={disabled} className="h-7 text-sm" />
+            </div>
           </div>
         </div>
 
         {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId, hasPreferred }) => (
+          {phoneRows.map(({ prefKey, prefId, hasPreferred }) => (
             hasPreferred === false ? (
               <div key={prefId} className="flex items-center justify-center h-7" />
             ) : (
-              <div key={prefId} className="flex items-center justify-center h-7">
-                <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-              </div>
+              <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
+                <div className="flex items-center justify-center h-7">
+                  <Checkbox
+                    id={`guarantor-${prefId}`}
+                    checked={getBoolValue(prefKey)}
+                    onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
+                    disabled={disabled}
+                  />
+                </div>
+              </DirtyFieldWrapper>
             )
           ))}
-          {/* Fax has no preferred slot — render spacer to keep alignment */}
-          <div className="h-7" />
         </div>
       </div>
     </div>
