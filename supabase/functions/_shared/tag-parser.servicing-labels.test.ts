@@ -5,6 +5,7 @@
 // (the failure mode reported by CSR).
 
 import { replaceMergeTags } from "./tag-parser.ts";
+import type { FieldValueData, LabelMapping } from "./tag-parser.ts";
 
 type Mode = "Lender" | "Broker" | "Company" | "Other Servicer";
 
