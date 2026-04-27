@@ -288,31 +288,8 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || getBoolValue('mailingSameAsPrimary')} className="h-7 text-sm" />
           </InlineField>
 
-          {/* Delivery Options & Send - stacked, inline checkboxes */}
+          {/* Send - inline checkboxes */}
           <div className="pt-2 space-y-2">
-            <div>
-              <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
-              <div className="flex items-center gap-4">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryPrint}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliveryPrint" className="text-sm font-normal">Print</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliveryEmail" className="text-sm font-normal">Email</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliverySms}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-deliverySms" className="text-sm font-normal">SMS</Label>
-                  </div>
-                </DirtyFieldWrapper>
-              </div>
-            </div>
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
