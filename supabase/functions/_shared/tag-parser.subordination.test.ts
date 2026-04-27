@@ -218,6 +218,7 @@ function runBareNoLabel(value: "true" | "false"): string {
   const fixture = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
 <w:body>
+<w:p><w:r><w:t xml:space="preserve">{{deal.id}}</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">There are subordination provisions.</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">If YES, explain here or on an attachment.</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">☐ Yes</w:t></w:r></w:p>
