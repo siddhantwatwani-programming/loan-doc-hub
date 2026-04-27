@@ -2238,7 +2238,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtBeforeWord = new RegExp(
-          `(${SINGLE_SDT})((?:\\s|<(?!w:sdt\\b)[^>]+>)*?${wordRe})`,
+          `(${SINGLE_SDT})((?:\\s|<(?!w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?${wordRe})`,
           "g",
         );
         return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
@@ -2247,10 +2247,7 @@ export function replaceMergeTags(
       };
 
       // Force any <w:sdt> checkbox immediately following the literal word
-      // (Yes/No) — across XML/whitespace only — to the desired state.
-      // Some RE851A authoring renders the visible glyph after its label,
-      // and Word may also persist the SDT in run-after-label order even when
-      // the visual layout shows it before.
+      // (Yes/No) — across XML/whitespace only, never crossing a paragraph.
       const forceSdtAfterWord = (
         windowXml: string,
         word: "Yes" | "No",
@@ -2258,7 +2255,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtAfterWord = new RegExp(
-          `(${wordRe})((?:\\s|<(?!w:sdt\\b)[^>]+>)*?)(${SINGLE_SDT})`,
+          `(${wordRe})((?:\\s|<(?!w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?)(${SINGLE_SDT})`,
           "g",
         );
         return windowXml.replace(sdtAfterWord, (_m, head, mid, sdtBlock) => {
