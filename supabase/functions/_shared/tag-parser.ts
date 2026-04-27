@@ -3155,13 +3155,11 @@ export function replaceMergeTags(
         mergedPPr = `<w:pPr>${spacingTag}</w:pPr>`;
       }
 
-      __dbgSplits++;
       return (
         `<w:p${pAttrs}>${mergedPPr}${leftBody}</w:p>` +
         `<w:p${pAttrs}>${mergedPPr}${rightBody}</w:p>`
       );
     });
-    console.log(`[tag-parser] RE851A A/B paragraph-split normalization splits=${__dbgSplits}`);
   }
 
 
