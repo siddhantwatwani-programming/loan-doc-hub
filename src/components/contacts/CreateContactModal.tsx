@@ -239,28 +239,15 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     if (contactType === 'borrower') {
       const errs: Record<string, string> = {};
       if (!form['borrower_type']) errs['borrower_type'] = 'Please select borrower type';
-      if (!(form['full_name'] || '').trim()) errs['full_name'] = 'Full Name is required';
+      if (!(form['full_name'] || '').trim()) errs['full_name'] = 'Entity Name is required';
       else if ((form['full_name'] || '').length > 100) errs['full_name'] = 'Max 100 characters';
       if (!(form['first_name'] || '').trim()) errs['first_name'] = 'Enter valid first name';
       if (!(form['last_name'] || '').trim()) errs['last_name'] = 'Enter valid last name';
       if (!(form['email'] || '').trim()) errs['email'] = 'Enter a valid email address';
-      if (form['dob']) {
-        const dobParts = form['dob'].split('/');
-        if (dobParts.length === 3) {
-          const dobDate = new Date(parseInt(dobParts[2]), parseInt(dobParts[0]) - 1, parseInt(dobParts[1]));
-          if (dobDate >= new Date()) errs['dob'] = 'Enter valid date of birth';
-        }
-      } else {
-        errs['dob'] = 'Enter valid date of birth';
-      }
       if (!(form['address.street'] || '').trim()) errs['address.street'] = 'Street is required';
       if (!(form['address.city'] || '').trim()) errs['address.city'] = 'City is required';
       if (!form['address.state']) errs['address.state'] = 'State is required';
       if (!(form['address.zip'] || '').trim()) errs['address.zip'] = 'ZIP is required';
-      if (!form['tax_id_type']) errs['tax_id_type'] = 'Please select Tax ID Type';
-      const tinDigits = (form['tax_id'] || '').replace(/\D/g, '');
-      if (!tinDigits) errs['tax_id'] = 'Enter valid TIN (9 digits)';
-      else if (tinDigits.length !== 9) errs['tax_id'] = 'Enter valid TIN (9 digits)';
       if (Object.keys(errs).length > 0) {
         setBorrowerErrors(errs);
         toast.error(Object.values(errs)[0]);
