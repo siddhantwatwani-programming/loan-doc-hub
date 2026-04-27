@@ -205,8 +205,8 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
         </div>
       </div>
 
-      {/* Band 2: Delivery Options | Send | Details */}
-      <div className="grid gap-x-6" style={{ gridTemplateColumns: '1fr 1.3fr 1.4fr' }}>
+      {/* Band 2: Delivery Options | Send | Details | FORD */}
+      <div className="grid gap-x-6" style={{ gridTemplateColumns: '0.8fr 1.1fr 1.2fr 1.2fr' }}>
         {/* Delivery Options */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options:</h4>
@@ -276,6 +276,27 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
               className="min-h-[110px] text-sm"
             />
           </DirtyFieldWrapper>
+        </div>
+
+        {/* FORD */}
+        <div className="space-y-2">
+          <h4 className="font-semibold text-sm text-foreground pb-1">FORD</h4>
+          <div className="grid grid-cols-2 gap-2">
+            {[1, 2, 3, 4, 5, 6].map((n) => {
+              const fieldKey = `borrower.authorized_party.ford_${n}`;
+              return (
+                <DirtyFieldWrapper key={fieldKey} fieldKey={fieldKey}>
+                  <Input
+                    value={values[fieldKey] || ''}
+                    onChange={(e) => onValueChange(fieldKey, e.target.value)}
+                    disabled={disabled}
+                    maxLength={200}
+                    className="h-7 text-sm"
+                  />
+                </DirtyFieldWrapper>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
