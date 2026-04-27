@@ -368,13 +368,15 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             className="space-y-0"
             disabled={disabled}
           >
-            {phoneRows.map(({ prefKey, prefId }) => (
+            {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
               <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
                 <div className="flex items-center justify-center h-7">
                   <RadioGroupItem id={`borrower-${prefId}`} value={prefKey} disabled={disabled} />
                 </div>
               </DirtyFieldWrapper>
             ))}
+            {/* Fax has no preferred slot — render spacer to keep alignment */}
+            <div className="h-7" />
           </RadioGroup>
         </div>
       </div>
