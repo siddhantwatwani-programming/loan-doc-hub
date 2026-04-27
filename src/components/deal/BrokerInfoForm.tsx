@@ -10,6 +10,14 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { AlertCircle } from 'lucide-react';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
 
+const FORD_DROPDOWN_OPTIONS = [
+  'Spouse, Kids, Grandkids', 'Big Dream', 'Sports Teams', 'Hobbies / Collections',
+  'Goals / Achievements', 'Favorite Restaurant, Food, Drinks', 'Pet(s)', 'Vacation Spot',
+  'Job / Occupation', 'Music / Bands', 'College', 'Hometown / Childhood',
+  'TV / Movies / Books', 'Anniversaries', 'Challenges / Frustrations',
+  'Charity / Personal Causes', 'Upcoming Event - What / When', 'Celebration - What / When',
+];
+
 import { US_STATES } from '@/lib/usStates';
 
 import { BROKER_INFO_KEYS } from '@/lib/fieldKeyMap';
