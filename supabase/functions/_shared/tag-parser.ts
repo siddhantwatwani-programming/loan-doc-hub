@@ -3322,15 +3322,7 @@ export function replaceMergeTags(
 
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
-  if ((globalThis as any).__DEBUG_SVC__) {
-    const m = result.match(/<w:p>[\s\S]*?THERE ARE NO[\s\S]*?<\/w:p>/);
-    console.log("[DBG before SDT] LENDER P:", m?.[0]);
-  }
   result = convertGlyphsToSdtCheckboxes(result);
-  if ((globalThis as any).__DEBUG_SVC__) {
-    const m = result.match(/<w:p>[\s\S]*?THERE ARE NO[\s\S]*?<\/w:p>/);
-    console.log("[DBG after SDT] LENDER P:", m?.[0]);
-  }
 
   return result;
 }
