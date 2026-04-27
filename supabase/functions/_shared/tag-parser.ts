@@ -1403,6 +1403,35 @@ export function processConditionalBlocks(
   const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
+    // Pre-pass: handle `(eq FIELD LITERAL)` sub-expressions for the innermost
+    // {{#if (eq ...)}}…{{/if}} block. We rewrite it to either the true or
+    // else branch so the simple {{#if KEY}} matcher below sees clean content.
+    // Same for {{#unless (eq ...)}}.
+    const eqIfPattern = /\{\{#if\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
+    const eqUnlessPattern = /\{\{#unless\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
+    const eqIfMatch = eqIfPattern.exec(result);
+    const eqUnlessMatch = eqUnlessPattern.exec(result);
+    if (eqIfMatch || eqUnlessMatch) {
+      const useUnless = !eqIfMatch || (eqUnlessMatch !== null && eqUnlessMatch.index < (eqIfMatch?.index ?? Infinity));
+      const m = (useUnless ? eqUnlessMatch : eqIfMatch) as RegExpExecArray;
+      const truthyEval = evaluateEqExpression(m[1], fieldValues, mergeTagMap, validFieldKeys) ?? false;
+      const truthy = useUnless ? !truthyEval : truthyEval;
+      const blockContent = m[2];
+      const elseIdx = blockContent.indexOf('{{else}}');
+      let kept = "";
+      if (truthy) {
+        kept = elseIdx !== -1 ? blockContent.substring(0, elseIdx) : blockContent;
+      } else if (elseIdx !== -1) {
+        kept = blockContent.substring(elseIdx + '{{else}}'.length);
+      }
+      const insertionPoint = m.index;
+      result = result.substring(0, m.index) + kept + result.substring(m.index + m[0].length);
+      result = cleanEmptyParagraphsNear(result, insertionPoint);
+      debugLog(`[tag-parser] Conditional {{#${useUnless ? "unless" : "if"} (${m[1]})}} = ${truthy}`);
+      iterations++;
+      continue;
+    }
+
     const ifPattern = /\{\{#if\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/if\}\}/;
     const unlessPattern = /\{\{#unless\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/unless\}\}/;
 
