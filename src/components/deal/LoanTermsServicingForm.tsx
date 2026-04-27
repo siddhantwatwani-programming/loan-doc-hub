@@ -398,36 +398,9 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
             </Select>
           </div>
         </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={AGENT_FK.assessed}>
-          <div className="flex items-center gap-2 max-w-xs">
-            <Label className="w-[120px] text-sm shrink-0">Assessed</Label>
-            <Select value={v(AGENT_FK.assessed)} onValueChange={(val) => sv(AGENT_FK.assessed, val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                {ASSESSED_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </DirtyFieldWrapper>
-        <DirtyFieldWrapper fieldKey={AGENT_FK.payable}>
-          <div className="flex items-center gap-2 max-w-xs">
-            <Label className="w-[120px] text-sm shrink-0">Payable</Label>
-            <Select value={v(AGENT_FK.payable)} onValueChange={(val) => sv(AGENT_FK.payable, val)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm">
-                <SelectValue placeholder="Select..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                {PAYABLE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </DirtyFieldWrapper>
+        {/* Assessed and Payable dropdowns intentionally hidden per UI requirement.
+            Underlying field keys (AGENT_FK.assessed / AGENT_FK.payable), options,
+            and persistence logic are preserved unchanged. */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-6">
