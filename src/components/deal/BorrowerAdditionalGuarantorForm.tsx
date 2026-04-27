@@ -321,10 +321,14 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
         {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
-            <div key={prefId} className="flex items-center justify-center h-7">
-              <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
-            </div>
+          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId, hasPreferred }) => (
+            hasPreferred === false ? (
+              <div key={prefId} className="flex items-center justify-center h-7" />
+            ) : (
+              <div key={prefId} className="flex items-center justify-center h-7">
+                <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
+              </div>
+            )
           ))}
           {/* Fax has no preferred slot — render spacer to keep alignment */}
           <div className="h-7" />
