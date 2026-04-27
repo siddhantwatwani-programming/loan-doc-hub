@@ -161,7 +161,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const handleSubmit = () => {
     // Check at least one meaningful field is filled
     const skipKeys = ['mailing_same_as_primary', 'preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax',
-      'delivery.print', 'delivery.email', 'delivery.sms', 'send_pref.payment_notification',
+      'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms',
+      'agreement_on_file', 'send_pref.payment_notification',
       'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice'];
     if (!hasAtLeastOneFieldFilled(form, skipKeys)) {
       toast.error('Please fill at least one field before saving');
