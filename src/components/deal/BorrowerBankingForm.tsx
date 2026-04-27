@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { MaskedInput } from '@/components/ui/masked-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
@@ -14,10 +13,8 @@ import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
 import type { CalculationResult } from '@/lib/calculationEngine';
 import { DirtyFieldWrapper } from './DirtyFieldWrapper';
-
 import { BORROWER_BANKING_KEYS } from '@/lib/fieldKeyMap';
 
-// Use central field key map
 const FIELD_KEYS = BORROWER_BANKING_KEYS;
 
 interface BorrowerBankingFormProps {
@@ -29,65 +26,76 @@ interface BorrowerBankingFormProps {
   calculationResults?: Record<string, CalculationResult>;
 }
 
-const SERVICE_STATUS_OPTIONS = ['None', 'Active', 'Cancelled', 'Hold'];
-const APPLY_DEBIT_AS_OPTIONS = ['Regular Payment', 'To Trust'];
-const DEBIT_FREQUENCY_OPTIONS = [
-  'Once Only',
-  'Monthly',
-  'Quarterly',
-  'Bi-Monthly',
-  'Bi-Weekly',
-  'Weekly',
-  'Every 15 Days',
-  'Twice Per Month',
-  '15th and EOM',
-  'Semi-Yearly',
-  'Yearly',
-];
+const ACH_STATUS_OPTIONS = ['Active', 'Inactive', 'Pending', 'Hold'];
 const ACCOUNT_TYPE_OPTIONS = ['Personal Savings', 'Personal Checking', 'Business Savings', 'Business Checking'];
+const NAME_TYPE_OPTIONS = ['Entity Name', 'Individual / Signer', 'Other'];
+const DEBIT_AMOUNT_TYPE_OPTIONS = ['Regular Payment', 'Other'];
+const STOP_DEBIT_OPTIONS = ['At Payoff', 'Payoff Demand Issued', 'One Month Prior to Maturity', 'On Date'];
+const APPLY_DEBIT_TO_OPTIONS = ['Regular Payment', 'Reserve', 'Suspense', 'Charges'];
+const DEBIT_FREQUENCY_OPTIONS = [
+  'Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly', 'Weekly',
+  'Every 15 Days', 'Twice Per Month', '15th and EOM', 'Semi-Yearly', 'Yearly',
+];
+const YES_NO_OPTIONS = ['Yes', 'No'];
 
 export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
-  fields,
   values,
   onValueChange,
-  showValidation = false,
   disabled = false,
 }) => {
-  const getValue = (key: keyof typeof FIELD_KEYS): string => {
-    return values[FIELD_KEYS[key]] || '';
-  };
-
-  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => {
-    return values[FIELD_KEYS[key]] === 'true';
-  };
-
+  const getValue = (key: keyof typeof FIELD_KEYS): string => values[FIELD_KEYS[key]] || '';
+  const getBoolValue = (key: keyof typeof FIELD_KEYS): boolean => values[FIELD_KEYS[key]] === 'true';
   const handleChange = (key: keyof typeof FIELD_KEYS, value: string | boolean) => {
     onValueChange(FIELD_KEYS[key], String(value));
   };
 
-  // Initialize defaults
   useEffect(() => {
-    if (!getValue('serviceStatus')) {
-      handleChange('serviceStatus', 'None');
-    }
-    if (!getValue('applyDebitAs')) {
-      handleChange('applyDebitAs', 'To Trust');
-    }
-    if (!getValue('debitFrequency')) {
-      handleChange('debitFrequency', 'Once Only');
-    }
+    if (!getValue('debitFrequency')) handleChange('debitFrequency', 'Once Only');
   }, []);
-  
+
   const debitFrequency = getValue('debitFrequency') || 'Once Only';
   const isOnceOnly = debitFrequency === 'Once Only';
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [lastDebitedOpen, setLastDebitedOpen] = useState(false);
   const [nextDebitOpen, setNextDebitOpen] = useState(false);
-  const [stopDateOpen, setStopDateOpen] = useState(false);
+  const [stopOnDateOpen, setStopOnDateOpen] = useState(false);
 
   const parseDate = (dateStr: string): Date | undefined => {
     if (!dateStr) return undefined;
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? undefined : date;
   };
+
+  const RowLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <Label className="w-36 text-sm text-foreground flex-shrink-0">{children}</Label>
+  );
+
+  const DateField = ({
+    fieldKey, value, onChange, open, setOpen,
+  }: { fieldKey: string; value: string; onChange: (v: string) => void; open: boolean; setOpen: (b: boolean) => void; }) => (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          disabled={disabled}
+          className={cn("h-8 text-sm flex-1 justify-start text-left font-normal", !value && "text-muted-foreground")}
+        >
+          {value ? format(parseDate(value)!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+          <CalendarIcon className="ml-auto h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+        <EnhancedCalendar
+          mode="single"
+          selected={parseDate(value)}
+          onSelect={(date) => { onChange(date ? format(date, 'yyyy-MM-dd') : ''); setOpen(false); }}
+          onClear={() => { onChange(''); setOpen(false); }}
+          onToday={() => { onChange(format(new Date(), 'yyyy-MM-dd')); setOpen(false); }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -96,49 +104,37 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
       </div>
 
       <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-        {/* Left Column */}
+        {/* ============== Left Column ============== */}
         <div className="space-y-4">
-          {/* Bank Name */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.bankName}>
+          {/* ACH Status */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.achStatus}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Bank Name</Label>
-              <Input
-                value={getValue('bankName')}
-                onChange={(e) => handleChange('bankName', e.target.value)}
-                disabled={disabled}
-                className="h-8 text-sm flex-1"
-              />
+              <RowLabel>ACH Status</RowLabel>
+              <Select value={getValue('achStatus') || undefined} onValueChange={(v) => handleChange('achStatus', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {ACH_STATUS_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
 
-          {/* Bank Address */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.bankAddress}>
-            <div className="flex items-start gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0 pt-2">Bank Address</Label>
-              <Textarea
-                value={getValue('bankAddress')}
-                onChange={(e) => handleChange('bankAddress', e.target.value)}
-                disabled={disabled}
-                className="text-sm flex-1 min-h-[80px]"
-                rows={3}
-              />
+          {/* Bank Name */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.bankName}>
+            <div className="flex items-center gap-4">
+              <RowLabel>Bank Name</RowLabel>
+              <Input value={getValue('bankName')} onChange={(e) => handleChange('bankName', e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" />
             </div>
           </DirtyFieldWrapper>
 
           {/* Routing Number */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.routingNumber}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Routing Number</Label>
+              <RowLabel>Routing Number</RowLabel>
               <MaskedInput
                 value={getValue('routingNumber')}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 9);
-                  handleChange('routingNumber', val);
-                }}
-                disabled={disabled}
-                placeholder="•••••••••"
-                maxLength={9}
-                inputMode="numeric"
+                onChange={(e) => handleChange('routingNumber', e.target.value.replace(/\D/g, '').slice(0, 9))}
+                disabled={disabled} placeholder="•••••••••" maxLength={9} inputMode="numeric"
               />
             </div>
           </DirtyFieldWrapper>
@@ -146,43 +142,11 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           {/* Account Number */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountNumber}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Account Number</Label>
+              <RowLabel>Account Number</RowLabel>
               <MaskedInput
                 value={getValue('accountNumber')}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 17);
-                  handleChange('accountNumber', val);
-                }}
-                disabled={disabled}
-                placeholder="••••••••••••"
-                maxLength={17}
-                inputMode="numeric"
-              />
-            </div>
-          </DirtyFieldWrapper>
-
-          {/* Individual ID */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.individualId}>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Individual Id</Label>
-              <Input
-                value={getValue('individualId')}
-                onChange={(e) => handleChange('individualId', e.target.value)}
-                disabled={disabled}
-                className="h-8 text-sm flex-1"
-              />
-            </div>
-          </DirtyFieldWrapper>
-
-          {/* Individual Name */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.individualName}>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Individual Name</Label>
-              <Input
-                value={getValue('individualName')}
-                onChange={(e) => handleChange('individualName', e.target.value)}
-                disabled={disabled}
-                className="h-8 text-sm flex-1"
+                onChange={(e) => handleChange('accountNumber', e.target.value.replace(/\D/g, '').slice(0, 17))}
+                disabled={disabled} placeholder="••••••••••••" maxLength={17} inputMode="numeric"
               />
             </div>
           </DirtyFieldWrapper>
@@ -190,100 +154,119 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           {/* Account Type */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.accountType}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Account Type</Label>
-              <Select
-                value={getValue('accountType') || 'Checking'}
-                onValueChange={(val) => handleChange('accountType', val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue placeholder="Select account type" />
-                </SelectTrigger>
+              <RowLabel>Account Type</RowLabel>
+              <Select value={getValue('accountType') || undefined} onValueChange={(v) => handleChange('accountType', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select account type" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {ACCOUNT_TYPE_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
+                  {ACCOUNT_TYPE_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </DirtyFieldWrapper>
 
-          {/* Notes */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.notes}>
-            <div className="flex items-start gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0 pt-2">Notes</Label>
-              <Textarea
-                value={getValue('notes')}
-                onChange={(e) => handleChange('notes', e.target.value)}
-                disabled={disabled}
-                className="text-sm flex-1 min-h-[80px]"
-                rows={3}
-                placeholder="Enter notes..."
-              />
+          {/* ID */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.idField}>
+            <div className="flex items-center gap-4">
+              <RowLabel>ID</RowLabel>
+              <Input value={getValue('idField')} onChange={(e) => handleChange('idField', e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" />
             </div>
           </DirtyFieldWrapper>
+
+          {/* Name (dropdown) */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.nameType}>
+            <div className="flex items-center gap-4">
+              <RowLabel>Name</RowLabel>
+              <Select value={getValue('nameType') || undefined} onValueChange={(v) => handleChange('nameType', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {NAME_TYPE_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
+          {/* Name - Other text input (only when Other selected) */}
+          {getValue('nameType') === 'Other' && (
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.nameOther}>
+              <div className="flex items-center gap-4">
+                <RowLabel>Name (Other)</RowLabel>
+                <Input value={getValue('nameOther')} onChange={(e) => handleChange('nameOther', e.target.value)} disabled={disabled} className="h-8 text-sm flex-1" placeholder="Enter name" />
+              </div>
+            </DirtyFieldWrapper>
+          )}
         </div>
 
-        {/* Right Column */}
+        {/* ============== Right Column ============== */}
         <div className="space-y-4">
-          {/* Service Status */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.serviceStatus}>
+          {/* Start Debit Date */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.startDebitDate}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Service Status</Label>
-              <Select
-                value={getValue('serviceStatus') || 'None'}
-                onValueChange={(val) => handleChange('serviceStatus', val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
+              <RowLabel>Start Debit Date</RowLabel>
+              <DateField fieldKey={FIELD_KEYS.startDebitDate} value={getValue('startDebitDate')} onChange={(v) => handleChange('startDebitDate', v)} open={startDateOpen} setOpen={setStartDateOpen} />
+            </div>
+          </DirtyFieldWrapper>
+
+          {/* Stop Debit (dropdown) */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.stopDebit}>
+            <div className="flex items-center gap-4">
+              <RowLabel>Stop Debit</RowLabel>
+              <Select value={getValue('stopDebit') || undefined} onValueChange={(v) => handleChange('stopDebit', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {SERVICE_STATUS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
+                  {STOP_DEBIT_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </DirtyFieldWrapper>
 
-          {/* Apply Debit As */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.applyDebitAs}>
+          {/* Stop Debit - On Date picker (only when On Date selected) */}
+          {getValue('stopDebit') === 'On Date' && (
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.stopDebitOnDate}>
+              <div className="flex items-center gap-4">
+                <RowLabel>Stop Date</RowLabel>
+                <DateField fieldKey={FIELD_KEYS.stopDebitOnDate} value={getValue('stopDebitOnDate')} onChange={(v) => handleChange('stopDebitOnDate', v)} open={stopOnDateOpen} setOpen={setStopOnDateOpen} />
+              </div>
+            </DirtyFieldWrapper>
+          )}
+
+          {/* Debit Amount (dropdown: Regular Payment / Other) */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.debitAmountType}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Apply Debit As</Label>
-              <Select
-                value={getValue('applyDebitAs') || 'To Trust'}
-                onValueChange={(val) => handleChange('applyDebitAs', val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue placeholder="Select option" />
-                </SelectTrigger>
+              <RowLabel>Debit Amount</RowLabel>
+              <Select value={getValue('debitAmountType') || undefined} onValueChange={(v) => handleChange('debitAmountType', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {APPLY_DEBIT_AS_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
+                  {DEBIT_AMOUNT_TYPE_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </DirtyFieldWrapper>
 
-          {/* Debit Frequency */}
+          {/* Debit Amount - Other ($ text box, only when Other selected) */}
+          {getValue('debitAmountType') === 'Other' && (
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.debitAmount}>
+              <div className="flex items-center gap-4">
+                <RowLabel>Amount ($)</RowLabel>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
+                  <Input
+                    value={getValue('debitAmount')}
+                    onChange={(e) => handleChange('debitAmount', e.target.value.replace(/[^\d.]/g, ''))}
+                    disabled={disabled} className="h-8 text-sm pl-6" placeholder="0.00" inputMode="decimal"
+                  />
+                </div>
+              </div>
+            </DirtyFieldWrapper>
+          )}
+
+          {/* Frequency */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.debitFrequency}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Frequency</Label>
-              <Select
-                value={debitFrequency}
-                onValueChange={(val) => handleChange('debitFrequency', val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-8 text-sm flex-1">
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
+              <RowLabel>Frequency</RowLabel>
+              <Select value={debitFrequency} onValueChange={(v) => handleChange('debitFrequency', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select frequency" /></SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  {DEBIT_FREQUENCY_OPTIONS.map((opt) => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                  ))}
+                  {DEBIT_FREQUENCY_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
@@ -292,15 +275,13 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
           {/* Debit Due Day */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.debitDueDay}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Due Day</Label>
+              <RowLabel>Debit Due Day</RowLabel>
               <Input
                 value={getValue('debitDueDay')}
                 onChange={(e) => {
                   const val = e.target.value.replace(/\D/g, '');
                   const num = parseInt(val, 10);
-                  if (val === '' || (num >= 1 && num <= 31)) {
-                    handleChange('debitDueDay', val);
-                  }
+                  if (val === '' || (num >= 1 && num <= 31)) handleChange('debitDueDay', val);
                 }}
                 disabled={disabled || isOnceOnly}
                 className={cn("h-8 text-sm flex-1", isOnceOnly && "bg-muted opacity-50")}
@@ -310,127 +291,64 @@ export const BorrowerBankingForm: React.FC<BorrowerBankingFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {/* Next Debit Date */}
+          {/* Apply Debit To */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.applyDebitTo}>
+            <div className="flex items-center gap-4">
+              <RowLabel>Apply Debit To</RowLabel>
+              <Select value={getValue('applyDebitTo') || undefined} onValueChange={(v) => handleChange('applyDebitTo', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {APPLY_DEBIT_TO_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
+          {/* Last Debited On */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.lastDebitedOn}>
+            <div className="flex items-center gap-4">
+              <RowLabel>Last Debited On</RowLabel>
+              <DateField fieldKey={FIELD_KEYS.lastDebitedOn} value={getValue('lastDebitedOn')} onChange={(v) => handleChange('lastDebitedOn', v)} open={lastDebitedOpen} setOpen={setLastDebitedOpen} />
+            </div>
+          </DirtyFieldWrapper>
+
+          {/* Next Debit */}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.nextDebitDate}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Next Debit Date</Label>
-              <Popover open={nextDebitOpen} onOpenChange={setNextDebitOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    className={cn(
-                      "h-8 text-sm flex-1 justify-start text-left font-normal",
-                      !getValue('nextDebitDate') && "text-muted-foreground"
-                    )}
-                  >
-                    {getValue('nextDebitDate')
-                      ? format(parseDate(getValue('nextDebitDate'))!, 'MM/dd/yyyy')
-                      : 'MM/DD/YYYY'}
-                    <CalendarIcon className="ml-auto h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={parseDate(getValue('nextDebitDate'))}
-                    onSelect={(date) => { handleChange('nextDebitDate', date ? format(date, 'yyyy-MM-dd') : ''); setNextDebitOpen(false); }}
-                    onClear={() => { handleChange('nextDebitDate', ''); setNextDebitOpen(false); }}
-                    onToday={() => { handleChange('nextDebitDate', format(new Date(), 'yyyy-MM-dd')); setNextDebitOpen(false); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <RowLabel>Next Debit</RowLabel>
+              <DateField fieldKey={FIELD_KEYS.nextDebitDate} value={getValue('nextDebitDate')} onChange={(v) => handleChange('nextDebitDate', v)} open={nextDebitOpen} setOpen={setNextDebitOpen} />
             </div>
           </DirtyFieldWrapper>
 
-          {/* Stop Date */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.stopDate}>
+          {/* Resubmit NSF */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.resubmitNsf}>
             <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Stop Date</Label>
-              <Popover open={stopDateOpen} onOpenChange={setStopDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    disabled={disabled}
-                    className={cn(
-                      "h-8 text-sm flex-1 justify-start text-left font-normal",
-                      !getValue('stopDate') && "text-muted-foreground"
-                    )}
-                  >
-                    {getValue('stopDate')
-                      ? format(parseDate(getValue('stopDate'))!, 'MM/dd/yyyy')
-                      : 'MM/DD/YYYY'}
-                    <CalendarIcon className="ml-auto h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={parseDate(getValue('stopDate'))}
-                    onSelect={(date) => { handleChange('stopDate', date ? format(date, 'yyyy-MM-dd') : ''); setStopDateOpen(false); }}
-                    onClear={() => { handleChange('stopDate', ''); setStopDateOpen(false); }}
-                    onToday={() => { handleChange('stopDate', format(new Date(), 'yyyy-MM-dd')); setStopDateOpen(false); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <RowLabel>Resubmit NSF</RowLabel>
+              <Select value={getValue('resubmitNsf') || undefined} onValueChange={(v) => handleChange('resubmitNsf', v)} disabled={disabled}>
+                <SelectTrigger className="h-8 text-sm flex-1"><SelectValue placeholder="Yes / No" /></SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {YES_NO_OPTIONS.map((o) => (<SelectItem key={o} value={o}>{o}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
-
-          {/* Debit Amount */}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.debitAmount}>
-            <div className="flex items-center gap-4">
-              <Label className="w-32 text-sm text-foreground flex-shrink-0">Debit Amount</Label>
-              <div className="relative flex-1">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">$</span>
-                <Input
-                  value={getValue('debitAmount')}
-                  onChange={(e) => {
-                    const val = e.target.value.replace(/[^\d.]/g, '');
-                    handleChange('debitAmount', val);
-                  }}
-                  disabled={disabled}
-                  className="h-8 text-sm pl-6"
-                  placeholder="0.00"
-                  inputMode="decimal"
-                />
-              </div>
-            </div>
-          </DirtyFieldWrapper>
-
-          {/* Send Confirm + Disable Online Payment */}
-          <div className="flex items-center gap-4">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendConfirm}>
-              <div className="flex items-center gap-2">
-                <Label className="w-32 text-sm text-foreground flex-shrink-0">Send Confirm</Label>
-                <Checkbox
-                  checked={getBoolValue('sendConfirm')}
-                  onCheckedChange={(checked) => handleChange('sendConfirm', !!checked)}
-                  disabled={disabled}
-                  className="h-4 w-4"
-                />
-              </div>
-            </DirtyFieldWrapper>
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.disableOnlinePayment}>
-              <div className="flex items-center gap-2 ml-8">
-                <Label className="text-sm font-semibold text-foreground whitespace-nowrap">Disable Online Payment</Label>
-                <Checkbox
-                  checked={getBoolValue('disableOnlinePayment')}
-                  onCheckedChange={(checked) => handleChange('disableOnlinePayment', !!checked)}
-                  disabled={disabled}
-                  className="h-4 w-4"
-                />
-              </div>
-            </DirtyFieldWrapper>
-          </div>
         </div>
       </div>
 
-      <div className="pt-6 border-t border-border">
-        <p className="text-sm text-muted-foreground">
-          Banking information is used for ACH payments and direct deposits. Ensure all details are accurate before submission.
-        </p>
+      {/* Disable Online Payment */}
+      <div className="pt-4 border-t border-border">
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.disableOnlinePayment}>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="disable-online-payment"
+              checked={getBoolValue('disableOnlinePayment')}
+              onCheckedChange={(checked) => handleChange('disableOnlinePayment', !!checked)}
+              disabled={disabled}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="disable-online-payment" className="text-sm font-semibold text-foreground">Disable Online Payment</Label>
+          </div>
+        </DirtyFieldWrapper>
       </div>
     </div>
   );
