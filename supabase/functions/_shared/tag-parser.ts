@@ -724,7 +724,7 @@ function convertGlyphsToSdtCheckboxes(xml: string): string {
     extractionPass++;
   }
 
-  safeguardedXml = safeguardedXml.replace(runWithGlyphOnly, (_match, _rPrGroup, innerRPr, glyph) => {
+  safeguardedXml = safeguardedXml.replace(runWithGlyphOnly, (_match, innerRPr, glyph) => {
     const isChecked = glyph === '☑' || glyph === '☒';
     count++;
     return buildSdtCheckboxXml(isChecked, innerRPr || undefined);
