@@ -194,6 +194,24 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliveryPrint" checked={getBoolValue('deliveryPrint')} onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryPrint" className="text-sm font-normal">Print</Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliveryEmail" checked={getBoolValue('deliveryEmail')} onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliveryEmail" className="text-sm font-normal">Email</Label>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Checkbox id="guarantor-deliverySms" checked={getBoolValue('deliverySms')} onCheckedChange={(checked) => handleChange('deliverySms', !!checked)} disabled={disabled} />
+                <Label htmlFor="guarantor-deliverySms" className="text-sm font-normal">SMS</Label>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
