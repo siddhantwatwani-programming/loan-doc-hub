@@ -33,13 +33,6 @@ const FIELD_KEYS = {
   notes: 'borrower.tax_info.notes',
 } as const;
 
-const DESIGNATED_RECIPIENT_OPTIONS = [
-  { value: 'primary', label: 'Borrower' },
-  { value: 'co-borrower', label: 'Co-borrower' },
-  { value: 'additional_guarantor', label: 'Additional Guarantor' },
-  { value: 'other', label: 'Other' },
-];
-
 const TIN_TYPE_OPTIONS = [
   { value: '0', label: '0 - Unknown' },
   { value: '1', label: '1 - EIN' },
@@ -68,22 +61,13 @@ export const BorrowerTaxInfoForm: React.FC<BorrowerTaxInfoFormProps> = ({
             <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">
               Designated Recipient
             </Label>
-            <Select
-              value={getValue('designatedRecipient') || undefined}
-              onValueChange={(value) => handleChange('designatedRecipient', value)}
+            <Checkbox
+              checked={getValue('designatedRecipient') === 'true'}
+              onCheckedChange={(checked) =>
+                handleChange('designatedRecipient', checked === true ? 'true' : 'false')
+              }
               disabled={disabled}
-            >
-              <SelectTrigger className="h-7 text-sm flex-1 max-w-[260px] bg-background">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </DirtyFieldWrapper>
 
