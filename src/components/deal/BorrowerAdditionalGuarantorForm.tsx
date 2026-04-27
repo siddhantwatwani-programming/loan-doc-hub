@@ -43,10 +43,9 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
-
-const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 import { STATE_OPTIONS } from '@/lib/usStates';
 
