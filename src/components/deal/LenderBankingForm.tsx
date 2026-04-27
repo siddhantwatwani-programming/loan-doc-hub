@@ -179,6 +179,11 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
               <Select value={getValue('accountType')} onValueChange={(value) => handleChange('accountType', value)} disabled={disabled}>
                 <SelectTrigger className="h-8"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="Personal Banking">Personal Banking</SelectItem>
+                  <SelectItem value="Business Banking">Business Banking</SelectItem>
+                  <SelectItem value="Personal Checking">Personal Checking</SelectItem>
+                  <SelectItem value="Business Checking">Business Checking</SelectItem>
+                  {/* Backward compatibility: legacy values still render if previously saved */}
                   <SelectItem value="Checking">Checking</SelectItem>
                   <SelectItem value="Savings">Savings</SelectItem>
                 </SelectContent>
