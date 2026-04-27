@@ -1,54 +1,37 @@
-# Plan: Participant Capacity Removal + Borrower Form Updates
+# RE851A: Amortization → Interest Only / Other Checkboxes
 
-## 1. Remove Capacity dropdown from Add Participant (all types)
+## Goal
+When generating the RE851A document, populate the **Interest Only** and **Other** checkboxes in the Amortization section based on the value selected in the CSR → Loan → Amortization dropdown.
 
-**File:** `src/components/deal/AddParticipantModal.tsx`
+## Context
+- The Amortization dropdown persists under `ln_p_amortiza` (legacy key) / `loan_terms.amortization`.
+- The engine already derives `ln_p_amortized` and `ln_p_amortizedPartially` from this same dropdown in `supabase/functions/generate-document/index.ts` (around line 815).
+- Field dictionary already has `ln_p_interestOnly` and `ln_p_other` (Boolean).
+- No template, schema, dropdown, or UI changes required.
 
-- Delete the entire "Capacity Dropdown" JSX block (lines ~414–429) so it no longer renders for any participant type.
-- Remove the `CAPACITY_OPTIONS` constant (lines ~71–88) — no longer referenced.
-- Keep the existing `capacity` state and the `resolvedCapacity = capacity || EXTENDED_TYPE_LABELS[type] || type` fallback so persistence still writes a sensible value (capacity will simply default to the extended type label / participant type). No save/update API changes.
-- Keep the `setCapacity('')` resets so behavior is unchanged.
+## Change
 
-No DB / API / schema changes.
+Extend the existing Amortization derivation block in `supabase/functions/generate-document/index.ts` to also publish booleans + glyph aliases for the two new checkboxes:
 
-## 2. Update deal Borrower form per screenshot annotations
+- If dropdown value (lowercased, trimmed) is `interest only` / `interest_only`:
+  - `ln_p_interestOnly = true`, `ln_p_other = false`
+- If dropdown value is `other`:
+  - `ln_p_other = true`, `ln_p_interestOnly = false`
+- Otherwise both remain `false`.
 
-**Files (apply identical edits to all three so the screenshot's "Co-borrower and Additional Guarantor screens should be identical to Borrower screen" rule holds):**
+Also publish glyph aliases (`ln_p_interestOnlyGlyph`, `ln_p_otherGlyph` → `☑` / `☐`) for templates that use direct merge tags instead of `{{#if}}` conditionals — same pattern used for the Servicing Agent and Broker Capacity checkboxes.
 
-- `src/components/deal/BorrowerPrimaryForm.tsx`
-- `src/components/deal/CoBorrowerPrimaryForm.tsx`
-- `src/components/deal/BorrowerAdditionalGuarantorForm.tsx`
+Mutual exclusivity is guaranteed because both flags are derived from the single dropdown value.
 
-### Field changes
+## Files Touched
+- `supabase/functions/generate-document/index.ts` — append derivation lines inside the existing Amortization block (no other code paths modified).
 
-| Change | Action |
-|---|---|
-| Rename "Full Name" → "Entity Name - If Applicable" | Update the `<Label>` text only; field key (`fullName`) unchanged |
-| Add "Capacity" dropdown | New `InlineField` bound to existing `FIELD_KEYS.capacity` using a `Select` with the options below |
-| Add SMS to Delivery | Already present in BorrowerPrimaryForm; verify and add to Co-borrower & Additional Guarantor if missing |
-| Remove "Credit Score" | Delete the `InlineField` for `creditScore` |
-| Remove "Hold" checkbox | Delete the Hold checkbox block |
-| Remove "ACH" checkbox | Delete the ACH checkbox block |
-| Remove "Tax ID Type" dropdown | Delete the Tax ID Type `InlineField` and its `TAX_ID_TYPE_OPTIONS` constant |
-| Remove "TIN" input | Delete the TIN `InlineField` |
-| Remove "TIN Verified" checkbox | Delete the TIN Verified block (TIN/EIN now lives on the 1098 tab — already implemented) |
-| Fax: remove "Preferred" radio | In the `phoneRows` array, drop the Fax row's preferred-radio rendering (keep the Fax phone input). Simplest: filter Fax out of the Preferred RadioGroup column while still rendering it in the Phone column |
+## Out of Scope
+- No changes to the RE851A `.docx` template.
+- No changes to the field dictionary, UI form, save/load APIs, or dropdown options.
+- No changes to other RE851A merge tags or checkbox blocks.
 
-### Capacity dropdown options (per screenshot)
-
-```
-Trustee, Successor Trustee, Authorized Signer, President, CEO,
-Power of Attorney, Member, Manager, Partner, Attorney
-```
-
-Place the new "Capacity" `InlineField` directly under "Borrower Type" (Column 1), matching the screenshot's red arrow.
-
-### Persistence
-
-All affected fields (`capacity`, `fullName`, `deliverySms`, etc.) already exist in `BORROWER_PRIMARY_KEYS` / `BORROWER_GUARANTOR_KEYS` and the co-borrower equivalent in `src/lib/fieldKeyMap.ts`, and are already routed through the existing `onValueChange` save pipeline. Removing UI for `creditScore`, `hold`, `ach`, `taxIdType`, `tin`, `tinVerified` simply hides them — no schema change, no key-map change, existing values stay in `deal_section_values` untouched.
-
-## Out of scope (per minimal-change policy)
-
-- No changes to APIs, edge functions, document generation, or DB schema.
-- No changes to other participant types' forms (Lender, Authorized Party, etc.) beyond the Add-Participant Capacity removal.
-- No changes to the contact-level (`ContactBorrowerDetailForm`) screen.
+## Acceptance
+- Selecting **Interest Only** → only the Interest Only checkbox is checked in the generated RE851A.
+- Selecting **Other** → only the Other checkbox is checked.
+- Document generates successfully with no layout/format change.
