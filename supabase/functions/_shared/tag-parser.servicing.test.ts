@@ -6,7 +6,7 @@
 
 import { processConditionalBlocks } from "./tag-parser.ts";
 
-type FieldValueData = { rawValue: string | number | boolean | null; dataType?: string };
+import type { FieldValueData } from "./types.ts";
 
 function fixture(servicingAgent: string): string {
   return [

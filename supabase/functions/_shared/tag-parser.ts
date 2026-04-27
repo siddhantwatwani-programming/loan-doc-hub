@@ -865,11 +865,14 @@ function replaceStaticCheckboxLabel(
     // Remove duplicate adjacent checkbox glyphs that arise when a merge tag
     // already resolved to ☑/☐ AND the template had a static glyph.
     // Pattern: two checkbox glyphs separated only by XML tags / whitespace,
-    // SCOPED to the same paragraph (`</w:p>` and `<w:p>` are excluded from
-    // the gap) so we never collapse two legitimately distinct paragraph-level
-    // glyphs into one (e.g., the RE851A A./B. broker-capacity rows).
+    // SCOPED to the same paragraph AND the same logical line within a
+    // paragraph. We exclude `</w:p>` / `<w:p>` (paragraph boundary) AND
+    // `<w:br/>` (soft line break, Shift+Enter) from the gap so we never
+    // collapse two legitimately distinct line-level glyphs into one (e.g.,
+    // the RE851A "Is Broker also a Borrower?" A./B. row where each {{#if}}
+    // block is on its own soft-break-separated line).
     result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
@@ -888,7 +891,7 @@ function replaceStaticCheckboxLabel(
       return `${labelText}${spacing}${checkboxValue}`;
     });
     result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
@@ -903,10 +906,11 @@ function replaceStaticCheckboxLabel(
   let result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
     return `${checkboxValue}${spacing}${labelText}`;
   });
-  // Same dedup for plain-text path — paragraph-scoped to avoid collapsing
-  // glyphs that legitimately belong to different paragraphs.
+  // Same dedup for plain-text path — paragraph- AND soft-break-scoped to
+  // avoid collapsing glyphs that legitimately belong to different paragraphs
+  // OR different soft-break-separated lines within the same paragraph.
   result = result.replace(
-    /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
+    /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
     (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
   );
   return { content: result, replaced: true };
