@@ -2271,12 +2271,21 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const inlineXmlOnly = `(?:\\s|<(?!w:sdt\\b|\\/w:sdt\\b|\\/w:p\\b|w:p[\\s>\\/])[^>]+>)*?`;
-        // 1) Glyph inside <w:t> followed by the word.
+        // 0) Glyph and label inside the SAME <w:t> run (e.g. "☐ Yes").
+        const glyphSameWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])(\\s*${wordRe}[^<]*</w:t>)`,
+          "g",
+        );
+        let next = windowXml.replace(
+          glyphSameWt,
+          (_m, wtOpen, pre, _g, tail) => `${wtOpen}${pre}${glyph}${tail}`,
+        );
+        // 1) Glyph inside <w:t> followed by the word in a later run.
         const glyphInWt = new RegExp(
           `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)(${inlineXmlOnly}${wordRe})`,
           "g",
         );
-        let next = windowXml.replace(
+        next = next.replace(
           glyphInWt,
           (_m, wtOpen, pre, _g, wtTail, labelPart) =>
             `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
@@ -2518,8 +2527,68 @@ export function replaceMergeTags(
           },
         );
 
+        // Final pass — RE851A live layout: a paragraph containing only the
+        // literal label "Yes" or "No" (case-sensitive) with NO checkbox glyph,
+        // NO Handlebars marker and NO native SDT block. The previous passes
+        // require an existing glyph/SDT/Handlebars marker to act, so a label
+        // such as a bare "No" cell renders without any checkbox. Here we
+        // detect those bare label paragraphs and inject the desired glyph
+        // immediately before the label run. Strictly scoped to Yes/No-only
+        // paragraphs; no prose row is touched.
+        let injectedBareParas = 0;
+        windowXml = windowXml.replace(
+          /<w:p\b[\s\S]*?<\/w:p>/g,
+          (para) => {
+            if (/<w:sdt\b/.test(para)) return para;
+            if (/[☐☑☒]/.test(para)) return para;
+            if (/\{\{/.test(para)) return para;
+            const plain = para.replace(/<[^>]*>/g, "");
+            const trimmed = plain.replace(/\s+/g, " ").trim();
+            if (!trimmed) return para;
+            // Allowed visible words: only "Yes" / "No" (case-sensitive).
+            const words = trimmed.split(/[^A-Za-z]+/).filter(Boolean);
+            if (words.length === 0 || words.length > 2) return para;
+            const allowed = new Set(["Yes", "No"]);
+            for (const w of words) if (!allowed.has(w)) return para;
+            const hasYesLabel = words.includes("Yes");
+            const hasNoLabel = words.includes("No");
+
+            const injectBareGlyph = (
+              xml: string,
+              labelWord: "Yes" | "No",
+              glyph: string,
+            ): { xml: string; injected: boolean } => {
+              const labelRunRe = new RegExp(
+                `(<w:r\\b[^>]*>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?\\s*<w:t(?:\\s[^>]*)?>)([^<]*\\b${labelWord}\\b[^<]*)(<\\/w:t>\\s*<\\/w:r>)`,
+              );
+              if (!labelRunRe.test(xml)) return { xml, injected: false };
+              const next = xml.replace(labelRunRe, (_m, head, txt, tail) => {
+                const leadWs = (txt.match(/^\s*/) || [""])[0];
+                const rest = txt.substring(leadWs.length);
+                return `${head}${leadWs}${glyph} ${rest}${tail}`;
+              });
+              return { xml: next, injected: next !== xml };
+            };
+
+            let p = para;
+            let injected = false;
+            if (hasYesLabel) {
+              const r = injectBareGlyph(p, "Yes", yesGlyph);
+              p = r.xml;
+              injected = injected || r.injected;
+            }
+            if (hasNoLabel) {
+              const r = injectBareGlyph(p, "No", noGlyph);
+              p = r.xml;
+              injected = injected || r.injected;
+            }
+            if (injected) injectedBareParas++;
+            return p;
+          },
+        );
+
         console.log(
-          `[tag-parser] Subordination Provision safety pass executed: isSubordination=${isSubordination}, windowLen=${winEnd - winStart}, sanitizedSdts=${sanitizedSdts}, normalizedParas=${normalizedParas}`,
+          `[tag-parser] Subordination Provision safety pass executed: isSubordination=${isSubordination}, windowLen=${winEnd - winStart}, sanitizedSdts=${sanitizedSdts}, normalizedParas=${normalizedParas}, injectedBareParas=${injectedBareParas}`,
         );
 
         rebuilt += windowXml;
