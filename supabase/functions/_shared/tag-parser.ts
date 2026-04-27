@@ -2418,6 +2418,10 @@ export function replaceMergeTags(
             const isYes = /(^|\s|[☐☑☒])Yes\.?$/.test(trimmed);
             const isNo = /(^|\s|[☐☑☒])No\.?$/.test(trimmed);
             if (!isYes && !isNo) return para;
+            // Skip paragraphs that already use native Word SDT checkboxes —
+            // those are fully handled by the SDT-toggle helpers above and
+            // must not be touched by the text-glyph normalizer.
+            if (/<w:sdt\b/.test(para)) return para;
             // Bail if the paragraph contains a different sentence (long text)
             // — only normalize tight Yes/No checkbox cells. The RE851A row is
             // ≤ ~10 visible chars (e.g. "☑ Yes", "☑☐ Yes", "{{#if x}}☑..Yes").
