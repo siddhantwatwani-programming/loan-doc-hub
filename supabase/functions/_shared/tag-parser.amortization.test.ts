@@ -56,20 +56,6 @@ function buildStaticGlyphFixture(): string {
 </w:body></w:document>`;
 }
 
-const SDT = (state: "0" | "1", glyph: "☐" | "☑") =>
-  `<w:sdt><w:sdtPr><w:rPr><w:rFonts w:ascii="MS Gothic"/></w:rPr><w14:checkbox><w14:checked w14:val="${state}"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:t>${glyph}</w:t></w:r></w:sdtContent></w:sdt>`;
-
-function buildSdtFixture(): string {
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
-<w:body>
-<w:p>${SDT("0", "☐")}<w:r><w:t xml:space="preserve"> AMORTIZED PARTIALLY</w:t></w:r></w:p>
-<w:p>${SDT("0", "☐")}<w:r><w:t xml:space="preserve"> AMORTIZED</w:t></w:r></w:p>
-<w:p>${SDT("0", "☐")}<w:r><w:t xml:space="preserve"> INTEREST ONLY</w:t></w:r></w:p>
-<w:p>${SDT("0", "☐")}<w:r><w:t xml:space="preserve"> Other</w:t></w:r></w:p>
-</w:body></w:document>`;
-}
-
 function run(fixture: string, activeKey: string): string {
   const fieldTransforms = new Map<string, string>();
   const mergeTagMap: Record<string, string> = {};
@@ -86,25 +72,13 @@ function run(fixture: string, activeKey: string): string {
 }
 
 // Returns the visible glyph (☐/☑/☒) appearing immediately before the EXACT
-// `label` occurrence in the rendered (XML-stripped) output. The label must
-// be the bare label (not a prefix of a longer label), so for "AMORTIZED"
-// we require it NOT be followed by " PARTIALLY".
+// `label` occurrence in the rendered (XML-stripped) output. The "AMORTIZED"
+// label must NOT match the "AMORTIZED PARTIALLY" line.
 function lastGlyphBeforeLabel(xml: string, label: string): string | null {
   const plain = xml.replace(/<[^>]*>/g, "");
   const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const re = new RegExp(`([☐☑☒])[^☐☑☒]*?${escaped}(?!\\s+PARTIALLY)(?![A-Za-z])`);
   const m = plain.match(re);
-  return m ? m[1] : null;
-}
-
-// Returns the w14:checked val for the SDT block immediately preceding the
-// exact `label` in the raw XML.
-function lastSdtCheckedBeforeLabel(xml: string, label: string): string | null {
-  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const re = new RegExp(
-    `<w14:checked\\s+w14:val="(\\d)"\\s*\\/>(?:(?!<w14:checked\\b)[\\s\\S])*?${escaped}(?!\\s+PARTIALLY)(?![A-Za-z])`,
-  );
-  const m = xml.match(re);
   return m ? m[1] : null;
 }
 
