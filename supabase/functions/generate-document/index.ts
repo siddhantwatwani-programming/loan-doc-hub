@@ -815,7 +815,14 @@ async function generateSingleDocument(
     const amortVal = (fieldValues.get("ln_p_amortiza")?.rawValue || fieldValues.get("loan_terms.amortization")?.rawValue || "").toString().trim().toLowerCase();
     fieldValues.set("ln_p_amortizedPartially", { rawValue: ["partially_amortized", "partially amortized", "amortized partially"].includes(amortVal) ? "true" : "false", dataType: "boolean" });
     fieldValues.set("ln_p_amortized", { rawValue: ["fully_amortized", "fully amortized", "amortized"].includes(amortVal) ? "true" : "false", dataType: "boolean" });
-    debugLog(`[generate-document] Derived amortization checkboxes from "${amortVal}": amortizedPartially=${amortVal === "amortized partially"}, amortized=${amortVal === "amortized"}`);
+    // RE851A Amortization section: "Interest Only" / "Other" checkboxes derived from the same dropdown.
+    const isInterestOnly = ["interest_only", "interest only", "interestonly"].includes(amortVal);
+    const isAmortOther = amortVal === "other";
+    fieldValues.set("ln_p_interestOnly", { rawValue: isInterestOnly ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_other", { rawValue: isAmortOther ? "true" : "false", dataType: "boolean" });
+    fieldValues.set("ln_p_interestOnlyGlyph", { rawValue: isInterestOnly ? "☑" : "☐", dataType: "text" });
+    fieldValues.set("ln_p_otherGlyph", { rawValue: isAmortOther ? "☑" : "☐", dataType: "text" });
+    debugLog(`[generate-document] Derived amortization checkboxes from "${amortVal}": amortizedPartially=${amortVal === "amortized partially"}, amortized=${amortVal === "amortized"}, interestOnly=${isInterestOnly}, other=${isAmortOther}`);
 
     // Payment Frequency dropdown → boolean checkbox keys
     const payFreqVal = (fieldValues.get("ln_p_paymentFreque")?.rawValue || fieldValues.get("loan_terms.payment_frequency")?.rawValue || "").toString().trim().toLowerCase();
