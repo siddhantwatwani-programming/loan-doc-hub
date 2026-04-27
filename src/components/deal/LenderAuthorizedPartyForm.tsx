@@ -24,9 +24,10 @@ import { LENDER_AUTHORIZED_PARTY_KEYS } from '@/lib/fieldKeyMap';
 const FIELD_KEYS = LENDER_AUTHORIZED_PARTY_KEYS;
 
 const CAPACITY_OPTIONS = [
+  { value: 'corporate_officer', label: 'Corporate Officer' },
   { value: 'attorney', label: 'Attorney' },
-  { value: 'cfo_cpa', label: 'CFO / CPA' },
-  { value: 'broker', label: 'Broker' },
+  { value: 'power_of_attorney', label: 'Power of Attorney' },
+  { value: 'accountant_cpa', label: 'Accountant / CPA' },
   { value: 'family', label: 'Family' },
   { value: 'bankruptcy_trustee', label: 'Bankruptcy Trustee' },
   { value: 'other', label: 'Other' },
@@ -224,7 +225,7 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
           <div className="space-y-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground min-w-[40px]">Email</Label>
+                <Label className="text-sm text-muted-foreground min-w-[40px]">Online</Label>
                 <Checkbox checked={getBoolValue('deliveryEmail')} onCheckedChange={(c) => handleChange('deliveryEmail', !!c)} disabled={disabled} />
               </div>
             </DirtyFieldWrapper>
