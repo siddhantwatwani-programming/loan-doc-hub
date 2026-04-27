@@ -336,6 +336,30 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <div className="pt-2">
+            <h4 className="font-semibold text-sm text-foreground pb-1">Delivery Options</h4>
+            <div className="flex items-center gap-4">
+              <DirtyFieldWrapper fieldKey={fk('delivery_print')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryPrint-c1" checked={getBoolValue('delivery_print')} onCheckedChange={(checked) => handleChange('delivery_print', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryPrint-c1" className="text-sm font-normal">Print</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={fk('delivery_email')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliveryEmail-c1" checked={getBoolValue('delivery_email')} onCheckedChange={(checked) => handleChange('delivery_email', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliveryEmail-c1" className="text-sm font-normal">Email</Label>
+                </div>
+              </DirtyFieldWrapper>
+              <DirtyFieldWrapper fieldKey={fk('delivery_sms')}>
+                <div className="flex items-center gap-1.5">
+                  <Checkbox id="coborrower-deliverySms-c1" checked={getBoolValue('delivery_sms')} onCheckedChange={(checked) => handleChange('delivery_sms', String(!!checked))} disabled={disabled} />
+                  <Label htmlFor="coborrower-deliverySms-c1" className="text-sm font-normal">SMS</Label>
+                </div>
+              </DirtyFieldWrapper>
+            </div>
+          </div>
+
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
