@@ -183,9 +183,6 @@ export const LenderBankingForm: React.FC<LenderBankingFormProps> = ({
                   <SelectItem value="Business Banking">Business Banking</SelectItem>
                   <SelectItem value="Personal Checking">Personal Checking</SelectItem>
                   <SelectItem value="Business Checking">Business Checking</SelectItem>
-                  {/* Backward compatibility: legacy values still render if previously saved */}
-                  <SelectItem value="Checking">Checking</SelectItem>
-                  <SelectItem value="Savings">Savings</SelectItem>
                 </SelectContent>
               </Select>
             </div>)}
