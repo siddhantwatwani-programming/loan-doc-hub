@@ -26,9 +26,11 @@ import {
 } from '@/lib/numericInputFilter';
 
 const SERVICING_AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+const ASSESSED_OPTIONS = ['Yes', 'No', 'N/A'];
 
 const AGENT_FK = {
   servicing_agent: 'origination_svc.servicing_agent',
+  assessed: 'origination_svc.assessed',
   tp_name: 'origination_svc.third_party.name',
   tp_street: 'origination_svc.third_party.street',
   tp_city: 'origination_svc.third_party.city',
@@ -388,6 +390,21 @@ export const LoanTermsServicingForm: React.FC<LoanTermsServicingFormProps> = ({
               </SelectTrigger>
               <SelectContent className="bg-popover z-50">
                 {SERVICING_AGENT_OPTIONS.map((opt) => (
+                  <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
+        <DirtyFieldWrapper fieldKey={AGENT_FK.assessed}>
+          <div className="flex items-center gap-2 max-w-xs">
+            <Label className="w-[120px] text-sm shrink-0">Assessed</Label>
+            <Select value={v(AGENT_FK.assessed)} onValueChange={(val) => sv(AGENT_FK.assessed, val)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm">
+                <SelectValue placeholder="Select..." />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                {ASSESSED_OPTIONS.map((opt) => (
                   <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                 ))}
               </SelectContent>
