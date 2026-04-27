@@ -5,6 +5,7 @@ import { useContactWorkspaceOptional } from '@/contexts/ContactWorkspaceContext'
 import { Button } from '@/components/ui/button';
 import BorrowerDetailSidebar, { type BorrowerSection } from './BorrowerDetailSidebar';
 import { BorrowerPrimaryForm } from '@/components/deal/BorrowerPrimaryForm';
+import { BorrowerCoBorrowerForm } from '@/components/deal/BorrowerCoBorrowerForm';
 import { BorrowerAdditionalGuarantorForm } from '@/components/deal/BorrowerAdditionalGuarantorForm';
 import { BorrowerAuthorizedPartyForm } from '@/components/deal/BorrowerAuthorizedPartyForm';
 import { BorrowerBankingForm } from '@/components/deal/BorrowerBankingForm';
