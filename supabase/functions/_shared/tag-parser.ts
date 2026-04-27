@@ -2293,7 +2293,10 @@ export function replaceMergeTags(
         return next;
       };
 
-      const WINDOW_SIZE = 3000;
+      // Window must be large enough to cover the right-hand table cell that
+      // hosts the Yes / No checkboxes in RE851A — that cell can sit several
+      // KB after the sentence anchor when the row contains nested table XML.
+      const WINDOW_SIZE = 8000;
       let scanFrom = 0;
       let rebuilt = "";
       let anchorMatch: RegExpExecArray | null;
@@ -2317,10 +2320,38 @@ export function replaceMergeTags(
         windowXml = forceGlyphAfterWord(windowXml, "Yes", yesGlyph);
         windowXml = forceGlyphAfterWord(windowXml, "No", noGlyph);
 
+        // Final fallback within this window: rewrite any "<glyph>... Yes" /
+        // "<glyph> ... No" pairing where the glyph and the label live in
+        // SEPARATE <w:t> runs (so the run-local rewrites above could not
+        // see the label). Strictly bounded to a single glyph immediately
+        // followed by intra-window XML and the literal label word, so no
+        // unrelated checkbox is touched.
+        const glyphSeparateRunBeforeYes = /([☐☑☒])((?:\s|<[^>]+>)*?<w:t[^>]*>\s*Yes\b)/g;
+        windowXml = windowXml.replace(
+          glyphSeparateRunBeforeYes,
+          (_m, _g, tail) => `${yesGlyph}${tail}`,
+        );
+        const glyphSeparateRunBeforeNo = /([☐☑☒])((?:\s|<[^>]+>)*?<w:t[^>]*>\s*No\b)/g;
+        windowXml = windowXml.replace(
+          glyphSeparateRunBeforeNo,
+          (_m, _g, tail) => `${noGlyph}${tail}`,
+        );
+
         rebuilt += windowXml;
         scanFrom = winEnd;
         anchorRe.lastIndex = winEnd;
         touched = true;
+      }
+      if (touched) {
+        rebuilt += result.substring(scanFrom);
+        result = rebuilt;
+        console.log(
+          `[tag-parser] RE851A Subordination Provision safety pass applied (window=${WINDOW_SIZE}).`,
+        );
+      } else {
+        console.log(
+          `[tag-parser] RE851A Subordination Provision safety pass: anchor "There are subordination provisions" not found in this XML part.`,
+        );
       }
       if (touched) {
         rebuilt += result.substring(scanFrom);
