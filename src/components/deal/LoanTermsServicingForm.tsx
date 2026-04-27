@@ -26,6 +26,7 @@ import {
 } from '@/lib/numericInputFilter';
 
 const SERVICING_AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+const ASSESSED_OPTIONS = ['Yes', 'No', 'N/A'];
 
 const AGENT_FK = {
   servicing_agent: 'origination_svc.servicing_agent',
