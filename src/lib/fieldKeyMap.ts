@@ -673,6 +673,18 @@ export const BROKER_INFO_KEYS = {
   mailingState: 'broker.mailing.state',
   mailingZip: 'broker.mailing.zip',
   mailingSameAsPrimary: 'broker.mailing_same_as_primary',
+  ford1: 'broker.ford.1',
+  ford2: 'broker.ford.2',
+  ford3: 'broker.ford.3',
+  ford4: 'broker.ford.4',
+  ford5: 'broker.ford.5',
+  ford6: 'broker.ford.6',
+  ford7: 'broker.ford.7',
+  ford8: 'broker.ford.8',
+  ford1Text: 'broker.ford.1_text',
+  ford2Text: 'broker.ford.2_text',
+  ford3Text: 'broker.ford.3_text',
+  ford4Text: 'broker.ford.4_text',
 } as const;
 
 export const BROKER_BANKING_KEYS = {
