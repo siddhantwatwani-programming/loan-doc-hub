@@ -155,6 +155,7 @@ export const BORROWER_GUARANTOR_KEYS = {
   mailingState: 'borrower.guarantor.mailing.state',
   mailingZip: 'borrower.guarantor.mailing.zip',
   phoneHome: 'borrower.guarantor.phone.home',
+  phoneHome2: 'borrower.guarantor.phone.home2',
   phoneWork: 'borrower.guarantor.phone.work',
   phoneCell: 'borrower.guarantor.phone.mobile',
   phoneFax: 'borrower.guarantor.phone.fax',
