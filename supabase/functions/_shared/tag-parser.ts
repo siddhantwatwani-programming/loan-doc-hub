@@ -3098,7 +3098,6 @@ export function replaceMergeTags(
   // sections of the document are touched.
   {
     const splitParaRe = /<w:p\b([^>]*)>([\s\S]*?)<\/w:p>/g;
-    let __dbgSplits = 0;
     result = result.replace(splitParaRe, (full, pAttrs, inner) => {
       // Plain text of the paragraph — used to detect both labels are present.
       const plain = inner.replace(/<[^>]*>/g, "");
