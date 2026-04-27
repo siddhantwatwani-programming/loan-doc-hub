@@ -2165,12 +2165,35 @@ export function replaceMergeTags(
       // inside <w:sdtContent>. If <w14:checked> is missing entirely (some
       // templates omit it for the unchecked default), inject it inside the
       // <w14:checkbox> element so Word reflects the new state.
+      // Strip stray TEXT inside <w:rPr>...</w:rPr> while preserving any nested
+      // tags (rFonts, color, sz, etc.). The RE851A v5+ template was authored
+      // with a literal ☑ glyph typed inside <w:rPr> of <w:sdt>/<w:sdtContent>
+      // run-property containers. That text content is structurally invalid
+      // but Word renders it as visible characters next to the checkbox,
+      // producing phantom "☑☑" prefixes that no toggle can affect because
+      // they live OUTSIDE <w:t>. Removing only the bare text — never tags —
+      // is XML-safe and leaves all formatting intact.
+      const stripRPrText = (sdtBlock: string): string =>
+        sdtBlock.replace(
+          /(<w:rPr\b[^>]*>)([\s\S]*?)(<\/w:rPr>)/g,
+          (_m, open, inner, close) => {
+            // Remove text that is NOT inside a tag: split on tags, keep tags,
+            // drop bare text fragments.
+            const cleaned = inner.replace(/(<[^>]+>)|[^<]+/g, (seg: string) =>
+              seg.startsWith("<") ? seg : "",
+            );
+            return `${open}${cleaned}${close}`;
+          },
+        );
+
       const toggleSdtBlock = (sdtBlock: string, isChecked: boolean): string => {
         if (!/<w14:checkbox\b/.test(sdtBlock)) return sdtBlock;
         const checkedVal = isChecked ? "1" : "0";
         const displayChar = isChecked ? "\u2611" : "\u2610";
 
-        let updated = sdtBlock;
+        // First, sanitize stray glyph text leaked into <w:rPr> containers.
+        let updated = stripRPrText(sdtBlock);
+
         // Self-closing form: <w14:checked w14:val="0"/>
         const selfClosing = /(<w14:checked\s+w14:val=")([^"]*)("\s*\/>)/;
         // Open/close form: <w14:checked w14:val="0"></w14:checked>
