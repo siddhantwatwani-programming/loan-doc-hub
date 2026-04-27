@@ -42,6 +42,7 @@ export const BORROWER_PRIMARY_KEYS = {
   mailingState: 'borrower.mailing.state',
   mailingZip: 'borrower.mailing.zip',
   phoneHome: 'borrower.phone.home',
+  phoneHome2: 'borrower.phone.home2',
   phoneWork: 'borrower.phone.work',
   phoneCell: 'borrower.phone.mobile',
   phoneFax: 'borrower.phone.fax',
