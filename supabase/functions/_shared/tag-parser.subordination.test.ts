@@ -1,0 +1,83 @@
+/**
+ * Regression tests for RE851A "Subordination Provision" Yes/No checkbox
+ * safety pass in tag-parser.ts.
+ *
+ * Reproduces the structure observed in the live RE851A v5 generated DOCX:
+ *   - "There are subordination provisions" anchor in one paragraph
+ *   - several intervening paragraphs (~5KB of XML) including a column break
+ *   - two separate <w:sdt> checkbox blocks, each followed by a literal
+ *     " Yes" / " No" text run
+ *
+ * Verifies that for both true and false values the correct checkbox is
+ * toggled (w14:checked + display glyph) without altering surrounding text.
+ */
+
+import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { replaceMergeTags } from "./tag-parser.ts";
+import type { FieldValueData, LabelMapping } from "./types.ts";
+
+const SDT_BLOCK = (state: "0" | "1", glyph: "☐" | "☑") => `<w:sdt><w:sdtPr><w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/></w:rPr><w14:checkbox><w14:checked w14:val="${state}"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/></w:rPr><w:t>${glyph}</w:t></w:r></w:sdtContent></w:sdt>`;
+
+// Pad with ~5KB of innocuous run XML to mirror the live template's gap
+// between the anchor text and the Yes/No checkboxes.
+const PAD = `<w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">${"x".repeat(80)}</w:t></w:r>`;
+const FILLER = Array.from({ length: 60 }, () => PAD).join("");
+
+function buildFixture(): string {
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
+<w:body>
+<w:p><w:r><w:t xml:space="preserve">There are subordination provisions.</w:t></w:r></w:p>
+<w:p>${FILLER}</w:p>
+<w:p><w:r><w:t xml:space="preserve">If YES, explain here.</w:t></w:r>${SDT_BLOCK("0", "☐")}<w:r><w:t xml:space="preserve"> Yes</w:t></w:r></w:p>
+<w:p><w:r><w:tab/></w:r>${SDT_BLOCK("0", "☐")}<w:r><w:t xml:space="preserve"> No</w:t></w:r></w:p>
+<w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
+</w:body></w:document>`;
+}
+
+function run(value: "true" | "false"): string {
+  const fieldValues = new Map<string, FieldValueData>([
+    ["ln_p_subordinationProvision", { rawValue: value, dataType: "boolean" }],
+    ["loan_terms.subordination_provision", { rawValue: value, dataType: "boolean" }],
+  ]);
+  const fieldTransforms = new Map<string, string>();
+  const mergeTagMap: Record<string, string> = {};
+  const labelMap: Record<string, LabelMapping> = {};
+  const validFieldKeys = new Set<string>([
+    "ln_p_subordinationProvision",
+    "loan_terms.subordination_provision",
+  ]);
+  return replaceMergeTags(buildFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+}
+
+function checkboxStatesAroundLabels(xml: string): { yes: string | null; no: string | null } {
+  const findStateBefore = (label: string): string | null => {
+    const labelIdx = xml.indexOf(` ${label}`);
+    if (labelIdx < 0) return null;
+    const region = xml.substring(Math.max(0, labelIdx - 1500), labelIdx);
+    const matches = [...region.matchAll(/<w14:checked w14:val="(\d)"/g)];
+    return matches.length ? matches[matches.length - 1][1] : null;
+  };
+  return { yes: findStateBefore("Yes"), no: findStateBefore("No") };
+}
+
+Deno.test("RE851A subordination provision — checked: Yes=☑, No=☐", () => {
+  const out = run("true");
+  const states = checkboxStatesAroundLabels(out);
+  assertEquals(states.yes, "1", "Yes checkbox should be checked");
+  assertEquals(states.no, "0", "No checkbox should be unchecked");
+  // Display glyphs should reflect the state too
+  const yesIdx = out.indexOf(" Yes");
+  const yesRegion = out.substring(Math.max(0, yesIdx - 800), yesIdx);
+  assertStringIncludes(yesRegion, "☑");
+  const noIdx = out.indexOf(" No");
+  const noRegion = out.substring(Math.max(0, noIdx - 800), noIdx);
+  assertStringIncludes(noRegion, "☐");
+});
+
+Deno.test("RE851A subordination provision — unchecked: Yes=☐, No=☑", () => {
+  const out = run("false");
+  const states = checkboxStatesAroundLabels(out);
+  assertEquals(states.yes, "0", "Yes checkbox should be unchecked");
+  assertEquals(states.no, "1", "No checkbox should be checked");
+});
