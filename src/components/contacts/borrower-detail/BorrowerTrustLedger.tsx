@@ -45,7 +45,7 @@ interface LedgerEntry {
   clr: string;
   deposit: string;
   balance: string;
-  category: 'all' | 'reserve' | 'impound';
+  category: 'all' | 'reserve' | 'impound' | 'suspense';
 }
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
@@ -72,7 +72,7 @@ const DATE_FILTER_OPTIONS = [
 const EXPORT_COLUMNS: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 const SEARCHABLE_FIELDS = ['reference', 'fromWhomReceivedPaid', 'memo', 'date'];
 const FILTER_OPTIONS = [
-  { id: 'category', label: 'Category', options: [{ value: 'reserve', label: 'Reserve' }, { value: 'impound', label: 'Impound' }] },
+  { id: 'category', label: 'Category', options: [{ value: 'reserve', label: 'Reserve' }, { value: 'impound', label: 'Impound' }, { value: 'suspense', label: 'Suspense' }] },
 ];
 
 const formatCurrency = (val: string) => {
@@ -254,6 +254,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             <TabsTrigger value="all" className="text-xs px-3 py-1">All Transactions</TabsTrigger>
             <TabsTrigger value="reserve" className="text-xs px-3 py-1">Reserve</TabsTrigger>
             <TabsTrigger value="impound" className="text-xs px-3 py-1">Impound</TabsTrigger>
+            <TabsTrigger value="suspense" className="text-xs px-3 py-1">Suspense</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2">
