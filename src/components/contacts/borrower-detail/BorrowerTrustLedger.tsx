@@ -72,7 +72,7 @@ const DATE_FILTER_OPTIONS = [
 const EXPORT_COLUMNS: ExportColumn[] = DEFAULT_COLUMNS.map(c => ({ id: c.id, label: c.label }));
 const SEARCHABLE_FIELDS = ['reference', 'fromWhomReceivedPaid', 'memo', 'date'];
 const FILTER_OPTIONS = [
-  { id: 'category', label: 'Category', options: [{ value: 'reserve', label: 'Reserve' }, { value: 'impound', label: 'Impound' }] },
+  { id: 'category', label: 'Category', options: [{ value: 'reserve', label: 'Reserve' }, { value: 'impound', label: 'Impound' }, { value: 'suspense', label: 'Suspense' }] },
 ];
 
 const formatCurrency = (val: string) => {
