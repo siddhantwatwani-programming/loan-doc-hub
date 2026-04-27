@@ -43,10 +43,9 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
-
-const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 import { STATE_OPTIONS } from '@/lib/usStates';
 
@@ -157,11 +156,8 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
           </InlineField>
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
-            <div className="flex items-start gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">Full Name</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
               <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -197,30 +193,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="h-0.5" />
-
-          <InlineField label="Credit Score" fieldKey={FIELD_KEYS.creditScore}>
-            <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          {/* Tax Identification */}
-          <InlineField label="Tax ID Type" fieldKey={FIELD_KEYS.taxIdType}>
-            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN" fieldKey={FIELD_KEYS.tin}>
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="guarantor-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
-              <Label htmlFor="guarantor-tinVerified" className="text-sm font-normal">TIN Verified</Label>
-            </div>
-          </DirtyFieldWrapper>
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
@@ -348,11 +320,13 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
         {/* Column 4 - Preferred (narrow) */}
         <div className="space-y-2">
           <h4 className="font-semibold text-sm text-foreground pb-1">Preferred</h4>
-          {phoneRows.map(({ prefKey, prefId }) => (
+          {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
             <div key={prefId} className="flex items-center justify-center h-7">
               <Checkbox id={`guarantor-${prefId}`} checked={getBoolValue(prefKey)} onCheckedChange={(checked) => handleChange(prefKey, !!checked)} disabled={disabled} />
             </div>
           ))}
+          {/* Fax has no preferred slot — render spacer to keep alignment */}
+          <div className="h-7" />
         </div>
       </div>
     </div>

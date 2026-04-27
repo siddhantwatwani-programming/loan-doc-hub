@@ -201,10 +201,9 @@ const BORROWER_TYPE_OPTIONS = [
 ];
 
 const CAPACITY_OPTIONS = [
-  'Borrower', 'Co-borrower', 'Trustee', 'Co-Trustee', 'Managing Member', 'Authorized Signer', 'Additional Guarantor',
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
-
-const TAX_ID_TYPE_OPTIONS = ['0 – Unknown', '1 – EIN', '2 – SSN'];
 
 import { STATE_OPTIONS } from '@/lib/usStates';
 
@@ -296,10 +295,7 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={fk('full_name')}>
             <div className="flex items-center gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">Full Name</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
-              </div>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
               <div className="flex-1">
                 <Input value={getValue('full_name')} onChange={(e) => handleChange('full_name', e.target.value)} disabled={disabled} className="h-7 text-sm" />
               </div>
@@ -339,30 +335,6 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="h-0.5" />
-
-          <InlineField label="Credit Score" fieldKey={fk('credit_score')}>
-            <Input value={getValue('credit_score')} onChange={(e) => handleChange('credit_score', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          {/* Tax Identification */}
-          <InlineField label="Tax ID Type" fieldKey={fk('tax_id_type')}>
-            <Select value={getValue('tax_id_type')} onValueChange={(value) => handleChange('tax_id_type', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN" fieldKey={fk('tin')}>
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <DirtyFieldWrapper fieldKey={fk('tin_verified')}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="coborrower-tinVerified" checked={getBoolValue('tin_verified')} onCheckedChange={(checked) => handleChange('tin_verified', String(!!checked))} disabled={disabled} />
-              <Label htmlFor="coborrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
-            </div>
-          </DirtyFieldWrapper>
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}

@@ -1,51 +1,54 @@
-## Goal
+# Plan: Participant Capacity Removal + Borrower Form Updates
 
-Add three new Boolean fields to the Field Dictionary under **Other Origination → Servicing**, alongside the existing `oo_svc_servicingAgent` dropdown, so they can be configured, persisted, and surfaced through the standard Field Dictionary pipeline.
+## 1. Remove Capacity dropdown from Add Participant (all types)
 
-## New Fields
+**File:** `src/components/deal/AddParticipantModal.tsx`
 
-All inserted into `public.field_dictionary` with:
-- `section = 'origination_fees'` (the enum value used for "Other Origination")
-- `form_type = 'servicing'` (the "Servicing" sub-section)
-- `data_type = 'boolean'`
-- `allowed_roles = ARRAY['admin','csr']`
-- `read_only_roles = ARRAY[]::text[]`
-- `is_calculated = false`, `is_repeatable = false`, `is_mandatory = false`
+- Delete the entire "Capacity Dropdown" JSX block (lines ~414–429) so it no longer renders for any participant type.
+- Remove the `CAPACITY_OPTIONS` constant (lines ~71–88) — no longer referenced.
+- Keep the existing `capacity` state and the `resolvedCapacity = capacity || EXTENDED_TYPE_LABELS[type] || type` fallback so persistence still writes a sensible value (capacity will simply default to the extended type label / participant type). No save/update API changes.
+- Keep the `setCapacity('')` resets so behavior is unchanged.
 
-| field_key | label |
+No DB / API / schema changes.
+
+## 2. Update deal Borrower form per screenshot annotations
+
+**Files (apply identical edits to all three so the screenshot's "Co-borrower and Additional Guarantor screens should be identical to Borrower screen" rule holds):**
+
+- `src/components/deal/BorrowerPrimaryForm.tsx`
+- `src/components/deal/CoBorrowerPrimaryForm.tsx`
+- `src/components/deal/BorrowerAdditionalGuarantorForm.tsx`
+
+### Field changes
+
+| Change | Action |
 |---|---|
-| `oo_svc_servicingAgentLender` | Servicing Agent – Lender |
-| `oo_svc_servicingAgentBroker` | Servicing Agent – Broker |
-| `oo_svc_servicingAgentOther`  | Servicing Agent – Other or Company |
+| Rename "Full Name" → "Entity Name - If Applicable" | Update the `<Label>` text only; field key (`fullName`) unchanged |
+| Add "Capacity" dropdown | New `InlineField` bound to existing `FIELD_KEYS.capacity` using a `Select` with the options below |
+| Add SMS to Delivery | Already present in BorrowerPrimaryForm; verify and add to Co-borrower & Additional Guarantor if missing |
+| Remove "Credit Score" | Delete the `InlineField` for `creditScore` |
+| Remove "Hold" checkbox | Delete the Hold checkbox block |
+| Remove "ACH" checkbox | Delete the ACH checkbox block |
+| Remove "Tax ID Type" dropdown | Delete the Tax ID Type `InlineField` and its `TAX_ID_TYPE_OPTIONS` constant |
+| Remove "TIN" input | Delete the TIN `InlineField` |
+| Remove "TIN Verified" checkbox | Delete the TIN Verified block (TIN/EIN now lives on the 1098 tab — already implemented) |
+| Fax: remove "Preferred" radio | In the `phoneRows` array, drop the Fax row's preferred-radio rendering (keep the Fax phone input). Simplest: filter Fax out of the Preferred RadioGroup column while still rendering it in the Phone column |
 
-Naming follows the existing `{section_abbr}_{form_abbr}_{fieldIdentifier}` convention (matches the existing `oo_svc_servicingAgent` dropdown).
+### Capacity dropdown options (per screenshot)
 
-## How It Persists
-
-No schema or API changes. Values flow through the existing Field Dictionary → `deal_section_values` / `deal_field_values` save pipeline (the same path every other `oo_svc_*` field uses). The Admin → Field Dictionary screen will auto-refresh and show the new fields under Other Origination → Servicing because of the existing window-focus refetch behavior.
-
-## Constraints Honored
-
-- No changes to UI layout, components, save/update APIs, document generation logic, or other field mappings.
-- No new tables, no schema changes — only three INSERTs into `field_dictionary`.
-- Existing `oo_svc_servicingAgent` dropdown is left untouched.
-- Existing data is unaffected (new keys, new rows only).
-
-## Implementation Step
-
-Single data insert via the Supabase insert tool:
-
-```sql
-INSERT INTO public.field_dictionary
-  (field_key, label, section, form_type, data_type, allowed_roles, read_only_roles, is_calculated, is_repeatable, is_mandatory)
-VALUES
-  ('oo_svc_servicingAgentLender', 'Servicing Agent – Lender',           'origination_fees', 'servicing', 'boolean', ARRAY['admin','csr'], ARRAY[]::text[], false, false, false),
-  ('oo_svc_servicingAgentBroker', 'Servicing Agent – Broker',           'origination_fees', 'servicing', 'boolean', ARRAY['admin','csr'], ARRAY[]::text[], false, false, false),
-  ('oo_svc_servicingAgentOther',  'Servicing Agent – Other or Company', 'origination_fees', 'servicing', 'boolean', ARRAY['admin','csr'], ARRAY[]::text[], false, false, false);
+```
+Trustee, Successor Trustee, Authorized Signer, President, CEO,
+Power of Attorney, Member, Manager, Partner, Attorney
 ```
 
-## Verification
+Place the new "Capacity" `InlineField` directly under "Borrower Type" (Column 1), matching the screenshot's red arrow.
 
-- Confirm the three rows exist in `field_dictionary` with `data_type = 'boolean'`.
-- Open Admin → Field Dictionary → filter by section "Other Origination" / form "Servicing" — the three new boolean fields appear next to the existing `Servicing Agent` dropdown.
-- No code files modified; no other fields touched.
+### Persistence
+
+All affected fields (`capacity`, `fullName`, `deliverySms`, etc.) already exist in `BORROWER_PRIMARY_KEYS` / `BORROWER_GUARANTOR_KEYS` and the co-borrower equivalent in `src/lib/fieldKeyMap.ts`, and are already routed through the existing `onValueChange` save pipeline. Removing UI for `creditScore`, `hold`, `ach`, `taxIdType`, `tin`, `tinVerified` simply hides them — no schema change, no key-map change, existing values stay in `deal_section_values` untouched.
+
+## Out of scope (per minimal-change policy)
+
+- No changes to APIs, edge functions, document generation, or DB schema.
+- No changes to other participant types' forms (Lender, Authorized Party, etc.) beyond the Add-Participant Capacity removal.
+- No changes to the contact-level (`ContactBorrowerDetailForm`) screen.

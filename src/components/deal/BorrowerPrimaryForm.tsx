@@ -52,11 +52,9 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
-
-const TAX_ID_TYPE_OPTIONS = [
-  '0 – Unknown',
-  '1 – EIN',
-  '2 – SSN',
+const CAPACITY_OPTIONS = [
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
 
 import { STATE_OPTIONS } from '@/lib/usStates';
@@ -168,11 +166,8 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           </InlineField>
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.fullName}>
-            <div className="flex items-start gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">Full Name</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Entity</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Entity Name - If Applicable</Label>
               <Input value={getValue('fullName')} onChange={(e) => handleChange('fullName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -195,6 +190,14 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <Input value={getValue('lastName')} onChange={(e) => handleChange('lastName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
+          <InlineField label="Capacity" fieldKey={FIELD_KEYS.capacity}>
+            <Select value={getValue('capacity')} onValueChange={(value) => handleChange('capacity', value)} disabled={disabled}>
+              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+              <SelectContent>
+                {CAPACITY_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+              </SelectContent>
+            </Select>
+          </InlineField>
 
           <InlineField label="Email" fieldKey={FIELD_KEYS.email}>
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
@@ -202,49 +205,10 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <div className="h-0.5" />
 
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.hold}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="borrower-hold" checked={getBoolValue('hold')} onCheckedChange={(checked) => handleChange('hold', !!checked)} disabled={disabled} />
-              <Label htmlFor="borrower-hold" className="text-sm font-normal">Hold</Label>
-            </div>
-          </DirtyFieldWrapper>
-
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.ach}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="borrower-ach" checked={getBoolValue('ach')} onCheckedChange={(checked) => handleChange('ach', !!checked)} disabled={disabled} />
-              <Label htmlFor="borrower-ach" className="text-sm font-normal">ACH</Label>
-            </div>
-          </DirtyFieldWrapper>
-
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
             <div className="flex items-center gap-2">
               <Checkbox id="borrower-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} />
               <Label htmlFor="borrower-agreementOnFile" className="text-sm font-normal">Agreement on File</Label>
-            </div>
-          </DirtyFieldWrapper>
-
-          <div className="h-0.5" />
-
-          <InlineField label="Credit Score" fieldKey={FIELD_KEYS.creditScore}>
-            <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          {/* Tax Identification */}
-          <InlineField label="Tax ID Type" fieldKey={FIELD_KEYS.taxIdType}>
-            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN" fieldKey={FIELD_KEYS.tin}>
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="borrower-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
-              <Label htmlFor="borrower-tinVerified" className="text-sm font-normal">TIN Verified</Label>
             </div>
           </DirtyFieldWrapper>
         </div>
@@ -404,13 +368,15 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             className="space-y-0"
             disabled={disabled}
           >
-            {phoneRows.map(({ prefKey, prefId }) => (
+            {phoneRows.filter(({ key }) => key !== 'phoneFax').map(({ prefKey, prefId }) => (
               <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
                 <div className="flex items-center justify-center h-7">
                   <RadioGroupItem id={`borrower-${prefId}`} value={prefKey} disabled={disabled} />
                 </div>
               </DirtyFieldWrapper>
             ))}
+            {/* Fax has no preferred slot — render spacer to keep alignment */}
+            <div className="h-7" />
           </RadioGroup>
         </div>
       </div>
