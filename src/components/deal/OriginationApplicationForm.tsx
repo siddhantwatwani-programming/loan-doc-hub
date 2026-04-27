@@ -344,6 +344,25 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
               </Select>
             </div>
           </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.source_of_information}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[140px] text-sm shrink-0">Source of Information</Label>
+              <Select
+                value={getValue(FIELD_KEYS.source_of_information) || undefined}
+                onValueChange={(val) => setValue(FIELD_KEYS.source_of_information, val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  <SelectItem value="Borrower">Borrower</SelectItem>
+                  <SelectItem value="Broker">Broker</SelectItem>
+                  <SelectItem value="Credit Report">Credit Report</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.is_borrower_also_broker}>
             <div className="flex items-center gap-2">
               <Label className="w-[140px] text-sm shrink-0">Is Borrower also the Broker</Label>
