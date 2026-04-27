@@ -1,88 +1,100 @@
-## Root cause found
+## Findings from the deep analysis
 
-The CSR field is saved correctly as a boolean field in the backend:
-
-- Field dictionary key: `ln_p_subordinationProvision`
-- Data type: `boolean`
-- Saved value examples: `value_text = "true"`
-
-The previous alias-only fix is present, but the live RE851A output still shows the Yes/No checkboxes not reflecting the saved value. The screenshot shows this row is authored as a normal document row with static checkbox glyphs near the label text:
+The CSR value is present and saved correctly:
 
 ```text
-There are subordination provisions.  ☐ Yes
-                                      ☐ No
+Field key: ln_p_subordinationProvision
+Data type: boolean
+Current deal value: value_text = "true"
 ```
 
-This means the failure is not only a key lookup issue. The live template can leave stale/static glyphs in place after the conditional pass, or the conditional may be fragmented in Word XML in a way that is not reliably handled by the generic checkbox logic.
-
-## Minimal scoped fix
-
-Make a RE851A-only safety pass for this exact row, similar in concept to the existing broker-capacity A/B safety pass, but strictly scoped to the literal Subordination Provision row labels.
-
-### 1. Keep the existing template condition
-
-No DOCX template edit is required. The corrected/confirmed Handlebars logic remains:
+The correct RE851A Handlebars condition should be:
 
 ```handlebars
 {{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
 {{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
 ```
 
-### 2. Normalize the source value in document generation
+I also found the likely remaining causes of the bad output:
 
-In `supabase/functions/generate-document/index.ts`, add a small derived-key block near the existing RE851A checkbox derivations. It will read the value from all known equivalent keys and republish the normalized boolean under both names:
+1. The RE851A template mapping table does not currently include `ln_p_subordinationProvision`, so I will add that missing mapping entry for RE851A only.
+2. The visible row appears to use Word checkbox controls/static checkbox glyphs. The current safety pass only handles some glyph shapes and does not reliably toggle native Word checkbox state (`w14:checked`) when the checkbox is an SDT/control. That can leave both boxes visually unchecked even when the data is true.
 
-```ts
-const subordinationRaw = (
-  fieldValues.get("ln_p_subordinationProvision")?.rawValue ??
-  fieldValues.get("loan_terms.subordination_provision")?.rawValue ??
-  ""
-).toString().trim().toLowerCase();
+## Plan
 
-const subordinationTrue = ["true", "yes", "y", "1", "checked", "on"].includes(subordinationRaw);
+### 1. Add the missing RE851A mapping entry only
 
-fieldValues.set("ln_p_subordinationProvision", {
-  rawValue: subordinationTrue ? "true" : "false",
-  dataType: "boolean",
-});
-fieldValues.set("loan_terms.subordination_provision", {
-  rawValue: subordinationTrue ? "true" : "false",
-  dataType: "boolean",
-});
-```
-
-This ensures the RE851A payload always contains the template key even if data arrives through the CSR persistence key.
-
-### 3. Add a row-scoped final safety pass only for this RE851A line
-
-In `supabase/functions/_shared/tag-parser.ts`, after conditional/label replacement and before converting glyphs to native Word checkboxes, add a narrowly-scoped pass that:
-
-- Reads `ln_p_subordinationProvision` / `loan_terms.subordination_provision`.
-- Forces the glyph immediately associated with `Yes` to `☑` when true and `☐` when false.
-- Forces the glyph immediately associated with `No` to `☐` when true and `☑` when false.
-- Only runs inside a local XML window containing the literal text `There are subordination provisions`.
-- Does not affect any other Yes/No checkbox pairs in RE851A.
-
-Expected final behavior:
+Add a single missing mapping record linking the RE851A template to the existing field dictionary row:
 
 ```text
-CSR checked     ->  ☑ Yes   ☐ No
-CSR unchecked   ->  ☐ Yes   ☑ No
+Template: re851a
+Field: ln_p_subordinationProvision
+Data type: boolean
+Label: SUBORDINATION PROVISION
 ```
 
-## What will not be changed
+This is a configuration/data fix only. No database schema, permissions, UI, API, or template file replacement will be changed.
 
-- No UI changes.
-- No database schema or permissions changes.
-- No document template upload/replacement.
-- No broad document generation refactor.
-- No changes to unrelated RE851A checkbox logic.
-- No changes to other templates.
+### 2. Keep the corrected template condition on the correct key
 
-## Verification
+Confirm the RE851A condition uses the singular key:
 
-After implementation, verify the generated XML logic against both states:
+```handlebars
+{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
+{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
+```
 
-1. With Subordination Provision saved as `true`, the RE851A row renders `☑ Yes` and `☐ No`.
-2. With Subordination Provision saved as `false`/missing, the RE851A row renders `☐ Yes` and `☑ No`.
-3. Confirm existing broker-capacity and balloon-payment checkbox handling remains untouched.
+The generation layer will continue accepting the equivalent persisted path `loan_terms.subordination_provision`, but the document condition should reference `ln_p_subordinationProvision`.
+
+### 3. Make the existing RE851A row safety pass handle Word checkbox controls
+
+Update only the Subordination Provision safety pass in `supabase/functions/_shared/tag-parser.ts` so it is strictly scoped to the row containing:
+
+```text
+There are subordination provisions.
+```
+
+Within that row only, force:
+
+```text
+CSR checked   -> ☑ Yes   ☐ No
+CSR unchecked -> ☐ Yes   ☑ No
+```
+
+The pass will support both cases:
+
+- Plain/static glyphs: `☐`, `☑`, `☒`
+- Native Word checkbox controls: update both the visible glyph and the internal checked state
+
+No other Yes/No checkbox logic in RE851A will be touched.
+
+### 4. Keep the existing value normalization, with a narrow alias fallback
+
+Preserve the current normalization in `generate-document/index.ts` that republishes the boolean under both:
+
+```text
+ln_p_subordinationProvision
+loan_terms.subordination_provision
+```
+
+If needed, add only narrow aliases for this one field so typo/path variants cannot break this row, without affecting unrelated checkboxes.
+
+### 5. Verify both states without changing unrelated behavior
+
+After implementation, verify with a small controlled document-processing fixture for both boolean values:
+
+```text
+true  -> ☑ Yes / ☐ No
+false -> ☐ Yes / ☑ No
+```
+
+Also confirm the current deal’s saved value (`true`) is included in the generation payload and that the generated RE851A XML contains the correct checkbox state for the Subordination Provision row.
+
+## What will not change
+
+- No UI changes
+- No layout or component changes
+- No API refactor
+- No database schema or permission changes
+- No document template upload/replacement unless the stored template is proven to contain the wrong key
+- No changes to unrelated RE851A checkbox logic
