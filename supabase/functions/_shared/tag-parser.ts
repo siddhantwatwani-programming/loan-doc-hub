@@ -2151,6 +2151,9 @@ export function replaceMergeTags(
       const noGlyph = isSubordination ? "☐" : "☑";
       const yesChecked = isSubordination;
       const noChecked = !isSubordination;
+      console.log(
+        `[tag-parser] RE851A Subordination Provision safety pass: rawValue=${JSON.stringify(subData?.rawValue)} -> isChecked=${isSubordination} (Yes=${yesGlyph}, No=${noGlyph})`,
+      );
 
       // Locate the anchor "There are subordination provisions", tolerant of
       // intervening XML/whitespace between the words.
