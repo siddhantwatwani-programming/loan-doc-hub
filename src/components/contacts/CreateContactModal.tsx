@@ -105,7 +105,7 @@ const getInitialForm = (contactType: string): Record<string, string> => {
     'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
     mailing_same_as_primary: 'false',
     'phone.home': '', 'phone.home2': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
-    'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
+    'preferred.home': 'false', 'preferred.home2': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
     delivery_print: 'false', delivery_email: 'false', delivery_sms: 'false',
     agreement_on_file: 'false',
   };
@@ -165,7 +165,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
   const handleSubmit = () => {
     // Check at least one meaningful field is filled
-    const skipKeys = ['mailing_same_as_primary', 'preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax',
+    const skipKeys = ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax',
       'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms',
       'agreement_on_file', 'send_pref.payment_notification',
       'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice'];
@@ -374,7 +374,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   };
 
   const handleBorrowerPref = (prefKey: string, checked: boolean) => {
-    const allPrefs = ['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'];
+    const allPrefs = ['preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax'];
     setForm(prev => {
       const u = { ...prev };
       allPrefs.forEach(k => { u[k] = (k === prefKey && checked) ? 'true' : 'false'; });
@@ -931,13 +931,13 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <span className="font-semibold text-xs text-foreground">Pref</span>
               </div>
               <RadioGroup
-                value={['preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax'].find((key) => form[key] === 'true') || ''}
+                value={['preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax'].find((key) => form[key] === 'true') || ''}
                 onValueChange={(value) => handleBorrowerPref(value, true)}
                 className="space-y-1.5"
               >
                 {[
                   { label: 'Home', phoneKey: 'phone.home', prefKey: 'preferred.home', hasPref: true },
-                  { label: 'Home', phoneKey: 'phone.home2', prefKey: '', hasPref: false },
+                  { label: 'Home', phoneKey: 'phone.home2', prefKey: 'preferred.home2', hasPref: true },
                   { label: 'Work', phoneKey: 'phone.work', prefKey: 'preferred.work', hasPref: true },
                   { label: 'Cell', phoneKey: 'phone.cell', prefKey: 'preferred.cell', hasPref: true },
                   { label: 'Fax', phoneKey: 'phone.fax', prefKey: 'preferred.fax', hasPref: true },
@@ -963,7 +963,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
         <DialogFooter className={contactType === 'lender' ? "shrink-0" : undefined}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice']) || !hasValidContactEmails(form)}>Create</Button>
+          <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice']) || !hasValidContactEmails(form)}>Create</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
