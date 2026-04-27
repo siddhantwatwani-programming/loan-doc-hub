@@ -192,11 +192,19 @@ export const BorrowerAuthorizedPartyForm: React.FC<BorrowerAuthorizedPartyFormPr
             ) : (
               <DirtyFieldWrapper key={prefId} fieldKey={FIELD_KEYS[prefKey]}>
                 <div className="flex items-center justify-center h-7">
-                  <Checkbox
+                  <input
+                    type="radio"
                     id={prefId}
+                    name="ap-preferred-phone"
                     checked={getBoolValue(prefKey)}
-                    onCheckedChange={(checked) => handleChange(prefKey, !!checked)}
+                    onChange={() => {
+                      phoneRows.forEach(({ prefKey: pk, hasPreferred: hp }) => {
+                        if (hp === false) return;
+                        handleChange(pk, pk === prefKey);
+                      });
+                    }}
                     disabled={disabled}
+                    className="h-4 w-4 cursor-pointer accent-primary"
                   />
                 </div>
               </DirtyFieldWrapper>
