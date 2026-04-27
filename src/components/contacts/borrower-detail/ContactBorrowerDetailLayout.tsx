@@ -114,6 +114,15 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
               disabled={isReadOnly}
           />
         );
+      case 'co-borrower':
+        return (
+          <BorrowerCoBorrowerForm
+            fields={emptyFields}
+            values={values}
+            onValueChange={handleValueChange}
+            disabled={isReadOnly}
+          />
+        );
       case 'dashboard':
         return <BorrowerDashboard contact={contact} />;
       case 'portfolio':
