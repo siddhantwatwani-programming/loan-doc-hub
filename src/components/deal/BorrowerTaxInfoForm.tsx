@@ -68,22 +68,13 @@ export const BorrowerTaxInfoForm: React.FC<BorrowerTaxInfoFormProps> = ({
             <Label className="text-sm text-foreground whitespace-nowrap min-w-[140px]">
               Designated Recipient
             </Label>
-            <Select
-              value={getValue('designatedRecipient') || undefined}
-              onValueChange={(value) => handleChange('designatedRecipient', value)}
+            <Checkbox
+              checked={getValue('designatedRecipient') === 'true'}
+              onCheckedChange={(checked) =>
+                handleChange('designatedRecipient', checked === true ? 'true' : 'false')
+              }
               disabled={disabled}
-            >
-              <SelectTrigger className="h-7 text-sm flex-1 max-w-[260px] bg-background">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                {DESIGNATED_RECIPIENT_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            />
           </div>
         </DirtyFieldWrapper>
 
