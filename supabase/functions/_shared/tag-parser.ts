@@ -2197,6 +2197,15 @@ export function replaceMergeTags(
         return updated;
       };
 
+      // Single-SDT matcher: matches one <w:sdt>...</w:sdt> block WITHOUT
+      // crossing into another <w:sdt> opener. The previous broad matcher
+      // (`<w:sdt ...</w:sdt>`) was lazy but could still span across the
+      // sibling Yes-checkbox SDT when locating the No label, causing both
+      // checkboxes to be replaced by a single toggled block — leaving the
+      // No checkbox stale. Negative lookahead `(?:(?!<w:sdt\b)[\s\S])*?`
+      // guarantees the captured block is exactly one SDT.
+      const SINGLE_SDT = `<w:sdt\\b(?:(?!<w:sdt\\b)[\\s\\S])*?<\\/w:sdt>`;
+
       // Force any <w:sdt> checkbox immediately preceding the literal word
       // (Yes/No) — across XML/whitespace only — to the desired state.
       const forceSdtBeforeWord = (
@@ -2206,7 +2215,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtBeforeWord = new RegExp(
-          `(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)((?:\\s|<[^>]+>)*?${wordRe})`,
+          `(${SINGLE_SDT})((?:\\s|<[^>]+>)*?${wordRe})`,
           "g",
         );
         return windowXml.replace(sdtBeforeWord, (_m, sdtBlock, tail) => {
@@ -2226,7 +2235,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtAfterWord = new RegExp(
-          `(${wordRe})((?:\\s|<[^>]+>)*?)(<w:sdt\\b[\\s\\S]*?<\\/w:sdt>)`,
+          `(${wordRe})((?:\\s|<[^>]+>)*?)(${SINGLE_SDT})`,
           "g",
         );
         return windowXml.replace(sdtAfterWord, (_m, head, mid, sdtBlock) => {
