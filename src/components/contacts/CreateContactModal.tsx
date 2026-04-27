@@ -54,6 +54,11 @@ const BORROWER_TYPE_OPTIONS = [
   'IRA / ERISA', 'Investment Fund', '401K', 'Foreign Holder W-8', 'Non-profit',
 ];
 
+const BORROWER_CAPACITY_OPTIONS = [
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
+];
+
 
 const getInitialForm = (contactType: string): Record<string, string> => {
   if (contactType === 'lender') {
