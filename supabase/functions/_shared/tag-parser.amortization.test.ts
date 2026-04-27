@@ -38,11 +38,14 @@ function buildExclusiveBools(activeKey: string): Map<string, FieldValueData> {
 // "(CHECK ONE)" cell after merge-tag resolution. AMORTIZED PARTIALLY is
 // listed BEFORE AMORTIZED so a naive bare-"AMORTIZED" replacer would
 // incorrectly target the partial line.
+// Each line includes a {{merge tag}} that resolves to "" so replaceMergeTags()
+// engages its post-pass pipeline (otherwise it short-circuits when no merge
+// markers, SDT checkboxes, or label needles are present).
 function buildStaticGlyphFixture(): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
 <w:body>
-<w:p><w:r><w:t xml:space="preserve">(CHECK ONE)</w:t></w:r></w:p>
+<w:p><w:r><w:t xml:space="preserve">(CHECK ONE) {{ln_p_amortiza}}</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">☐ AMORTIZED PARTIALLY</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">☐ AMORTIZED</w:t></w:r></w:p>
 <w:p><w:r><w:t xml:space="preserve">☐ INTEREST ONLY</w:t></w:r></w:p>
