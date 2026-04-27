@@ -92,16 +92,17 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   // borrower
   return {
+    borrower_id: '',
     borrower_type: '', full_name: '', first_name: '', middle_initial: '', last_name: '',
-    email: '', dob: '',
+    capacity: '',
+    email: '',
     'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
     'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
     mailing_same_as_primary: 'false',
-    'phone.home': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
+    'phone.home': '', 'phone.home2': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
     'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
-    tax_id_type: '', tax_id: '', tin_verified: 'false',
-    hold: 'false', ach: 'false', agreement_on_file: 'false',
-    issue_1099: 'false',
+    delivery_print: 'false', delivery_email: 'false', delivery_sms: 'false',
+    agreement_on_file: 'false',
   };
 };
 
