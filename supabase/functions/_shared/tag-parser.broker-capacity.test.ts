@@ -19,12 +19,15 @@ import { replaceMergeTags } from "./tag-parser.ts";
 import type { FieldValueData, LabelMapping } from "./types.ts";
 
 function buildBrokerCapacityFixture(): string {
+  // Mirrors the actual run-split observed in re851a_v64.docx:
+  //   A row: <w:t>☐ .</w:t> + <w:t>A. Agent in arranging a loan...</w:t>
+  //   B row: <w:sdt>...<w:t>☐</w:t></w:sdt> + <w:t>B. </w:t> + <w:t>*</w:t> + <w:t>Principal as a borrower...</w:t>
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml">
 <w:body>
 <w:p><w:r><w:t xml:space="preserve">PART 2  BROKER CAPACITY IN TRANSACTION</w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/></w:rPr><w:t xml:space="preserve">☐ </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/></w:rPr><w:t xml:space="preserve">.A. Agent in arranging a loan on behalf of another</w:t></w:r></w:p>
-<w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/></w:rPr><w:t xml:space="preserve">☐</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman"/></w:rPr><w:t xml:space="preserve">B. *Principal as a borrower on funds from which broker will directly or indirectly benefit</w:t></w:r></w:p>
+<w:p><w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">☐ .</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">A. Agent in arranging a loan on behalf of another</w:t></w:r></w:p>
+<w:p><w:sdt><w:sdtPr><w14:checkbox><w14:checked w14:val="0"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r><w:t>☐</w:t></w:r></w:sdtContent></w:sdt><w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">B. </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">*</w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Arial"/></w:rPr><w:t xml:space="preserve">Principal as a borrower on funds from which broker will directly or indirectly benefit</w:t></w:r></w:p>
 <w:p><w:r><w:t>PART 3 LOAN INFORMATION</w:t></w:r></w:p>
 </w:body></w:document>`;
 }
