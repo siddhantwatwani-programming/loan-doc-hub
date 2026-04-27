@@ -1306,6 +1306,174 @@ function evaluateEqExpression(
   return fieldValueLower === literalLower;
 }
 
+/**
+ * Split the children of an (or …) / (and …) sexp into balanced sub-expressions.
+ * Input is the inside of the wrapper, e.g. for `(or (eq A "x") (eq B "y"))`
+ * we receive `(eq A "x") (eq B "y")` (after the leading `or`/`and` token is
+ * already consumed by the caller). Returns an array of inner sexp strings
+ * WITHOUT their outer parens — e.g. `["eq A \"x\"", "eq B \"y\""]`. Bare-word
+ * children (no parens) are also supported. Quoted strings are honored so a
+ * literal containing parens or whitespace doesn't confuse the splitter.
+ */
+function splitBalancedSexps(body: string): string[] {
+  const out: string[] = [];
+  let i = 0;
+  const n = body.length;
+  while (i < n) {
+    while (i < n && /\s/.test(body[i])) i++;
+    if (i >= n) break;
+    if (body[i] === "(") {
+      let depth = 0;
+      const start = i;
+      let inStr: string | null = null;
+      while (i < n) {
+        const ch = body[i];
+        if (inStr) {
+          if (ch === inStr) inStr = null;
+        } else if (ch === '"' || ch === "'") {
+          inStr = ch;
+        } else if (ch === "(") {
+          depth++;
+        } else if (ch === ")") {
+          depth--;
+          if (depth === 0) { i++; break; }
+        }
+        i++;
+      }
+      // Strip outer parens
+      out.push(body.substring(start + 1, i - 1).trim());
+    } else {
+      // Bare token (a field key referenced as a truthy check)
+      const start = i;
+      while (i < n && !/\s/.test(body[i])) i++;
+      out.push(body.substring(start, i).trim());
+    }
+  }
+  return out.filter(Boolean);
+}
+
+/**
+ * Evaluate a Handlebars sub-expression body (the part inside the outermost
+ * parens of `{{#if (...)}}`). Supports:
+ *   - eq FIELD LITERAL                                  (delegates to evaluateEqExpression)
+ *   - or  (sexp1) (sexp2) …                             (any true → true)
+ *   - and (sexp1) (sexp2) …                             (all true → true)
+ *   - not (sexp)                                        (logical negation)
+ *   - bare FIELD                                        (truthy check)
+ * Returns null when the expression cannot be parsed.
+ */
+function evaluateSubExpression(
+  expr: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>,
+): boolean | null {
+  const trimmed = expr.trim();
+  // (or …) / (and …) / (not …)
+  const headMatch = trimmed.match(/^(or|and|not)\b\s*([\s\S]*)$/i);
+  if (headMatch) {
+    const op = headMatch[1].toLowerCase();
+    const children = splitBalancedSexps(headMatch[2]);
+    if (children.length === 0) return null;
+    const evaluated: boolean[] = [];
+    for (const child of children) {
+      // Bare-word child → truthy check on the field value
+      let v: boolean | null;
+      if (/^[A-Za-z0-9_.]+$/.test(child)) {
+        v = isConditionTruthy(child, fieldValues, mergeTagMap, validFieldKeys);
+      } else {
+        v = evaluateSubExpression(child, fieldValues, mergeTagMap, validFieldKeys);
+      }
+      if (v === null) return null;
+      evaluated.push(v);
+    }
+    if (op === "or") return evaluated.some(Boolean);
+    if (op === "and") return evaluated.every(Boolean);
+    if (op === "not") return !evaluated[0];
+  }
+  // (eq FIELD LITERAL)
+  if (/^eq\s+/i.test(trimmed)) {
+    return evaluateEqExpression(trimmed, fieldValues, mergeTagMap, validFieldKeys);
+  }
+  // Bare field key
+  if (/^[A-Za-z0-9_.]+$/.test(trimmed)) {
+    return isConditionTruthy(trimmed, fieldValues, mergeTagMap, validFieldKeys);
+  }
+  return null;
+}
+
+/**
+ * Find the first `{{#if (…)}}` or `{{#unless (…)}}` opener whose parens are
+ * balanced, then locate its matching `{{/if}}` / `{{/unless}}`. Returns the
+ * full block details so the caller can rewrite it. Returns null if no such
+ * block is found.
+ */
+function findBalancedSexpBlock(
+  source: string,
+): { start: number; end: number; tag: "if" | "unless"; expr: string; body: string } | null {
+  const openerRe = /\{\{#(if|unless)\s*\(/g;
+  let m: RegExpExecArray | null;
+  while ((m = openerRe.exec(source)) !== null) {
+    const tag = m[1] as "if" | "unless";
+    // Walk balanced parens starting at the '(' inside the tag
+    let i = m.index + m[0].length - 1; // position of '('
+    let depth = 0;
+    let inStr: string | null = null;
+    let exprStart = i + 1;
+    let exprEnd = -1;
+    while (i < source.length) {
+      const ch = source[i];
+      if (inStr) {
+        if (ch === inStr) inStr = null;
+      } else if (ch === '"' || ch === "'") {
+        inStr = ch;
+      } else if (ch === "(") {
+        depth++;
+      } else if (ch === ")") {
+        depth--;
+        if (depth === 0) { exprEnd = i; break; }
+      }
+      i++;
+    }
+    if (exprEnd === -1) continue;
+    // Expect `}}` (with optional whitespace) right after the closing paren
+    const afterParen = source.substring(exprEnd + 1);
+    const closerOpen = afterParen.match(/^\s*\}\}/);
+    if (!closerOpen) continue;
+    const blockBodyStart = exprEnd + 1 + closerOpen[0].length;
+    // Find matching {{/if}} or {{/unless}} (innermost — track nesting of same tag)
+    const closeTag = `{{/${tag}}}`;
+    const openTagRe = new RegExp(`\\{\\{#${tag}\\b`, "g");
+    openTagRe.lastIndex = blockBodyStart;
+    let scan = blockBodyStart;
+    let nesting = 1;
+    while (scan < source.length) {
+      const closeIdx = source.indexOf(closeTag, scan);
+      if (closeIdx === -1) break;
+      openTagRe.lastIndex = scan;
+      let nextOpen: RegExpExecArray | null = null;
+      while ((nextOpen = openTagRe.exec(source)) !== null) {
+        if (nextOpen.index >= closeIdx) { nextOpen = null; break; }
+        nesting++;
+        scan = nextOpen.index + nextOpen[0].length;
+      }
+      // Consume this close
+      nesting--;
+      if (nesting === 0) {
+        return {
+          start: m.index,
+          end: closeIdx + closeTag.length,
+          tag,
+          expr: source.substring(exprStart, exprEnd).trim(),
+          body: source.substring(blockBodyStart, closeIdx),
+        };
+      }
+      scan = closeIdx + closeTag.length;
+    }
+  }
+  return null;
+}
+
 function isConditionTruthy(
   fieldKey: string,
   fieldValues: Map<string, FieldValueData>,
@@ -1403,6 +1571,36 @@ export function processConditionalBlocks(
   const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
+    // Pre-pre-pass: resolve any {{#if (…)}} / {{#unless (…)}} whose head is
+    // (or …), (and …), (not …), or a nested combination thereof. The simple
+    // (eq …) pattern below cannot match these, and leaving them unresolved
+    // would let the safety-net stripper drop the opener and leave residue.
+    const sexpBlock = findBalancedSexpBlock(result);
+    if (sexpBlock) {
+      const evalResult = evaluateSubExpression(sexpBlock.expr, fieldValues, mergeTagMap, validFieldKeys);
+      // Only rewrite when we successfully evaluated; otherwise let the (eq …)
+      // pattern below take its normal path so behavior matches the prior
+      // implementation for any expression types we don't yet support.
+      const isOrAndNot = /^(or|and|not)\b/i.test(sexpBlock.expr.trim());
+      if (evalResult !== null && isOrAndNot) {
+        const truthyEval = evalResult;
+        const truthy = sexpBlock.tag === "unless" ? !truthyEval : truthyEval;
+        const elseIdx = sexpBlock.body.indexOf('{{else}}');
+        let kept = "";
+        if (truthy) {
+          kept = elseIdx !== -1 ? sexpBlock.body.substring(0, elseIdx) : sexpBlock.body;
+        } else if (elseIdx !== -1) {
+          kept = sexpBlock.body.substring(elseIdx + '{{else}}'.length);
+        }
+        const insertionPoint = sexpBlock.start;
+        result = result.substring(0, sexpBlock.start) + kept + result.substring(sexpBlock.end);
+        result = cleanEmptyParagraphsNear(result, insertionPoint);
+        debugLog(`[tag-parser] Conditional {{#${sexpBlock.tag} (${sexpBlock.expr})}} = ${truthy}`);
+        iterations++;
+        continue;
+      }
+    }
+
     // Pre-pass: handle `(eq FIELD LITERAL)` sub-expressions for the innermost
     // {{#if (eq ...)}}…{{/if}} block. We rewrite it to either the true or
     // else branch so the simple {{#if KEY}} matcher below sees clean content.

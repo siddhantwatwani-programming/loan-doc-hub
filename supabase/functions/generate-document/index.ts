@@ -931,7 +931,18 @@ async function generateSingleDocument(
     setBool("sv_p_qualifiedPartyServicing", isOtherServicing);
     setGlyph("sv_p_anotherQualifiedPartyGlyph", isOtherServicing);
     setGlyph("sv_p_otherServicingGlyph", isOtherServicing);
-    console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}`);
+    // Publish the canonical merge key the RE851A template references directly
+    // in {{#if (eq sv_p_servicingAgent "Lender" | "Broker" | "Company" | "Other Servicer")}}.
+    // Title-case so even non-case-insensitive consumers resolve correctly; the
+    // (eq ...) evaluator already lowercases both sides for the comparison.
+    const canonicalServicingAgent =
+      isLenderServicing ? "Lender" :
+      isBrokerServicing ? "Broker" :
+      servicingAgentRaw === "company" ? "Company" :
+      (servicingAgentRaw === "other servicer" || servicingAgentRaw === "other") ? "Other Servicer" :
+      "";
+    fieldValues.set("sv_p_servicingAgent", { rawValue: canonicalServicingAgent, dataType: "text" });
+    console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}, sv_p_servicingAgent="${canonicalServicingAgent}"`);
 
 
     // Build all_properties_list and multi-property pr_p_address
