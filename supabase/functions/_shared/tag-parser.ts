@@ -1571,6 +1571,36 @@ export function processConditionalBlocks(
   const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
+    // Pre-pre-pass: resolve any {{#if (…)}} / {{#unless (…)}} whose head is
+    // (or …), (and …), (not …), or a nested combination thereof. The simple
+    // (eq …) pattern below cannot match these, and leaving them unresolved
+    // would let the safety-net stripper drop the opener and leave residue.
+    const sexpBlock = findBalancedSexpBlock(result);
+    if (sexpBlock) {
+      const evalResult = evaluateSubExpression(sexpBlock.expr, fieldValues, mergeTagMap, validFieldKeys);
+      // Only rewrite when we successfully evaluated; otherwise let the (eq …)
+      // pattern below take its normal path so behavior matches the prior
+      // implementation for any expression types we don't yet support.
+      const isOrAndNot = /^(or|and|not)\b/i.test(sexpBlock.expr.trim());
+      if (evalResult !== null && isOrAndNot) {
+        const truthyEval = evalResult;
+        const truthy = sexpBlock.tag === "unless" ? !truthyEval : truthyEval;
+        const elseIdx = sexpBlock.body.indexOf('{{else}}');
+        let kept = "";
+        if (truthy) {
+          kept = elseIdx !== -1 ? sexpBlock.body.substring(0, elseIdx) : sexpBlock.body;
+        } else if (elseIdx !== -1) {
+          kept = sexpBlock.body.substring(elseIdx + '{{else}}'.length);
+        }
+        const insertionPoint = sexpBlock.start;
+        result = result.substring(0, sexpBlock.start) + kept + result.substring(sexpBlock.end);
+        result = cleanEmptyParagraphsNear(result, insertionPoint);
+        debugLog(`[tag-parser] Conditional {{#${sexpBlock.tag} (${sexpBlock.expr})}} = ${truthy}`);
+        iterations++;
+        continue;
+      }
+    }
+
     // Pre-pass: handle `(eq FIELD LITERAL)` sub-expressions for the innermost
     // {{#if (eq ...)}}…{{/if}} block. We rewrite it to either the true or
     // else branch so the simple {{#if KEY}} matcher below sees clean content.
