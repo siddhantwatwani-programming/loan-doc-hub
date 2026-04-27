@@ -195,6 +195,7 @@ const ContactBorrowersPage: React.FC = () => {
     // Computed preferred phone
     if (columnId === 'preferred_phone') {
       if (cd['preferred.home'] === 'true') return 'Home';
+      if (cd['preferred.home2'] === 'true') return 'Home 2';
       if (cd['preferred.work'] === 'true') return 'Work';
       if (cd['preferred.cell'] === 'true') return 'Cell';
       if (cd['preferred.fax'] === 'true') return 'Fax';
