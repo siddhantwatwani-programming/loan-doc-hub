@@ -225,7 +225,7 @@ export const LenderAuthorizedPartyForm: React.FC<LenderAuthorizedPartyFormProps>
           <div className="space-y-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.deliveryEmail}>
               <div className="flex items-center gap-2">
-                <Label className="text-sm text-muted-foreground min-w-[40px]">Email</Label>
+                <Label className="text-sm text-muted-foreground min-w-[40px]">Online</Label>
                 <Checkbox checked={getBoolValue('deliveryEmail')} onCheckedChange={(c) => handleChange('deliveryEmail', !!c)} disabled={disabled} />
               </div>
             </DirtyFieldWrapper>
