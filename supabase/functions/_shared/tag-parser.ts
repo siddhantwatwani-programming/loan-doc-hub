@@ -2299,7 +2299,18 @@ export function replaceMergeTags(
         return next;
       };
 
-      const WINDOW_SIZE = 3000;
+      // Section-scoped window: start at the anchor and extend up to the next
+      // major RE851A section marker (Part 4 onwards) so the Yes/No
+      // checkboxes are reached even when Word pushes them onto a later
+      // paragraph or column/page (RE851A v5 places them ~5–6KB after the
+      // anchor, well past the previous fixed 3KB window). Fall back to a
+      // generous 12KB cap if no section marker is found.
+      const SECTION_END_MARKERS = [
+        "PART 4", "PART\u00A04",
+        "MULTI-LENDER TRANSACTIONS",
+        "PART 5", "PART\u00A05",
+      ];
+      const WINDOW_HARD_CAP = 12000;
       let scanFrom = 0;
       let rebuilt = "";
       let anchorMatch: RegExpExecArray | null;
@@ -2307,7 +2318,14 @@ export function replaceMergeTags(
       anchorRe.lastIndex = 0;
       while ((anchorMatch = anchorRe.exec(result)) !== null) {
         const winStart = anchorMatch.index;
-        const winEnd = Math.min(result.length, winStart + WINDOW_SIZE);
+        // Find the nearest downstream section marker (text-only check is
+        // imprecise vs XML, but acceptable here — markers are unique).
+        let sectionEnd = result.length;
+        for (const marker of SECTION_END_MARKERS) {
+          const idx = result.indexOf(marker, winStart + 1);
+          if (idx > 0 && idx < sectionEnd) sectionEnd = idx;
+        }
+        const winEnd = Math.min(result.length, sectionEnd, winStart + WINDOW_HARD_CAP);
         rebuilt += result.substring(scanFrom, winStart);
         let windowXml = result.substring(winStart, winEnd);
 
