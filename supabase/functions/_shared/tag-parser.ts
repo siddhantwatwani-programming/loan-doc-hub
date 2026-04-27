@@ -1930,6 +1930,18 @@ export function replaceMergeTags(
       debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
       return `{{${cleaned}}}`;
     }
+    // Also consolidate `{{#if (eq FIELD "literal")}}` / `{{#unless (eq ...)}}`
+    // helpers split across runs. Restrict the literal to safe characters so we
+    // never accidentally swallow unrelated content.
+    if (/^#if\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+    if (/^#unless\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+      return `{{${cleaned}}}`;
+    }
+
     if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
       debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
       return `{{${cleaned}}}`;
