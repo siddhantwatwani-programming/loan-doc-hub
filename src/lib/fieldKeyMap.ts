@@ -307,6 +307,7 @@ export const LENDER_INFO_KEYS = {
   investorQuestionnaireDue: 'lender.investor_questionnaire_due',
   investorQuestionnaireDueDate: 'lender.investor_questionnaire_due_date',
   ach: 'lender.ach',
+  status: 'lender.status',
 } as const;
 
 export const LENDER_AUTHORIZED_PARTY_KEYS = {
