@@ -193,30 +193,6 @@ export const BorrowerAdditionalGuarantorForm: React.FC<BorrowerAdditionalGuarant
             <EmailInput value={getValue('email')} onValueChange={(v) => handleChange('email', v)} disabled={disabled} className="h-7 text-sm" />
           </InlineField>
 
-          <div className="h-0.5" />
-
-          <InlineField label="Credit Score" fieldKey={FIELD_KEYS.creditScore}>
-            <Input value={getValue('creditScore')} onChange={(e) => handleChange('creditScore', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          {/* Tax Identification */}
-          <InlineField label="Tax ID Type" fieldKey={FIELD_KEYS.taxIdType}>
-            <Select value={getValue('taxIdType')} onValueChange={(value) => handleChange('taxIdType', value)} disabled={disabled}>
-              <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-              <SelectContent>{TAX_ID_TYPE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}</SelectContent>
-            </Select>
-          </InlineField>
-
-          <InlineField label="TIN" fieldKey={FIELD_KEYS.tin}>
-            <Input value={getValue('tin')} onChange={(e) => handleChange('tin', e.target.value)} disabled={disabled} className="h-7 text-sm" />
-          </InlineField>
-
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.tinVerified}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="guarantor-tinVerified" checked={getBoolValue('tinVerified')} onCheckedChange={(checked) => handleChange('tinVerified', !!checked)} disabled={disabled} />
-              <Label htmlFor="guarantor-tinVerified" className="text-sm font-normal">TIN Verified</Label>
-            </div>
-          </DirtyFieldWrapper>
         </div>
 
         {/* Column 2 - Primary Address & Mailing Address & Delivery Options & Send */}
