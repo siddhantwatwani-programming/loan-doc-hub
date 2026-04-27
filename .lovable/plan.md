@@ -1,60 +1,71 @@
-## Plan: Fix RE851A Amortization checkbox population
+## Goal
 
-### Goal
-When generating RE851A, the Amortization dropdown value from CSR → Loan → Amortization will check exactly one matching checkbox in the document and leave all others unchecked.
+Restructure the **Borrower → Authorized Party** form to match the attached screenshot exactly. Persist via existing `deal_section_values` JSONB save flow (no new tables, no schema changes).
 
-### Confirmed cause
-The dropdown value is being saved (example current deal has `ln_p_amortiza = other`) and the generation function already derives boolean values. However, the uploaded/generated RE851A document uses visible static checkbox markers next to labels such as `AMORTIZED PARTIALLY`, `AMORTIZED`, `INTEREST ONLY`, and `Other`. The existing label fallback only has partial label coverage and does not reliably force all Amortization labels, so the static document checkbox stays unchecked.
+## Layout target (from screenshot)
 
-### Implementation steps
-1. **Keep UI, database, APIs, template, and existing mappings unchanged**
-   - No schema changes.
-   - No template formatting or placement changes.
-   - No dropdown behavior changes.
+Two stacked bands inside the existing card:
 
-2. **Constrain the fix to document generation**
-   - Update only the document-generation checkbox logic for RE851A Amortization.
-   - Continue using existing source field `ln_p_amortiza` / `loan_terms.amortization`.
+```text
+┌───────────────────────────────────────────────────────────────────────────────────┐
+│ Band 1: 4 columns                                                                 │
+│ ┌─────────────────┬─────────────────┬───────────────────────┬──────────┐          │
+│ │ Name            │ Address         │ Phone                 │ Preferred│          │
+│ │  First [____]   │  Street [____]  │  Home [_________]     │   [ ]    │          │
+│ │  Middle [____]  │  City   [____]  │  Work [_________]     │   [ ]    │          │
+│ │  Last  [____]   │  State  [▼]     │  Cell [_________]     │   [ ]    │          │
+│ │  Capacity [▼]   │  ZIP    [____]  │  Fax  [_________]     │          │          │
+│ │  Email [____]   │                 │                       │          │          │
+│ │  Date Auth [📅] │                 │                       │          │          │
+│ └─────────────────┴─────────────────┴───────────────────────┴──────────┘          │
+│                                                                                   │
+│ Band 2: 3 columns                                                                 │
+│ ┌────────────────────┬────────────────────────────────┬──────────────────────┐    │
+│ │ Delivery Options:  │ Send                           │ Details              │    │
+│ │  [ ] Online        │  [ ] Payment Confirmation      │  ┌──────────────┐    │    │
+│ │  [ ] Mail          │  [ ] Coupon Book               │  │              │    │    │
+│ │  [ ] SMS           │  [ ] Payment Statement         │  │  (textarea)  │    │    │
+│ │                    │  [ ] Late Notice               │  └──────────────┘    │    │
+│ │                    │  [ ] Maturity Notice           │                      │    │
+│ └────────────────────┴────────────────────────────────┴──────────────────────┘    │
+└───────────────────────────────────────────────────────────────────────────────────┘
+```
 
-3. **Strengthen dropdown value normalization**
-   - Normalize casing, spaces, underscores, hyphens, and punctuation so all saved variants match:
-     - Fully Amortized
-     - Partially Amortized
-     - Interest Only
-     - Constant Amortization
-     - Add-On Interest
-     - Other
-   - Preserve the CHECK ONE behavior by setting all known Amortization booleans false except the selected option.
+## Changes to existing form
 
-4. **Add RE851A Amortization label bindings at generation time**
-   - Add runtime-only label mappings for the visible RE851A labels:
-     - `AMORTIZED PARTIALLY` → `ln_p_amortizedPartially`
-     - `AMORTIZED` / `FULLY AMORTIZED` → `ln_p_amortized`
-     - `INTEREST ONLY` → `ln_p_interestOnly`
-     - `Other` → `ln_p_other`
-     - If field dictionary keys exist later for Constant Amortization / Add-On Interest, include those labels without creating schema.
-   - This mirrors the existing broker-capacity and servicing checkbox fallback approach.
+Edit only `src/components/deal/BorrowerAuthorizedPartyForm.tsx`. No file additions, no key map changes, no save-flow changes.
 
-5. **Add a narrow final safety pass for the RE851A Amortization row**
-   - In the local XML window around `INTEREST RATE` / `(CHECK ONE)` / `PAYMENT FREQUENCY`, force only the Amortization checkbox glyphs or native checkbox states to match the derived booleans.
-   - Preserve surrounding text, spacing, table structure, alignment, and document formatting.
-   - Do not touch other RE851A checkbox sections.
+### Remove from rendering (keys remain in `BORROWER_AUTHORIZED_PARTY_KEYS` for backward compatibility / no schema impact)
+- Borrower ID, Borrower Type, Full Name fields
+- Tax ID Type, TIN, Issue 1098
+- Entire **Mailing Address** block + "Same as Primary" checkbox (and its sync `useEffect` / handler)
+- Home2 phone row
+- FORD section (8 dropdowns/inputs)
 
-6. **Regression check**
-   - Add/adjust a focused test using an XML fixture shaped like the RE851A Amortization row to verify:
-     - Fully Amortized checks only `AMORTIZED`
-     - Partially Amortized checks only `AMORTIZED PARTIALLY`
-     - Interest Only checks only `INTEREST ONLY`
-     - Other checks only `Other`
-   - Confirm the document-generation code path still produces valid DOCX XML.
+### Keep / restructure
+- **Name column**: First, Middle, Last, Capacity (dropdown), Email, Date Authorized (date picker — uses existing `EnhancedCalendar`)
+- **Address column**: Street, City, State (dropdown via `STATE_OPTIONS`), ZIP — labels use `min-w-[60px]`
+- **Phone column**: Home, Work, Cell, Fax (4 rows only — drops Home2)
+- **Preferred column**: 3 checkboxes aligned with Home/Work/Cell rows; Fax row has empty spacer (matches screenshot — no checkbox next to Fax)
+- **Delivery Options**: Online, Mail, SMS (add SMS using existing `deliverySms` key already in the map)
+- **Send**: Payment Confirmation, Coupon Book, Payment Statement, Late Notice, Maturity Notice (uses existing `sendPaymentConfirmation`, `sendCouponBook`, `sendPaymentStatement`, `sendLateNotice`, `sendMaturityNotice` keys — all already present)
+- **Details**: existing textarea, moved to be the 3rd column of Band 2 instead of full-width below
 
-### Files expected to change
-- `supabase/functions/generate-document/index.ts`
-- `supabase/functions/_shared/tag-parser.ts`
-- Possibly one focused regression test under `supabase/functions/_shared/`
+### Capacity dropdown
+Already matches screenshot exactly: Corporate Officer, Attorney, Power of Attorney, Accountant / CPA, Family, Bankruptcy Trustee, Other. No change.
 
-### Explicit non-goals
-- No changes to Contacts, Borrower, Loan UI layout, dropdown options, or save behavior.
-- No database table, field dictionary, or migration changes.
-- No RE851A template edits.
-- No changes to unrelated document generation sections.
+## Persistence
+
+- All field bindings continue to use `BORROWER_AUTHORIZED_PARTY_KEYS` and `onValueChange` → existing `deal_section_values` save pipeline.
+- No keys added or removed from the map.
+- Removed UI fields: their keys stay in the map; if any historical values exist in JSONB they remain untouched (per minimal-change policy).
+
+## Out of scope
+
+- No changes to `fieldKeyMap.ts`, sidebar, layout wrapper, save APIs, Additional Guarantor form, or any document templates.
+- No new database tables, columns, or migrations.
+- No styling changes to the surrounding card / section header.
+
+## Files touched
+
+- `src/components/deal/BorrowerAuthorizedPartyForm.tsx` (only)
