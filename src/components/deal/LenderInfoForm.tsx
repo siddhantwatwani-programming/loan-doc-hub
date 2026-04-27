@@ -277,6 +277,35 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
               />
             </div>)}
 
+            {wrapField('capacity', <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Capacity</Label>
+              <Select
+                value={getValue('capacity') || undefined}
+                onValueChange={(value) => handleChange('capacity', value)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Select capacity" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {[
+                    'Trustee',
+                    'Successor Trustee',
+                    'Authorized Signer',
+                    'President',
+                    'CEO',
+                    'Power of Attorney',
+                    'Member',
+                    'Manager',
+                    'Partner',
+                    'Other',
+                  ].map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>)}
+
             
             {wrapField('email', <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Email</Label>
