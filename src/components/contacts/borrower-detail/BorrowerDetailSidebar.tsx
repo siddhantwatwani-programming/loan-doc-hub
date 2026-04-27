@@ -1,16 +1,17 @@
 import React from 'react';
 import {
   LayoutDashboard, Briefcase, History, DollarSign, BookOpen,
-  MessageSquare, Building2, FileText, UserCheck, UserPlus, Paperclip, ScrollText, User, Receipt,
+  MessageSquare, Building2, FileText, UserCheck, UserPlus, Paperclip, ScrollText, User, Users, Receipt,
 } from 'lucide-react';
 
 export type BorrowerSection =
-  | 'borrower' | 'dashboard' | 'portfolio' | 'history' | 'charges'
+  | 'borrower' | 'co-borrower' | 'dashboard' | 'portfolio' | 'history' | 'charges'
   | 'banking' | '1098' | 'additional-guarantor' | 'authorized-party' | 'trust-ledger' | 'tax-info'
   | 'conversation-log' | 'attachments' | 'events-journal';
 
 const SECTIONS: { id: BorrowerSection; label: string; icon: React.ElementType }[] = [
   { id: 'borrower', label: 'Borrower', icon: User },
+  { id: 'co-borrower', label: 'Co-borrower', icon: Users },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'history', label: 'History', icon: History },
