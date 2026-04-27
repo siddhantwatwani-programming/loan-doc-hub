@@ -52,11 +52,9 @@ const BORROWER_TYPE_OPTIONS = [
   'Non-profit',
 ];
 
-
-const TAX_ID_TYPE_OPTIONS = [
-  '0 – Unknown',
-  '1 – EIN',
-  '2 – SSN',
+const CAPACITY_OPTIONS = [
+  'Trustee', 'Successor Trustee', 'Authorized Signer', 'President', 'CEO',
+  'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
 
 import { STATE_OPTIONS } from '@/lib/usStates';
