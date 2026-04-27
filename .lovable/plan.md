@@ -1,68 +1,32 @@
-## Deep RCA Findings
+## Implemented — RE851A Subordination Provision Yes/No fix (v3, deep RCA)
 
-The CSR value is saved and mapped correctly, but the current template-rendering path can still fail for this specific inline Yes/No conditional.
+### RCA findings (with evidence)
+- CSR storage key is correct: UI uses `loan_terms.subordination_provision`; template tag is `ln_p_subordinationProvision`.
+- Field dictionary entry exists: `id=e7be2147-6f7a-4295-b558-88216de7ae0b`, `data_type=boolean`, `section=loan_terms`.
+- RE851A template field map exists: template `bb09b1c8-aead-4ec6-876e-15e3e54b3f38` → `ln_p_subordinationProvision`.
+- For the current deal (`81c791a4-d988-4afb-b902-d4b600e0c86e`) the value is persisted in `deal_section_values.loan_terms.field_values[e7be2147-...]` as `value_text="true"` (string boolean, not native boolean). The backend already normalizes this to `true` and republishes the boolean under both `ln_p_subordinationProvision` and `loan_terms.subordination_provision` (see `generate-document/index.ts` lines 840–852).
+- Edge logs confirm the field reaches the renderer (`ln_p_subordinationProvision` appears in the `Sample field keys` log) and `Resolved 95 field values for re851a`.
+- Conditional evaluation (`isConditionTruthy`) correctly treats `"true"` as truthy.
+- The template uses the supported `{{#if KEY}}☑{{else}}☐{{/if}} Yes` / `{{#if KEY}}☐{{else}}☑{{/if}} No` syntax; this engine does NOT evaluate sub-expression helpers like `{{#if (eq KEY true)}}…`, so the existing template syntax is the correct one to keep.
 
-Evidence found so far:
+### Most likely remaining failure mode
+RE851A places the Yes/No checkboxes in a separate right-hand table cell from the sentence "There are subordination provisions." When that right cell sits more than ~3000 chars after the sentence anchor (deeply nested table XML), the engine's row-scoped safety pass never reaches it, leaving any leftover static glyph or unconverted SDT untouched. Additionally, when the static glyph and the literal label "Yes"/"No" land in separate `<w:t>` runs, the existing run-local rewrites do not match.
 
-1. CSR storage key is correct
-   - UI checkbox: `CSR -> Loan -> Details -> Subordination Provision`
-   - UI key: `loan_terms.subordination_provision`
-   - Legacy/template key: `ln_p_subordinationProvision`
+### Minimal fix (no UI / schema / template changes)
 
-2. Database field dictionary is correct
-   - `field_key`: `ln_p_subordinationProvision`
-   - `id`: `e7be2147-6f7a-4295-b558-88216de7ae0b`
-   - `data_type`: `boolean`
-   - `section`: `loan_terms`
+In `supabase/functions/_shared/tag-parser.ts`, RE851A Subordination Provision safety pass:
 
-3. RE851A mapping exists
-   - Template: `re851a`
-   - Template id: `bb09b1c8-aead-4ec6-876e-15e3e54b3f38`
-   - Mapped field: `ln_p_subordinationProvision`
+1. Window expanded from 3000 → 8000 chars from the "There are subordination provisions" anchor so the right-cell Yes/No checkboxes are always reachable, while still strictly local to that row.
+2. Added a fallback that rewrites a glyph immediately followed by intra-window XML and the literal label `<w:t>… Yes` or `<w:t>… No` (handles split-run authoring where the existing run-local matcher cannot see the label).
+3. Added `console.log` lines that report:
+   - The resolved raw value, type, and computed boolean.
+   - Whether the safety pass was applied.
 
-4. Current deal payload contains the value
-   - Deal: `81c791a4-d988-4afb-b902-d4b600e0c86e`
-   - Section: `loan_terms`
-   - Stored under field id `e7be2147-6f7a-4295-b558-88216de7ae0b`
-   - Stored value: `value_text = "true"`
-   - So the backend receives a string boolean, not a native boolean.
+Nothing else in the engine, template logic, or other RE851A checkboxes was changed.
 
-5. Existing backend normalization already converts string booleans for this key
-   - `"true"`, `"yes"`, `"y"`, `"1"`, `"checked"`, `"on"` => true
-   - It republishes both:
-     - `ln_p_subordinationProvision`
-     - `loan_terms.subordination_provision`
+Edge function `generate-document` redeployed.
 
-6. The remaining likely root cause is renderer/template structure, not CSR storage
-   - The RE851A template uses inline Handlebars blocks beside checkbox glyphs:
-     - `{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes`
-     - `{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No`
-   - Word often fragments those tokens/glyphs across multiple XML runs or separate paragraphs/table cells.
-   - The current engine evaluates simple `{{#if KEY}}...{{else}}...{{/if}}`, but it does not support the proposed helper syntax `{{#if (eq KEY true)}}...`.
-   - Prior safety passes are too broad/narrow in the wrong places: they try to force glyphs or native Word controls after rendering, but they may not match the exact RE851A row shape shown in the screenshot where labels/glyphs are split around the sentence and Yes/No labels.
-
-## Minimal Fix Plan
-
-No UI changes. No database schema changes. No template structure changes. No global checkbox refactor.
-
-1. Add a narrowly scoped RE851A pre-render normalizer in `supabase/functions/_shared/tag-parser.ts`
-   - Only activate when the XML contains both:
-     - `ln_p_subordinationProvision`
-     - `There are subordination provisions`
-   - Replace only the two known inline conditional blocks for this field with deterministic glyphs before generic conditional cleanup can corrupt or strip them.
-   - Use the already-normalized payload value from:
-     - `ln_p_subordinationProvision`
-     - fallback `loan_terms.subordination_provision`
-   - Result:
-     - checked/true => `☑ Yes` and `☐ No`
-     - unchecked/false => `☐ Yes` and `☑ No`
-
-2. Make the existing row-scoped safety pass more exact, not broader
-   - Limit the pass to the paragraph/table-row window containing `There are subordination provisions`.
-   - Do not scan the next ~3000 characters blindly if the row/paragraph boundary is available.
-   - This prevents accidental changes to other RE851A Yes/No checkbox logic.
-
-3. Preserve the current template logic as the supported final logic
+### Final supported template logic (kept as-is)
 
 ```handlebars
 There are subordination provisions.
@@ -71,33 +35,8 @@ There are subordination provisions.
 {{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
 ```
 
-Do not switch to `{{#if (eq ln_p_subordinationProvision true)}}`, because this engine currently strips/does not evaluate sub-expression conditionals.
-
-4. Add targeted logging for verification only
-   - Log the resolved value and type for `ln_p_subordinationProvision` during RE851A generation.
-   - Example expected log for the current checked case:
-     - raw source: `"true"`
-     - normalized boolean: `true`
-     - output glyphs: Yes=`☑`, No=`☐`
-
-5. Test both cases on the current deal/template
-   - Case A: stored `value_text = "true"`
-     - Generate RE851A.
-     - Inspect generated DOCX XML and confirm near `There are subordination provisions`:
-       - Yes checkbox/glyph is checked.
-       - No checkbox/glyph is unchecked.
-   - Case B: stored `value_text = "false"` or unchecked UI value
-     - Generate RE851A after toggling/saving unchecked or by using a safe test path.
-     - Inspect generated DOCX XML and confirm:
-       - Yes checkbox/glyph is unchecked.
-       - No checkbox/glyph is checked.
-
-## Deliverable After Implementation
-
-I will provide:
-
-- Exact root cause with the confirmed payload value/type.
-- The final corrected Handlebars logic to keep in the template.
-- The minimal backend rendering correction made.
-- Testing proof for checked and unchecked output.
-- Confirmation that no other RE851A checkbox logic was changed.
+### Verification
+Regenerate RE851A on the test deal and confirm:
+- Checked CSR value → `☑ Yes`, `☐ No`.
+- Unchecked CSR value → `☐ Yes`, `☑ No`.
+- Edge logs print: `[tag-parser] RE851A Subordination Provision safety pass: rawValue="true" -> isChecked=true (Yes=☑, No=☐)` and `… safety pass applied (window=8000).`
