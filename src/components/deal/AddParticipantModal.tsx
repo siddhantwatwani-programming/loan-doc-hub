@@ -403,22 +403,7 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
                 </Select>
               </div>
 
-              {/* Capacity Dropdown - hidden for broker */}
-              {participantType && participantType !== 'broker' && CAPACITY_OPTIONS[participantType] && (
-                <div className="mb-4">
-                  <Label className="text-sm font-medium mb-1.5 block">Capacity</Label>
-                  <Select value={capacity} onValueChange={setCapacity}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select capacity..." />
-                    </SelectTrigger>
-                    <SelectContent className="z-[70]">
-                      {CAPACITY_OPTIONS[participantType].map((opt) => (
-                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+
 
               <div className="flex gap-2">
                 <Button
