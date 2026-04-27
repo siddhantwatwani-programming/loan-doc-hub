@@ -64,6 +64,16 @@ function lastGlyphBeforeLabel(xml: string, label: string): string | null {
   return matches ? matches[matches.length - 1] : null;
 }
 
+function lastNativeCheckboxStateBeforeLabel(xml: string, labelRegex: RegExp): string | null {
+  const paras = xml.match(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g) ?? [];
+  for (const para of paras) {
+    if (!labelRegex.test(para.replace(/<[^>]*>/g, ""))) continue;
+    const states = [...para.matchAll(/<w14:checked\s+w14:val="([01])"\s*\/>/g)].map((m) => m[1]);
+    return states.length ? states[states.length - 1] : null;
+  }
+  return null;
+}
+
 function countParagraphsContainingLabel(xml: string, labelRegex: RegExp): number {
   const paras = xml.match(/<w:p\b[^>]*>[\s\S]*?<\/w:p>/g) ?? [];
   return paras.filter((p) => labelRegex.test(p.replace(/<[^>]*>/g, ""))).length;
@@ -95,6 +105,11 @@ Deno.test("soft-break A/B — true: paragraph is split AND A=☐, B=☑", () => 
     lastGlyphBeforeLabel(out, "*Principal as a borrower") ??
     lastGlyphBeforeLabel(out, "Principal as a borrower");
   assertEquals(bGlyph, "☑", "B glyph must be ☑ (and present) when broker is also a borrower");
+  assertEquals(
+    lastNativeCheckboxStateBeforeLabel(out, /B\.\s*\*?\s*Principal as a borrower/i),
+    "1",
+    "B native Word checkbox state must be checked when broker is also a borrower",
+  );
 });
 
 Deno.test("soft-break A/B — false: paragraph is split AND A=☑, B=☐", () => {
@@ -114,6 +129,11 @@ Deno.test("soft-break A/B — false: paragraph is split AND A=☑, B=☐", () =>
     lastGlyphBeforeLabel(out, "*Principal as a borrower") ??
     lastGlyphBeforeLabel(out, "Principal as a borrower");
   assertEquals(bGlyph, "☐", "B glyph must be ☐ (and present) when broker is NOT also a borrower");
+  assertEquals(
+    lastNativeCheckboxStateBeforeLabel(out, /B\.\s*\*?\s*Principal as a borrower/i),
+    "0",
+    "B native Word checkbox state must be unchecked when broker is not also a borrower",
+  );
 });
 
 Deno.test("soft-break A/B — split paragraphs enforce 0pt before/after, single line spacing", () => {
