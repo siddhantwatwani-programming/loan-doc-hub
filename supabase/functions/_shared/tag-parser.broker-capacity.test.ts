@@ -51,15 +51,15 @@ function run(value: "true" | "false" | null): string {
   );
 }
 
-// Returns the last visible glyph (☐/☑/☒) appearing before `label` in the
-// rendered XML (XML tags stripped). Mirrors the helper used by the
-// subordination tests.
+// Strip XML tags first, then locate the (now-contiguous) plain-text label and
+// return the last visible glyph (☐/☑/☒) appearing before it. This handles
+// labels split across multiple <w:t> runs (e.g. "B. " + "*" + "Principal...").
 function lastGlyphBeforeLabel(xml: string, label: string): string | null {
-  const idx = xml.indexOf(label);
+  const plain = xml.replace(/<[^>]*>/g, "");
+  const idx = plain.indexOf(label);
   if (idx < 0) return null;
-  const region = xml.substring(Math.max(0, idx - 800), idx);
-  const plain = region.replace(/<[^>]*>/g, "");
-  const matches = plain.match(/[☐☑☒]/g);
+  const region = plain.substring(0, idx);
+  const matches = region.match(/[☐☑☒]/g);
   return matches ? matches[matches.length - 1] : null;
 }
 
@@ -70,10 +70,11 @@ Deno.test("RE851A broker-capacity — isBrkBorrower=true → A=☐, B=☑", () =
     "☐",
     "A row glyph should be unchecked when broker is also borrower",
   );
-  // Allow either "B. *Principal" or "B. Principal" depending on label match path
+  // Tolerate either "*Principal" or "Principal" — depends on whether the
+  // optional "*" survives between the run boundaries in the rendered XML.
   const bGlyph =
-    lastGlyphBeforeLabel(out, "B. *Principal as a borrower") ??
-    lastGlyphBeforeLabel(out, "B. Principal as a borrower");
+    lastGlyphBeforeLabel(out, "*Principal as a borrower") ??
+    lastGlyphBeforeLabel(out, "Principal as a borrower");
   assertEquals(bGlyph, "☑", "B row glyph should be checked when broker is also borrower");
 });
 
@@ -85,8 +86,8 @@ Deno.test("RE851A broker-capacity — isBrkBorrower=false → A=☑, B=☐", () 
     "A row glyph should be checked when broker is NOT also borrower",
   );
   const bGlyph =
-    lastGlyphBeforeLabel(out, "B. *Principal as a borrower") ??
-    lastGlyphBeforeLabel(out, "B. Principal as a borrower");
+    lastGlyphBeforeLabel(out, "*Principal as a borrower") ??
+    lastGlyphBeforeLabel(out, "Principal as a borrower");
   assertEquals(bGlyph, "☐", "B row glyph should be unchecked when broker is NOT also borrower");
 });
 
@@ -98,7 +99,8 @@ Deno.test("RE851A broker-capacity — missing field leaves glyphs untouched", ()
     "A row glyph should remain the original ☐ from the template",
   );
   const bGlyph =
-    lastGlyphBeforeLabel(out, "B. *Principal as a borrower") ??
-    lastGlyphBeforeLabel(out, "B. Principal as a borrower");
+    lastGlyphBeforeLabel(out, "*Principal as a borrower") ??
+    lastGlyphBeforeLabel(out, "Principal as a borrower");
   assertEquals(bGlyph, "☐", "B row glyph should remain the original ☐ from the template");
 });
+
