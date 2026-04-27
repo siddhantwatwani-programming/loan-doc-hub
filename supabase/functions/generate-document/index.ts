@@ -1686,6 +1686,18 @@ async function generateSingleDocument(
       "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER": {
         fieldKey: "sv_p_anotherQualifiedParty",
       },
+      // RE851A Part 3 Amortization labels (CHECK ONE) — derived booleans are
+      // already populated by the dropdown→checkbox derivation step. These
+      // label bindings let the existing static glyph-before-label fallback
+      // toggle the correct checkbox without any template edits.
+      "FULLY AMORTIZED": { fieldKey: "ln_p_amortized" },
+      "AMORTIZED": { fieldKey: "ln_p_amortized" },
+      "AMORTIZED PARTIALLY": { fieldKey: "ln_p_amortizedPartially" },
+      "PARTIALLY AMORTIZED": { fieldKey: "ln_p_amortizedPartially" },
+      "INTEREST ONLY": { fieldKey: "ln_p_interestOnly" },
+      "CONSTANT AMORTIZATION": { fieldKey: "ln_p_constantAmortization" },
+      "ADD-ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
+      "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
     };
 
     const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
