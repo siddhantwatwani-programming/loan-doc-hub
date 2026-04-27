@@ -1,108 +1,169 @@
-## Findings so far
+## Root cause confirmed
 
-### Exact root cause
-This is not a CSR UI persistence failure. The current deal stores the Subordination Provision value correctly, and the generation payload includes it.
+This is not a missing CSR field, wrong template key, or database persistence issue.
 
-The failure is in the RE851A rendering path for this specific row:
+The value is reaching document generation, but the RE851A template structure is not being normalized correctly at render time. The current safety pass detects the Subordination Provision section, but it only normalizes one Yes/No label per Word paragraph. The live template can place both conditional rows in one Word paragraph/textbox or split the Handlebars control tags across runs/line breaks, leaving one side unresolved or leaving literal `{{#if ...}}` text visible.
 
-1. The CSR UI field uses the UI key `loan_terms.subordination_provision`, which is translated to the document/dictionary key `ln_p_subordinationProvision`.
-2. The saved value is a string boolean (`"true"` / `"false"`), not a native boolean. The current conditional evaluator already handles string booleans correctly.
-3. The RE851A uploaded template now contains both normal Handlebars-style text checkbox logic and/or native Word checkbox structures around the same Subordination Provision row. The native Word checkbox structures are tagless and can contain malformed run-property glyph text (`<w:rPr>☑</w:rPr>`), so the normal merge-tag conditional path alone is not reliable for this row.
-4. The existing safety pass is anchored to `There are subordination provisions`, but the latest runtime log shows `sanitizedSdts=0`, meaning it did not detect/touch any native checkbox SDTs in the current template window. Therefore, if the template row is using native Word checkbox controls or malformed split markup, those controls remain in their template default state even though the payload value is correct.
+## Evidence
 
-### Evidence gathered
+Database / mapping evidence:
 
-Database field dictionary:
 ```text
-field_key: ln_p_subordinationProvision
-label: SUBORDINATION PROVISION
-data_type: boolean
-section: loan_terms
+field_dictionary:
+field_key = ln_p_subordinationProvision
+data_type = boolean
+section = loan_terms
+label = SUBORDINATION PROVISION
 ```
 
-Current deal value (`81c791a4-d988-4afb-b902-d4b600e0c86e`):
-```text
-ln_p_subordinationProvision stored value_text: "true"
-ln_p_balloonPaymen stored value_text: "true"
-```
+Current deal evidence for `81c791a4-d988-4afb-b902-d4b600e0c86e`:
 
-UI mapping:
 ```text
-LoanTermsDetailsForm uses FIELD_KEYS.subordinationProvision
-FIELD_KEYS.subordinationProvision = loan_terms.subordination_provision
-legacyKeyMap maps loan_terms.subordination_provision -> ln_p_subordinationProvision
+ln_p_subordinationProvision value_text = "false"
+ln_p_balloonPaymen value_text = "true"
 ```
 
 Generation log evidence:
+
 ```text
-[generate-document] Derived ln_p_subordinationProvision from "true" (rawType=string): normalized=true
-[tag-parser] Subordination Provision safety pass executed: isSubordination=true, windowLen=12000, sanitizedSdts=0
+[generate-document] Sample field keys: ... ln_p_subordinationProvision, ln_p_balloonPaymen, ...
+[generate-document] Derived ln_p_subordinationProvision from "false" (rawType=string): normalized=false
+[tag-parser] Subordination Provision safety pass executed: isSubordination=false, windowLen=12000, sanitizedSdts=0, normalizedParas=1
 ```
 
 This proves:
-- the payload contains the value,
-- the value normalizes to checked/true,
-- the issue is not Balloon Payment,
-- the remaining problem is the RE851A row-specific rendering/toggling pass not reliably replacing the final Yes/No output for the actual current template structure.
 
-## Scoped fix plan
+- `ln_p_subordinationProvision` is present in the generation payload.
+- The value is normalized as a boolean-compatible string.
+- The renderer finds the Subordination Provision section.
+- The remaining failure is row rendering/Word XML normalization, not the UI checkbox or field mapping.
 
-### 1. Keep the existing CSR UI and mappings unchanged
-No changes to Loan Details UI, database schema, field dictionary, permissions, Balloon Payment logic, or general checkbox logic.
+## Correct mapping/key reference
 
-### 2. Harden only the RE851A Subordination Provision safety pass
-File: `supabase/functions/_shared/tag-parser.ts`
+Use this relationship:
 
-Within the existing block already scoped to the anchor text `There are subordination provisions`:
-
-- Resolve `ln_p_subordinationProvision` / `loan_terms.subordination_provision` as a strict boolean using the same inclusive value handling already present.
-- Compute final expected glyphs:
-  - checked/true: `Yes = ☑`, `No = ☐`
-  - unchecked/false: `Yes = ☐`, `No = ☑`
-- Apply a local replacement only inside the anchored section window, not document-wide.
-- Support all current template shapes in that local window:
-  1. clean text conditionals like `{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes`,
-  2. split Word XML conditionals,
-  3. static glyphs adjacent to `Yes` / `No`,
-  4. native Word SDT checkboxes adjacent to `Yes` / `No`,
-  5. malformed SDT run-property glyph text by stripping only bare text inside checkbox `<w:rPr>` blocks while preserving formatting tags.
-- Tighten the SDT/glyph label matching so it cannot cross paragraph boundaries or sibling checkbox blocks.
-
-### 3. Add a regression fixture for both expected cases
-File: `supabase/functions/_shared/tag-parser.subordination.test.ts`
-
-Extend the existing test so it verifies both template shapes:
-
-- native Word checkbox (`<w:sdt><w14:checkbox>...`) before `Yes` / `No`, including malformed `<w:rPr>☑</w:rPr>` text,
-- clean Handlebars text checkbox conditionals using `ln_p_subordinationProvision`.
-
-Assertions for checked:
 ```text
-Yes: ☑ / w14:checked="1"
-No:  ☐ / w14:checked="0"
+CSR UI/internal key: loan_terms.subordination_provision
+Document/template key: ln_p_subordinationProvision
 ```
 
-Assertions for unchecked:
+The existing template condition is conceptually correct:
+
 ```text
-Yes: ☐ / w14:checked="0"
-No:  ☑ / w14:checked="1"
+{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
+{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
 ```
 
-Also assert no stray checkbox glyph text remains inside checkbox `<w:rPr>` blocks.
+No database schema change is needed.
 
-### 4. Redeploy only the document generation backend function
-Redeploy `generate-document` so the shared tag-parser change is live.
+## Fix plan
+
+### 1. Keep all existing behavior unchanged
+
+No changes to:
+
+- CSR Loan Details UI
+- database schema
+- permissions
+- Balloon Payment logic
+- general checkbox logic
+- template upload/document pipeline
+- unrelated templates
+
+### 2. Patch only the RE851A Subordination Provision safety pass
+
+File:
+
+```text
+supabase/functions/_shared/tag-parser.ts
+```
+
+Inside the existing local window anchored to:
+
+```text
+There are subordination provisions
+```
+
+update the paragraph-scoped normalizer so it handles both of these current RE851A shapes:
+
+```text
+Shape A: separate paragraphs
+☐ Yes
+☑ No
+```
+
+```text
+Shape B: same Word paragraph/textbox with line break
+{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes
+{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No
+```
+
+Implementation detail:
+
+- Treat `Yes` and `No` independently within the same paragraph.
+- Strip leftover Subordination-only Handlebars markers, including both simple and sub-expression forms.
+- Remove only checkbox glyphs from the tight Yes/No checkbox cell/paragraph.
+- Reinsert exactly one glyph before each label:
+
+```text
+checked=true  -> ☑ Yes, ☐ No
+checked=false -> ☐ Yes, ☑ No
+```
+
+- Add guards so the replacement does not touch explanatory text like `If YES, explain here...`.
+- Tighten the static-glyph helper patterns so they do not cross paragraph boundaries.
+
+### 3. Add regression tests for the failing shape
+
+File:
+
+```text
+supabase/functions/_shared/tag-parser.subordination.test.ts
+```
+
+Add/extend tests for:
+
+1. Separate paragraph Yes/No rows.
+2. Native Word checkbox rows.
+3. Same-paragraph/same-textbox Yes + No rows, matching the uploaded screenshot shape.
+4. Both boolean values:
+
+```text
+ln_p_subordinationProvision = "true"
+Expected:  ☑ Yes / ☐ No
+
+ln_p_subordinationProvision = "false"
+Expected:  ☐ Yes / ☑ No
+```
+
+Also assert that rendered output does not contain leftover:
+
+```text
+{{#if
+{{else}}
+{{/if}}
+```
+
+### 4. Deploy only the document generation backend function
+
+Redeploy:
+
+```text
+generate-document
+```
+
+No UI deployment or schema migration is required.
 
 ### 5. Verification after implementation
-After approval, I will run the targeted regression test and confirm the latest logs. If permitted by available tooling, I will also regenerate RE851A once with the current checked value and inspect the generated DOCX XML/output. For the unchecked proof, I will use the regression fixture to avoid modifying the user’s current deal data unless you explicitly request a live unchecked regeneration.
 
-## Final deliverable after implementation
-I will report:
+After approval, I will:
 
-- root cause: rendering/template-structure handling, not missing mapping,
-- evidence: saved field value + generation log + code mapping,
-- exact corrected mapping/key reference:
-  - UI: `loan_terms.subordination_provision`
-  - document/template context: `ln_p_subordinationProvision`
-- final fix: row-scoped RE851A rendering correction in `tag-parser.ts`,
-- proof for both checked and unchecked outcomes.
+- Run the targeted Subordination Provision regression tests.
+- Confirm logs still show the payload value and normalized boolean.
+- Regenerate RE851A for the current unchecked case and confirm:
+
+```text
+CSR unchecked -> Yes ☐ and No ☑
+```
+
+For the checked case, I will prove it through the regression fixture unless you explicitly want the live deal value changed for an end-to-end checked regeneration.

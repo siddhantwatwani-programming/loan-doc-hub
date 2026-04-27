@@ -2408,32 +2408,56 @@ export function replaceMergeTags(
           /<w:p\b[\s\S]*?<\/w:p>/g,
           (para) => {
             const plain = para.replace(/<[^>]*>/g, "");
-            // Match paragraphs whose visible text ends with " Yes" or " No"
-            // (allow trailing whitespace / punctuation), and contains no other
-            // significant text beyond the label + a checkbox glyph cluster.
             const trimmed = plain.replace(/\s+/g, " ").trim();
-            const isYes = /(^|\s|[☐☑☒])Yes\.?$/.test(trimmed);
-            const isNo = /(^|\s|[☐☑☒])No\.?$/.test(trimmed);
-            if (!isYes && !isNo) return para;
+            // Detect presence of Yes / No labels inside the paragraph. The
+            // RE851A v5+ shape places BOTH labels in the same Word paragraph
+            // separated by a soft line break (<w:br/>), so we cannot require
+            // the paragraph to *end* in Yes or No anymore. Instead match the
+            // tight checkbox row pattern: a label preceded by either a
+            // checkbox glyph or a Handlebars control marker.
+            const hasYes = /(?:[☐☑☒]|\}\})\s*Yes\b/.test(trimmed)
+              || /(?:^|\s)Yes\b/.test(trimmed);
+            const hasNo = /(?:[☐☑☒]|\}\})\s*No\b/.test(trimmed)
+              || /(?:^|\s)No\b/.test(trimmed);
+            // Quick reject: must contain at least one label *and* either a
+            // checkbox glyph or an unresolved Handlebars #if marker
+            // referencing the subordination key. This prevents the
+            // normalizer from touching unrelated prose paragraphs in the
+            // same window (e.g. the "If YES, explain here..." sentence).
+            if (!hasYes && !hasNo) return para;
+            const hasCheckboxArtifact = /[☐☑☒]/.test(trimmed)
+              || /\{\{\s*#if\s+ln_p_subordinationProvision\s*\}\}/i.test(trimmed)
+              || /\{\{\s*#if\s+loan_terms\.subordination_provision\s*\}\}/i.test(trimmed);
+            if (!hasCheckboxArtifact) return para;
             // Skip paragraphs that already use native Word SDT checkboxes —
-            // those are fully handled by the SDT-toggle helpers above and
-            // must not be touched by the text-glyph normalizer.
+            // those are fully handled by the SDT-toggle helpers above.
             if (/<w:sdt\b/.test(para)) return para;
-            // Bail if the paragraph contains a different sentence (long text)
-            // — only normalize tight Yes/No checkbox cells. The RE851A row is
-            // ≤ ~10 visible chars (e.g. "☑ Yes", "☑☐ Yes", "{{#if x}}☑..Yes").
-            // Strip Handlebars markers from visible-text length check so
-            // pre-conditional-eval shapes still qualify.
+            // Reject paragraphs that look like the explanatory sentence
+            // ("If YES, explain here or on an attachment.") or any other
+            // prose row. The Yes/No checkbox cell text is short even when
+            // both rows share the paragraph.
             const lenWithoutHbs = trimmed
               .replace(/\{\{[^}]*\}\}/g, "")
               .trim().length;
             if (lenWithoutHbs > 40) return para;
-
-            const desired = isYes ? yesGlyph : noGlyph;
+            // Reject if the paragraph contains a different complete word
+            // beyond the labels and an optional checkbox glyph cluster.
+            // Allowed visible words after stripping Handlebars+glyphs:
+            // only "Yes" / "No" (case-sensitive, the RE851A authored form).
+            const wordsOnly = trimmed
+              .replace(/\{\{[^}]*\}\}/g, " ")
+              .replace(/[☐☑☒]/g, " ")
+              .replace(/[^A-Za-z]+/g, " ")
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean);
+            const allowedWords = new Set(["Yes", "No"]);
+            for (const w of wordsOnly) {
+              if (!allowedWords.has(w)) return para;
+            }
 
             let p = para;
-            // Strip any residual Handlebars control/text that survived earlier
-            // passes inside <w:t> runs of THIS paragraph only.
+            // 1. Strip any residual Handlebars control markers in <w:t> runs.
             p = p.replace(
               /<w:t([^>]*)>([^<]*)<\/w:t>/g,
               (m, attrs, text) => {
@@ -2447,7 +2471,7 @@ export function replaceMergeTags(
                 return `<w:t${attrs}>${cleaned}</w:t>`;
               },
             );
-            // Remove ALL checkbox glyphs inside <w:t> in this paragraph.
+            // 2. Remove ALL checkbox glyphs inside <w:t> in this paragraph.
             p = p.replace(
               /<w:t([^>]*)>([^<]*)<\/w:t>/g,
               (m, attrs, text) => {
@@ -2456,23 +2480,38 @@ export function replaceMergeTags(
                 return `<w:t${attrs}>${cleaned}</w:t>`;
               },
             );
-            // Inject the desired glyph immediately before the label word in
-            // its own minimal <w:r>/<w:t> run, preserving the existing label
-            // run's formatting context.
-            const labelWord = isYes ? "Yes" : "No";
-            const labelRunRe = new RegExp(
-              `(<w:r\\b[^>]*>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?\\s*<w:t(?:\\s[^>]*)?>)([^<]*\\b${labelWord}\\b[^<]*)(<\\/w:t>\\s*<\\/w:r>)`,
-            );
-            if (labelRunRe.test(p)) {
-              p = p.replace(labelRunRe, (_m, head, txt, tail) => {
-                // Prepend the glyph directly to the label text, preserving
-                // any leading whitespace already present (e.g. " Yes").
+            // 3. Inject the correct glyph immediately before EACH label run
+            //    that exists in this paragraph. Treat Yes and No
+            //    independently so a single Word paragraph carrying both
+            //    rows (separated by <w:br/>) gets BOTH checkboxes set.
+            const injectGlyphBeforeLabel = (
+              xml: string,
+              labelWord: "Yes" | "No",
+              glyph: string,
+            ): { xml: string; injected: boolean } => {
+              const labelRunRe = new RegExp(
+                `(<w:r\\b[^>]*>(?:<w:rPr>[\\s\\S]*?<\\/w:rPr>)?\\s*<w:t(?:\\s[^>]*)?>)([^<]*\\b${labelWord}\\b[^<]*)(<\\/w:t>\\s*<\\/w:r>)`,
+              );
+              if (!labelRunRe.test(xml)) return { xml, injected: false };
+              const next = xml.replace(labelRunRe, (_m, head, txt, tail) => {
                 const leadWs = (txt.match(/^\s*/) || [""])[0];
                 const rest = txt.substring(leadWs.length);
-                return `${head}${leadWs}${desired} ${rest}${tail}`;
+                return `${head}${leadWs}${glyph} ${rest}${tail}`;
               });
-              normalizedParas++;
+              return { xml: next, injected: next !== xml };
+            };
+            let injectedAny = false;
+            if (hasYes) {
+              const r = injectGlyphBeforeLabel(p, "Yes", yesGlyph);
+              p = r.xml;
+              injectedAny = injectedAny || r.injected;
             }
+            if (hasNo) {
+              const r = injectGlyphBeforeLabel(p, "No", noGlyph);
+              p = r.xml;
+              injectedAny = injectedAny || r.injected;
+            }
+            if (injectedAny) normalizedParas++;
             return p;
           },
         );
