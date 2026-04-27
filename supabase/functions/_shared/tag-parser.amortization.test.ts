@@ -85,24 +85,27 @@ function run(fixture: string, activeKey: string): string {
   );
 }
 
-// Returns the most-recent visible glyph (☐/☑/☒) appearing before `label`
-// in the rendered (XML-stripped) output.
+// Returns the visible glyph (☐/☑/☒) appearing immediately before the EXACT
+// `label` occurrence in the rendered (XML-stripped) output. The label must
+// be the bare label (not a prefix of a longer label), so for "AMORTIZED"
+// we require it NOT be followed by " PARTIALLY".
 function lastGlyphBeforeLabel(xml: string, label: string): string | null {
   const plain = xml.replace(/<[^>]*>/g, "");
-  const idx = plain.indexOf(label);
-  if (idx < 0) return null;
-  const region = plain.substring(0, idx);
-  const matches = region.match(/[☐☑☒]/g);
-  return matches ? matches[matches.length - 1] : null;
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`([☐☑☒])[^☐☑☒]*?${escaped}(?!\\s+PARTIALLY)(?![A-Za-z])`);
+  const m = plain.match(re);
+  return m ? m[1] : null;
 }
 
-// Returns the most recent <w14:checked w14:val="X"/> value before `label`.
+// Returns the w14:checked val for the SDT block immediately preceding the
+// exact `label` in the raw XML.
 function lastSdtCheckedBeforeLabel(xml: string, label: string): string | null {
-  const labelIdx = xml.indexOf(label);
-  if (labelIdx < 0) return null;
-  const region = xml.substring(0, labelIdx);
-  const matches = [...region.matchAll(/<w14:checked\s+w14:val="(\d)"\s*\/>/g)];
-  return matches.length ? matches[matches.length - 1][1] : null;
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(
+    `<w14:checked\\s+w14:val="(\\d)"\\s*\\/>(?:(?!<w14:checked\\b)[\\s\\S])*?${escaped}(?!\\s+PARTIALLY)(?![A-Za-z])`,
+  );
+  const m = xml.match(re);
+  return m ? m[1] : null;
 }
 
 const STATIC_LABELS = [
