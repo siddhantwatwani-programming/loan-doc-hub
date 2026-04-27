@@ -2235,7 +2235,7 @@ export function replaceMergeTags(
       ): string => {
         const wordRe = `\\b${word}\\b`;
         const sdtAfterWord = new RegExp(
-          `(${wordRe})((?:\\s|<[^>]+>)*?)(${SINGLE_SDT})`,
+          `(${wordRe})((?:\\s|<(?!w:sdt\\b)[^>]+>)*?)(${SINGLE_SDT})`,
           "g",
         );
         return windowXml.replace(sdtAfterWord, (_m, head, mid, sdtBlock) => {
