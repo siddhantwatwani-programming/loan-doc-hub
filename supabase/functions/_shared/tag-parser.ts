@@ -1225,6 +1225,87 @@ function getConditionalAliasCandidates(fieldKey: string): string[] {
   return [normalized];
 }
 
+/**
+ * Resolve the raw, normalized field value for use in `(eq ...)` comparisons.
+ * Mirrors the alias-fallback logic of `isConditionTruthy` but returns the
+ * raw stringified value (lower-cased, trimmed) instead of a boolean. Returns
+ * an empty string when no data is present so equality against "" works.
+ */
+function resolveRawValueForEq(
+  fieldKey: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>,
+): string {
+  const aliasCandidates = getConditionalAliasCandidates(fieldKey);
+  let canonicalKey = resolveFieldKeyWithMap(fieldKey, mergeTagMap, validFieldKeys);
+  let resolved = getFieldData(canonicalKey, fieldValues);
+  if (!resolved?.data || resolved.data.rawValue === null || resolved.data.rawValue === "") {
+    for (const aliasKey of aliasCandidates) {
+      const aliasCanonicalKey = resolveFieldKeyWithMap(aliasKey, mergeTagMap, validFieldKeys);
+      const aliasResolved = getFieldData(aliasCanonicalKey, fieldValues);
+      if (aliasResolved?.data && aliasResolved.data.rawValue !== null && aliasResolved.data.rawValue !== "") {
+        canonicalKey = aliasCanonicalKey;
+        resolved = aliasResolved;
+        break;
+      }
+    }
+  }
+  if (!resolved?.data) return "";
+  const raw = resolved.data.rawValue;
+  if (raw === null) return "";
+  if (typeof raw === "boolean") return raw ? "true" : "false";
+  if (typeof raw === "number") return String(raw);
+  return String(raw).trim();
+}
+
+/**
+ * Evaluate Handlebars-style `(eq FIELD LITERAL)` sub-expressions.
+ *
+ * Accepts:
+ *   (eq ln_p_subordinationProvision true)
+ *   (eq ln_p_subordinationProvision "true")
+ *   (eq loan_terms.subordination_provision 'false')
+ *   (eq SOME_FIELD "Individual")
+ *
+ * Comparison rules (case-insensitive):
+ *   - true / "true" / "yes" / "y" / "1" / "checked" / "on" all map to TRUE
+ *   - false / "false" / "no" / "n" / "0" / "unchecked" / "off" map to FALSE
+ *   - For mixed boolean ↔ string compares, both sides are normalized to the
+ *     above truthy/falsy sets when possible.
+ *   - Otherwise plain string equality (case-insensitive) is used.
+ */
+function evaluateEqExpression(
+  expr: string,
+  fieldValues: Map<string, FieldValueData>,
+  mergeTagMap: Record<string, string>,
+  validFieldKeys?: Set<string>,
+): boolean | null {
+  // (eq FIELD LITERAL) — LITERAL is bareword OR "..." OR '...'
+  const m = expr.match(/^\s*eq\s+([A-Za-z0-9_.]+)\s+(?:"([^"]*)"|'([^']*)'|([A-Za-z0-9_.\-]+))\s*$/i);
+  if (!m) return null;
+  const fieldKey = m[1];
+  const literal = (m[2] ?? m[3] ?? m[4] ?? "").trim();
+  const literalLower = literal.toLowerCase();
+  const fieldValueRaw = resolveRawValueForEq(fieldKey, fieldValues, mergeTagMap, validFieldKeys);
+  const fieldValueLower = fieldValueRaw.toLowerCase();
+
+  const TRUE_SET = new Set(["true", "yes", "y", "1", "checked", "on"]);
+  const FALSE_SET = new Set(["false", "no", "n", "0", "unchecked", "off", ""]);
+
+  const literalIsTrue = TRUE_SET.has(literalLower);
+  const literalIsFalse = FALSE_SET.has(literalLower);
+  const fieldIsTrue = TRUE_SET.has(fieldValueLower);
+  const fieldIsFalse = FALSE_SET.has(fieldValueLower);
+
+  if (literalIsTrue || literalIsFalse) {
+    if (fieldIsTrue || fieldIsFalse) {
+      return (literalIsTrue && fieldIsTrue) || (literalIsFalse && fieldIsFalse);
+    }
+  }
+  return fieldValueLower === literalLower;
+}
+
 function isConditionTruthy(
   fieldKey: string,
   fieldValues: Map<string, FieldValueData>,
