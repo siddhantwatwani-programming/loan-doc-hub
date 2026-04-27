@@ -2234,6 +2234,8 @@ export function replaceMergeTags(
         // Append untouched chunk before window
         rebuilt += result.substring(scanFrom, winStart);
         let windowXml = result.substring(winStart, winEnd);
+        windowXml = forceSdtBeforeWord(windowXml, "Yes", isSubordination);
+        windowXml = forceSdtBeforeWord(windowXml, "No", !isSubordination);
         windowXml = forceGlyphBeforeWord(windowXml, "Yes", yesGlyph);
         windowXml = forceGlyphBeforeWord(windowXml, "No", noGlyph);
         rebuilt += windowXml;
