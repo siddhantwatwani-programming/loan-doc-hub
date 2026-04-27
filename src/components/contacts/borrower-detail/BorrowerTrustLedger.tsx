@@ -396,8 +396,8 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleAddEntry}>Add Entry</Button>
+            <Button variant="outline" size="sm" onClick={() => { setAddDialogOpen(false); setEditingId(null); setNewEntry(EMPTY_ENTRY); }}>Cancel</Button>
+            <Button size="sm" onClick={handleAddEntry}>{editingId ? 'Update Entry' : 'Add Entry'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
