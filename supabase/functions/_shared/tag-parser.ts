@@ -3248,6 +3248,78 @@ export function replaceMergeTags(
     }
   }
 
+  // RE851A — Servicing Agent safety pass.
+  // Strictly scoped to the three literal RE851A servicing-section labels.
+  // After all merge-tag, conditional, label, bracket, and broker-capacity
+  // logic has run, force the glyph immediately preceding each label to the
+  // correct state derived from the CSR Servicing Agent dropdown:
+  //   Lender                    → ☑ "THERE ARE NO SERVICING ARRANGEMENTS"
+  //   Broker                    → ☑ "BROKER IS THE SERVICING AGENT"
+  //   Company / Other Servicer  → ☑ "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN"
+  // All other servicing glyphs become ☐. This guarantees exactly one ☑
+  // even when the template's {{#if (eq …)}} blocks were broken across
+  // <w:r>/<w:t>/SDT runs and left a static ☐ behind. Surrounding text,
+  // formatting, and XML structure are preserved unchanged — only the
+  // glyph character toggles.
+  {
+    const agentRaw =
+      getFieldData("sv_p_servicingAgent", fieldValues)?.data?.rawValue
+      ?? getFieldData("oo_svc_servicingAgent", fieldValues)?.data?.rawValue
+      ?? getFieldData("origination_svc.servicing_agent", fieldValues)?.data?.rawValue
+      ?? getFieldData("loan_terms.servicing_agent", fieldValues)?.data?.rawValue
+      ?? "";
+    const agent = String(agentRaw).trim().toLowerCase();
+    let mode: "lender" | "broker" | "other" | null = null;
+    if (agent === "lender") mode = "lender";
+    else if (agent === "broker") mode = "broker";
+    else if (agent === "company" || agent === "other servicer" || agent === "other") mode = "other";
+
+    if (mode !== null) {
+      const lenderGlyph = mode === "lender" ? "☑" : "☐";
+      const brokerGlyph = mode === "broker" ? "☑" : "☐";
+      const otherGlyph  = mode === "other"  ? "☑" : "☐";
+
+      const buildXmlFlex = (label: string) =>
+        label.split(/\s+/).filter(Boolean)
+          .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join("(?:\\s|<[^>]+>)*");
+
+      const lenderPattern = buildXmlFlex("THERE ARE NO SERVICING ARRANGEMENTS");
+      const brokerPattern = buildXmlFlex("BROKER IS THE SERVICING AGENT");
+      const otherPattern  = buildXmlFlex("ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN");
+
+      const forceGlyphBeforeLabel = (xml: string, labelPattern: string, glyph: string): string => {
+        // 1) Glyph inside a <w:t> immediately followed (across XML/whitespace)
+        //    by the literal label. Replace ONLY the glyph character.
+        const glyphInWt = new RegExp(
+          `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        let next = xml.replace(glyphInWt, (_m, wtOpen, pre, _g, wtTail, labelPart) =>
+          `${wtOpen}${pre}${glyph}${wtTail}${labelPart}`,
+        );
+
+        // 2) Plain-text glyph (no <w:t> wrapper) directly before the label.
+        const glyphPlain = new RegExp(
+          `([☐☑☒])((?:\\s|<[^>]+>)*?)(${labelPattern})(?![A-Za-z])`,
+          "gi",
+        );
+        next = next.replace(glyphPlain, (_m, _g, mid, labelText) =>
+          `${glyph}${mid}${labelText}`,
+        );
+        return next;
+      };
+
+      result = forceGlyphBeforeLabel(result, lenderPattern, lenderGlyph);
+      result = forceGlyphBeforeLabel(result, brokerPattern, brokerGlyph);
+      result = forceGlyphBeforeLabel(result, otherPattern,  otherGlyph);
+
+      console.log(
+        `[generate-document] Forced RE851A servicing-agent glyphs: agent="${agent}", lender=${lenderGlyph}, broker=${brokerGlyph}, other=${otherGlyph}`,
+      );
+    }
+  }
+
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
   result = convertGlyphsToSdtCheckboxes(result);
