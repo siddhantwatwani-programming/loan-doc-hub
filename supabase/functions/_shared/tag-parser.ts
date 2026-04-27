@@ -891,7 +891,7 @@ function replaceStaticCheckboxLabel(
       return `${labelText}${spacing}${checkboxValue}`;
     });
     result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/])[^>]*>)*?)/g,
+      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
       (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
     );
     return { content: result, replaced: true };
