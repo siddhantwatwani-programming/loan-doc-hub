@@ -148,6 +148,17 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
   } = useGridSelection(filteredData);
 
   const handleAddEntry = async () => {
+    if (editingId) {
+      const updated = entries.map(e => e.id === editingId ? { ...newEntry, id: editingId } as LedgerEntry : e);
+      setEntries(updated);
+      await persistEntries(updated);
+      setNewEntry(EMPTY_ENTRY);
+      setEditingId(null);
+      setAddDialogOpen(false);
+      toast.success('Entry updated');
+      logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Updated', oldValue: '', newValue: newEntry.reference || newEntry.memo || 'Entry' }]);
+      return;
+    }
     const entry: LedgerEntry = { ...newEntry, id: crypto.randomUUID() };
     const updated = [...entries, entry];
     setEntries(updated);
@@ -156,6 +167,14 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
     setAddDialogOpen(false);
     toast.success('Entry added');
     logContactEvent(contactDbId, 'Trust Ledger', [{ fieldLabel: 'Entry Added', oldValue: '', newValue: entry.reference || entry.memo || 'New entry' }]);
+  };
+
+  const openEditDialog = (entry: LedgerEntry) => {
+    if (disabled) return;
+    const { id, ...rest } = entry;
+    setNewEntry(rest as typeof EMPTY_ENTRY);
+    setEditingId(id);
+    setAddDialogOpen(true);
   };
 
   const handleBulkDelete = async () => {
