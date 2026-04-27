@@ -112,6 +112,7 @@ const BorrowerTrustLedger: React.FC<{ borrowerId: string; contactDbId: string; d
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [newEntry, setNewEntry] = useState(EMPTY_ENTRY);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!contactDbId) return;
