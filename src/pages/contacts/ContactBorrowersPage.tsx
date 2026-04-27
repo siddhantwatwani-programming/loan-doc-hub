@@ -44,15 +44,33 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'borrower_type', label: 'Type', visible: true },
   { id: 'full_name', label: 'Entity Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
+  { id: 'middle_initial', label: 'Middle', visible: false },
   { id: 'last_name', label: 'Last', visible: true },
+  { id: 'capacity', label: 'Capacity', visible: false },
   { id: 'email', label: 'Email', visible: true },
-  { id: 'phone.cell', label: 'Cell Phone', visible: true },
   { id: 'phone.home', label: 'Home Phone', visible: true },
+  { id: 'phone.home2', label: 'Home Phone 2', visible: false },
+  { id: 'phone.work', label: 'Work Phone', visible: false },
+  { id: 'phone.cell', label: 'Cell Phone', visible: true },
+  { id: 'phone.fax', label: 'Fax', visible: false },
+  { id: 'preferred_phone', label: 'Preferred Phone', visible: false },
+  { id: 'address.street', label: 'Address Street', visible: false },
+  { id: 'address.city', label: 'Address City', visible: false },
+  { id: 'address.state', label: 'Address State', visible: false },
+  { id: 'address.zip', label: 'Address Zip', visible: false },
+  { id: 'mailing.street', label: 'Mailing Street', visible: false },
+  { id: 'mailing.city', label: 'Mailing City', visible: false },
+  { id: 'mailing.state', label: 'Mailing State', visible: false },
+  { id: 'mailing.zip', label: 'Mailing Zip', visible: false },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
+  { id: 'delivery_print', label: 'Delivery Print', visible: false },
+  { id: 'delivery_email', label: 'Delivery Email', visible: false },
+  { id: 'delivery_sms', label: 'Delivery SMS', visible: false },
+  { id: 'agreement_on_file', label: 'Agreement on File', visible: false },
 ];
 
-const BOOLEAN_COLUMNS = new Set<string>([]);
+const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file']);
 
 const BORROWER_FILTER_OPTIONS: FilterOption[] = [
   {
@@ -177,6 +195,7 @@ const ContactBorrowersPage: React.FC = () => {
     // Computed preferred phone
     if (columnId === 'preferred_phone') {
       if (cd['preferred.home'] === 'true') return 'Home';
+      if (cd['preferred.home2'] === 'true') return 'Home 2';
       if (cd['preferred.work'] === 'true') return 'Work';
       if (cd['preferred.cell'] === 'true') return 'Cell';
       if (cd['preferred.fax'] === 'true') return 'Fax';
@@ -257,7 +276,7 @@ const ContactBorrowersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_borrowers_v5"
+        tableConfigKey="contact_borrowers_v6"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
         filterOptions={BORROWER_FILTER_OPTIONS}
