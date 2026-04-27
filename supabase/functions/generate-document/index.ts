@@ -874,6 +874,49 @@ async function generateSingleDocument(
     fieldValues.set("or_p_brkCapacityPrincipalGlyph", { rawValue: brkBorrowerTrue ? "☑" : "☐", dataType: "text" });
     console.log(`[generate-document] Derived broker capacity checkboxes from "${brkBorrowerRaw}": agent=${!brkBorrowerTrue}, principal=${brkBorrowerTrue}, isBrkBorrower=${brkBorrowerTrue}`);
 
+    // Servicing Agent (RE851A Servicing section) → boolean checkbox keys.
+    // CSR persists the dropdown under origination_svc.servicing_agent. The
+    // RE851A template has three mutually-exclusive checkboxes that toggle
+    // based on the selected value:
+    //   - Lender                 → "THERE ARE NO SERVICING ARRANGEMENTS"
+    //   - Broker                 → "BROKER IS THE SERVICING AGENT"
+    //   - Company / Other Servicer → "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN"
+    // We publish boolean + glyph aliases under several plausible merge-tag
+    // names so the template's existing {{#if ...}} blocks resolve correctly
+    // without requiring template edits.
+    const servicingAgentRaw = (
+      fieldValues.get("origination_svc.servicing_agent")?.rawValue ??
+      fieldValues.get("sv_p_servicingAgent")?.rawValue ??
+      fieldValues.get("loan_terms.servicing_agent")?.rawValue ??
+      ""
+    ).toString().trim().toLowerCase();
+    const isLenderServicing = servicingAgentRaw === "lender";
+    const isBrokerServicing = servicingAgentRaw === "broker";
+    const isOtherServicing = servicingAgentRaw === "company" || servicingAgentRaw === "other servicer" || servicingAgentRaw === "other";
+    const setBool = (k: string, v: boolean) => fieldValues.set(k, { rawValue: v ? "true" : "false", dataType: "boolean" });
+    const setGlyph = (k: string, v: boolean) => fieldValues.set(k, { rawValue: v ? "☑" : "☐", dataType: "text" });
+    // "No servicing arrangements" (Lender)
+    setBool("sv_p_noServicingArrangements", isLenderServicing);
+    setBool("sv_p_lenderServicing", isLenderServicing);
+    setBool("sv_p_isLenderServicing", isLenderServicing);
+    setGlyph("sv_p_noServicingArrangementsGlyph", isLenderServicing);
+    setGlyph("sv_p_lenderServicingGlyph", isLenderServicing);
+    // "Broker is the servicing agent"
+    setBool("sv_p_brokerIsServicingAgent", isBrokerServicing);
+    setBool("sv_p_brokerServicing", isBrokerServicing);
+    setBool("sv_p_isBrokerServicing", isBrokerServicing);
+    setGlyph("sv_p_brokerIsServicingAgentGlyph", isBrokerServicing);
+    setGlyph("sv_p_brokerServicingGlyph", isBrokerServicing);
+    // "Another qualified party will service the loan" (Company / Other Servicer)
+    setBool("sv_p_anotherQualifiedParty", isOtherServicing);
+    setBool("sv_p_otherServicing", isOtherServicing);
+    setBool("sv_p_isOtherServicing", isOtherServicing);
+    setBool("sv_p_qualifiedPartyServicing", isOtherServicing);
+    setGlyph("sv_p_anotherQualifiedPartyGlyph", isOtherServicing);
+    setGlyph("sv_p_otherServicingGlyph", isOtherServicing);
+    console.log(`[generate-document] Derived servicing-agent checkboxes from "${servicingAgentRaw}": lender=${isLenderServicing}, broker=${isBrokerServicing}, other=${isOtherServicing}`);
+
+
     // Build all_properties_list and multi-property pr_p_address
     if (propertyIndices.size > 0) {
       const sortedIndices = [...propertyIndices].sort((a, b) => a - b);
