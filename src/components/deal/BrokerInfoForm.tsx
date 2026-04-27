@@ -238,6 +238,23 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               </div>
             </DirtyFieldWrapper>
           ))}
+
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">FORD</h3>
+          <div className="space-y-1.5">
+            {([['ford1', 'ford2'], ['ford3', 'ford4'], ['ford5', 'ford6'], ['ford7', 'ford8']] as const).map(([dropdownKey, inputKey], idx) => (
+              <DirtyFieldWrapper key={idx} fieldKey={FIELD_KEYS[dropdownKey]}>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={getValue(dropdownKey) || undefined} onValueChange={(v) => handleChange(dropdownKey, v)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      {FORD_DROPDOWN_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Input value={getValue(inputKey)} onChange={(e) => handleChange(inputKey, e.target.value)} disabled={disabled} className="h-7 text-xs" />
+                </div>
+              </DirtyFieldWrapper>
+            ))}
+          </div>
         </div>
       </div>
     </div>
