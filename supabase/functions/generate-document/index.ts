@@ -849,7 +849,7 @@ async function generateSingleDocument(
     const subordinationTrue = ["true", "yes", "y", "1", "checked", "on"].includes(subordinationRaw);
     fieldValues.set("ln_p_subordinationProvision", { rawValue: subordinationTrue ? "true" : "false", dataType: "boolean" });
     fieldValues.set("loan_terms.subordination_provision", { rawValue: subordinationTrue ? "true" : "false", dataType: "boolean" });
-    debugLog(`[generate-document] Derived ln_p_subordinationProvision from "${subordinationRaw}": ${subordinationTrue}`);
+    console.log(`[generate-document] Derived ln_p_subordinationProvision from "${subordinationRaw}" (rawType=${typeof subordinationRaw}): normalized=${subordinationTrue}`);
 
     // Broker Capacity in Transaction (RE851A Part 2) → boolean checkbox keys
     // Derived from "Is Broker Also a Borrower?" UI checkbox. The UI persists this
