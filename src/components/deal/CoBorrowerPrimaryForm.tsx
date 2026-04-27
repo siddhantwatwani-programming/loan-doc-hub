@@ -268,8 +268,9 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
     }
   }, [isSameAsPrimary, primaryStreetVal, primaryCityVal, primaryStateVal, primaryZipVal]);
 
-  const phoneRows = [
+  const phoneRows: { key: string; label: string; prefKey: string; prefId: string; hasPreferred?: boolean }[] = [
     { key: 'phone.home', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome' },
+    { key: 'phone.home2', label: 'Home', prefKey: 'preferred.home', prefId: 'prefHome2', hasPreferred: false },
     { key: 'phone.work', label: 'Work', prefKey: 'preferred.work', prefId: 'prefWork' },
     { key: 'phone.mobile', label: 'Cell', prefKey: 'preferred.cell', prefId: 'prefCell' },
     { key: 'fax', label: 'Fax', prefKey: 'preferred.fax', prefId: 'prefFax' },
