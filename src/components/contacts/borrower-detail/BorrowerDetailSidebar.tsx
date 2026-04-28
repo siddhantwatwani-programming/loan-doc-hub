@@ -11,7 +11,6 @@ export type BorrowerSection =
 
 const SECTIONS: { id: BorrowerSection; label: string; icon: React.ElementType }[] = [
   { id: 'borrower', label: 'Borrower', icon: User },
-  { id: 'co-borrower', label: 'Co-borrower', icon: Users },
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
   { id: 'history', label: 'History', icon: History },
