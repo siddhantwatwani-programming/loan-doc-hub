@@ -169,6 +169,16 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
             />
           </div>
         );
+      case 'tax-reporting':
+        return (
+          <div className="p-6">
+            <LenderTaxReporting
+              values={values}
+              onValueChange={handleValueChange}
+              disabled={isReadOnly}
+            />
+          </div>
+        );
       case 'attachments':
         return (
           <div className="p-6">
