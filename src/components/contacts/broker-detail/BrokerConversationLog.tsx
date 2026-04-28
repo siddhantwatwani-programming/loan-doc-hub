@@ -36,6 +36,7 @@ interface LogRow {
   status: string;
   content: string;
   highPriority: boolean;
+  followUp?: boolean;
   reference: string;
   attachments: (string | AttachmentMeta)[];
   account: string;
