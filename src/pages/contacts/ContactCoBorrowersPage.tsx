@@ -199,7 +199,6 @@ const ContactCoBorrowersPage: React.FC = () => {
           navigate('/contacts/co-borrowers');
         }}
         onSave={handleSave}
-        isReadOnly={isReadOnly}
       />
     );
   }
