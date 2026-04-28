@@ -201,7 +201,6 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
           navigate('/contacts/additional-guarantors');
         }}
         onSave={handleSave}
-        isReadOnly={isReadOnly}
       />
     );
   }
