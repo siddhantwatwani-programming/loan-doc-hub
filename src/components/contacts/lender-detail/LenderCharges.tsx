@@ -611,15 +611,25 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
 
   // Totals row (per screenshot — totals of unpaid active bills)
   const totals = useMemo(() => {
-    const acc = { original_balance: 0, unpaid_balance: 0, accrued_interest: 0, total_due: 0 };
+    const acc = {
+      original_balance: 0,
+      unpaid_balance: 0,
+      accrued_interest: 0,
+      total_due: 0,
+      owed_to_account: 0,
+      deferred: 0,
+    };
     filtered.forEach(r => {
       acc.original_balance += parseMoney(r.original_balance || r.unpaid_balance);
-      acc.unpaid_balance += computeFinalUnpaid(r);
-      acc.accrued_interest += parseMoney(r.accrued_interest);
-      acc.total_due += parseMoney(r.total_due) + sumAdjustments(r.adjustments);
+      acc.unpaid_balance += computeUnpaidBalance(r);
+      acc.accrued_interest += computeAccruedInterest(r);
+      acc.total_due += computeTotalDue(r);
+      acc.owed_to_account += computeOwedToAccount(r);
+      acc.deferred += computeDeferredAmount(r);
     });
     return acc;
   }, [filtered]);
+
 
   const toggleRow = (id: string) => {
     setSelectedRows(prev => {
