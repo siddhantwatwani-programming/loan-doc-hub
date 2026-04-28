@@ -34,6 +34,7 @@ import GlobalEventJournalPage from "./pages/csr/GlobalEventJournalPage";
 import ContactLendersPage from "./pages/contacts/ContactLendersPage";
 import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
 import ContactBrokersPage from "./pages/contacts/ContactBrokersPage";
+import ContactCoBorrowersPage from "./pages/contacts/ContactCoBorrowersPage";
 
 
 const queryClient = new QueryClient({
@@ -84,7 +85,8 @@ const App = () => (
                   <Route path="/contacts/others/insurance-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/title-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/notary" element={<ComingSoonPage />} />
-                  <Route path="/contacts/co-borrowers" element={<ComingSoonPage />} />
+                  <Route path="/contacts/co-borrowers" element={<ContactCoBorrowersPage />} />
+                  <Route path="/contacts/co-borrowers/:contactId" element={<ContactCoBorrowersPage />} />
                   <Route path="/contacts/additional-guarantors" element={<ComingSoonPage />} />
                   <Route path="/contacts/authorized-parties" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/additional-guarantor" element={<ComingSoonPage />} />
