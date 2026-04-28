@@ -1,79 +1,44 @@
 ## Goal
 
-Make the **Source of Information** dropdown under **Other Origination → Application → Borrower** fully functional: correct options, persisted to the database, and usable in document templates via the canonical merge tag `{{oo_app_sourceOfInformation}}`.
+Update the **Contacts → Broker → Banking** section's **Type** dropdown to match the values shown in the uploaded screenshot. The rest of the Banking layout already matches the screenshot exactly.
 
 ## What I found
 
-The field already exists in the UI at `src/components/deal/OriginationApplicationForm.tsx:347-365` keyed by the dotted path `origination_app.borrower.source_of_information`. Three problems block it from working end-to-end:
+- The active Banking screen at Contacts → Broker → Banking is rendered by `src/components/deal/BrokerBankingForm.tsx` (mounted from `ContactBrokerDetailLayout.tsx` line 188).
+- The form already contains every field shown in the screenshot, in the same three-column layout, persisted via the existing `onValueChange` → `BROKER_BANKING_KEYS` save pipeline (no schema or API change needed):
+  - **Column 1 (Bank/ACH):** ACH Status, Bank, Routing Number, Account Number, Type, Name, ID, Further Credit To
+  - **Column 2 (Check / Mailing):** By Check, Same as Mailing, Address, City, Zip Code
+  - **Column 3 (Credit Card):** Cardholder Name, Card Number, Security Code, Expiration, Zip Code
+- The annotation in red on the screenshot calls out exactly one issue: the **Type** dropdown options are wrong. Current options are `Checking / Savings`. Required options:
+  - Personal Banking
+  - Business Banking
+  - Personal Checking
+  - Business Checking
+- The legacy file `src/components/contacts/broker-detail/BrokerBanking.tsx` is no longer wired into the active layout (only the unused `BrokerDetailLayout.tsx` references it). Leaving it untouched per minimal-change rule.
 
-| # | Issue | Impact |
-|---|---|---|
-| 1 | Dropdown options are wrong (`Borrower / Broker / Credit Report`) | Doesn't match required values |
-| 2 | No `field_dictionary` row exists for `origination_app.borrower.source_of_information` | UI saves are silently skipped (project rule: missing dictionary keys are not persisted) |
-| 3 | No `merge_tag_aliases` row maps `oo_app_sourceOfInformation` → the storage key | Templates using `{{oo_app_sourceOfInformation}}` render blank |
+## Change
 
-All other Borrower section fields (e.g. `info_provided_by`, `is_borrower_also_broker`) have dictionary rows under `section=origination_fees, data_type=text`, so the new entry will follow the same pattern.
+`src/components/deal/BrokerBankingForm.tsx` lines 168–171 — replace the two existing `<SelectItem>`s for the Type dropdown with the four required options, in the order shown in the screenshot. The `<Select>`, `<DirtyFieldWrapper>`, label, styling, storage key, and persistence wiring all stay exactly as today.
 
-## Changes
-
-### 1. UI — replace dropdown options (no layout change)
-
-`src/components/deal/OriginationApplicationForm.tsx` lines 358–362: replace the three current `<SelectItem>`s with the five required values, in order:
-
-- Broker
-- Borrower
-- Third Party
-- Internal Referral
-- Other
-
-The `<Select>`, label, wrapper, styling, placeholder ("Select"), and storage key all stay exactly as today.
-
-### 2. Database — register the field in the dictionary (migration)
-
-Insert one row into `field_dictionary` so the value persists through the existing save pipeline:
-
-```sql
-INSERT INTO public.field_dictionary
-  (field_key, label, section, data_type, form_type, is_mandatory, is_calculated, is_repeatable)
-VALUES
-  ('origination_app.borrower.source_of_information',
-   'Source of Information',
-   'origination_fees',
-   'text',
-   'primary',
-   false, false, false)
-ON CONFLICT DO NOTHING;
+```tsx
+<SelectContent>
+  <SelectItem value="Personal Banking">Personal Banking</SelectItem>
+  <SelectItem value="Business Banking">Business Banking</SelectItem>
+  <SelectItem value="Personal Checking">Personal Checking</SelectItem>
+  <SelectItem value="Business Checking">Business Checking</SelectItem>
+</SelectContent>
 ```
-
-Mirrors the existing `origination_app.borrower.info_provided_by` entry. No schema change — only a row insert into the existing table.
-
-### 3. Document generation — register the merge-tag alias
-
-Insert one row into `merge_tag_aliases` so templates can reference the requested canonical key:
-
-```sql
-INSERT INTO public.merge_tag_aliases
-  (tag_name, field_key, tag_type, is_active)
-VALUES
-  ('oo_app_sourceOfInformation',
-   'origination_app.borrower.source_of_information',
-   'merge_tag',
-   true)
-ON CONFLICT DO NOTHING;
-```
-
-This lets the existing doc-gen engine resolve `{{oo_app_sourceOfInformation}}` to the selected dropdown label (the value stored is the human-readable string, e.g. "Internal Referral", so the document shows the label, not an ID).
 
 ## What is NOT changing
 
-- No UI layout, spacing, alignment, or styling changes — only the three dropdown items inside the existing `<Select>`.
-- No edits to `OriginationApplicationForm` props, persistence wiring, `useDealFields`, `legacyKeyMap.ts`, or `fieldKeyMap.ts`.
-- No changes to any document template, the doc-gen pipeline, or any other field mapping.
-- No schema/DDL changes — both DB changes are pure row inserts into existing tables.
-- Backward-compatible: existing records with no value remain blank; the prior `Credit Report` value would simply not match a current option (the Select renders empty placeholder, no error).
+- No layout, spacing, alignment, or styling changes — same `<Select>` cell, same column structure.
+- No new fields added — every other field in the screenshot is already present.
+- No schema, API, or storage changes — the existing `accountType` field key already persists via `BROKER_BANKING_KEYS` through the standard save flow.
+- No edits to `BrokerBanking.tsx`, `BrokerDetailLayout.tsx`, `fieldKeyMap.ts`, or any other file.
+- Backward compatible: any broker record currently storing `Checking` or `Savings` will simply show an empty Select placeholder until the user picks one of the new options (no data loss, no error).
 
 ## Acceptance check
 
-1. Open Other Origination → Application → Borrower → Source of Information shows the 5 required options with "Select" placeholder.
-2. Pick a value → save → reload the deal → the value re-populates.
-3. Generate a template that contains `{{oo_app_sourceOfInformation}}` → the document renders the selected label (e.g. "Internal Referral"), blank when unset, no errors.
+1. Open Contacts → Broker → (any broker) → Banking → Type dropdown shows exactly: Personal Banking, Business Banking, Personal Checking, Business Checking.
+2. Pick a value → save → reload → value re-populates.
+3. No other field, label, or layout changes anywhere on the screen.
