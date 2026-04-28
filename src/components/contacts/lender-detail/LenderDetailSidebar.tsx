@@ -20,6 +20,7 @@ const SECTIONS: { id: LenderSection; label: string; icon: React.ElementType }[] 
   { id: 'authorized-party', label: 'Authorized Party', icon: UserCheck },
   { id: 'banking', label: 'Banking', icon: Building2 },
   { id: '1099', label: '1099', icon: FileText },
+  { id: 'tax-reporting', label: 'Tax Reporting', icon: Receipt },
   { id: 'attachments', label: 'Attachments', icon: Paperclip },
   { id: 'events-journal', label: 'Events Journal', icon: ScrollText },
 ];
