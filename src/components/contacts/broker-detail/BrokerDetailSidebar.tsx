@@ -19,6 +19,7 @@ const SECTIONS: { id: BrokerSection; label: string; icon: React.ElementType }[] 
   { id: 'trust-ledger', label: 'Trust Ledger', icon: BookOpen },
   { id: 'conversation-log', label: 'Conversation Log', icon: MessageSquare },
   { id: 'banking', label: 'Banking', icon: Building2 },
+  { id: 'tax-info', label: 'Tax Info', icon: Receipt },
   { id: '1099', label: '1099', icon: FileText },
   { id: 'authorized-party', label: 'Authorized Party', icon: UserCheck },
   { id: 'attachments', label: 'Attachments', icon: Paperclip },
