@@ -53,32 +53,19 @@ interface PortfolioRow {
 }
 
 const ALL_COLUMNS = [
-  { id: 'dealNumber', label: 'Account Number' },
+  { id: 'dealNumber', label: 'Loan Account' },
   { id: 'borrowerName', label: 'Borrower Name' },
-  { id: 'loanStatus', label: 'Loan Status' },
-  { id: 'propertyAddress', label: 'Property' },
-  { id: 'ownershipPct', label: '% Owned (Pro-rata)' },
-  { id: 'fundingAmount', label: 'Investment Amount' },
-  { id: 'outstandingBalance', label: 'Current Balance (UPB)' },
-  { id: 'currentBalance', label: 'Current Balance' },
-  { id: 'noteRate', label: 'Interest Rate' },
+  { id: 'noteRate', label: 'Note Rate' },
   { id: 'lenderRate', label: 'Lender Rate' },
-  { id: 'paymentReceived', label: 'Payment Received' },
   { id: 'regularPayment', label: 'Regular Payment' },
-  { id: 'nextPaymentDate', label: 'Next Due Date' },
-  { id: 'roiYield', label: 'ROI / Yield' },
-  { id: 'accruedInterest', label: 'Accrued Interest' },
-  { id: 'capacity', label: 'Capacity' },
-  { id: 'loanAmount', label: 'Loan Amount' },
+  { id: 'outstandingBalance', label: 'Principal Balance' },
+  { id: 'nextPaymentDate', label: 'Next Payment' },
   { id: 'maturityDate', label: 'Maturity Date' },
   { id: 'termLeft', label: 'Term Left' },
   { id: 'daysLate', label: 'Days Late' },
+  { id: 'ownershipPct', label: 'Pct Owned' },
+  { id: 'propertyAddress', label: 'Property Description' },
 ];
-
-const CAPACITY_OPTIONS = [
-  'Primary Lender', 'Participant Lender', 'Syndicate Lender', 'Authorized Party',
-];
-const STATUS_OPTIONS = ['Active', 'Delinquent', 'Paid Off', 'Default', 'Closed'];
 
 function extractFieldValue(fv: Record<string, any>, fieldId: string, key: string): any {
   const entry = fv[fieldId];
