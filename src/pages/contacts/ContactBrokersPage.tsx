@@ -279,7 +279,7 @@ const ContactBrokersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_brokers_v4"
+        tableConfigKey="contact_brokers_v5"
         addButtonLabel="Add Broker"
         breadcrumbLabel="Brokers"
         filterOptions={BROKER_FILTER_OPTIONS}
