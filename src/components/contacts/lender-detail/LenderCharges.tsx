@@ -145,6 +145,22 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
   const [newCharge, setNewCharge] = useState<Omit<ChargeRow, 'id'>>(EMPTY_CHARGE);
   const [isSaving, setIsSaving] = useState(false);
 
+  // Adjustment + History state (no UI structure changes to existing grid)
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [activeChargeId, setActiveChargeId] = useState<string | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState<string>('');
+  const [adjustRemarks, setAdjustRemarks] = useState<string>('');
+  const [history, setHistory] = useState<ChargeHistoryEntry[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('Unknown');
+
+  // Resolve current user once for audit trail
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserEmail(data.user?.email || data.user?.id || 'Unknown');
+    });
+  }, []);
+
   // Load charges from contact_data on mount
   useEffect(() => {
     const loadCharges = async () => {
