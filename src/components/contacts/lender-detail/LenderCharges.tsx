@@ -565,7 +565,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                 </SelectContent>
               </Select>
             </div>
-            {ALL_COLUMNS.map(col => (
+            {ALL_COLUMNS.filter(col => col.id !== 'charge_type').map(col => (
               <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
                 <Label className="text-xs">{col.label}</Label>
                 {col.id === 'date' ? (
