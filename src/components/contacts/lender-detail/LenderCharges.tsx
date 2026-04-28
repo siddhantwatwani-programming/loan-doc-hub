@@ -835,10 +835,10 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   let display = raw || '-';
                   if (raw && CURRENCY_COLS.has(c.id)) {
                     const n = parseMoney(raw);
-                    display = `$${n.toFixed(2)}`;
+                    display = fmtMoney(n);
                   } else if (raw && c.id === 'owed_to_account') {
                     const n = parseMoney(raw);
-                    display = `$${n.toFixed(2)}`;
+                    display = fmtMoney(n);
                   } else if (raw && c.id === 'interest_rate') {
                     display = `${raw}%`;
                   }
