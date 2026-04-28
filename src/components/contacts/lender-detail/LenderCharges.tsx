@@ -175,7 +175,8 @@ const computeFinalUnpaid = (row: ChargeRow): number => {
 const computeAmountOwedByBorrower = (advBy: string, onBehalf: string): number =>
   parseMoney(advBy) + parseMoney(onBehalf);
 
-const fmtMoney = (n: number) => `$${n.toFixed(2)}`;
+const fmtMoney = (n: number) =>
+  `$${(isNaN(n) ? 0 : n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ─── Calculated read-only field derivations (Charges Grid) ───────────────────
 // Deferred amount: when row.deferred flag is set, the charge amount is postponed
