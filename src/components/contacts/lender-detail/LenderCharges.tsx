@@ -219,36 +219,109 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
 
   const handleAddCharge = useCallback(async () => {
     if (disabled) return;
+    const chargeId = crypto.randomUUID();
     const chargeWithId: ChargeRow = {
       ...newCharge,
-      id: crypto.randomUUID(),
+      id: chargeId,
+      // Snapshot original amount so adjustments never overwrite it
+      original_amount: newCharge.unpaid_balance || newCharge.original_amount || '',
+      adjustments: [],
     };
     const updatedRows = [...rows, chargeWithId];
+    const newHistoryEntry: ChargeHistoryEntry = {
+      id: crypto.randomUUID(),
+      chargeId,
+      action: 'created',
+      newValue: `${chargeWithId.charge_type || chargeWithId.description || 'Charge'} | $${chargeWithId.original_amount || '0'}`,
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedHistory = [...history, newHistoryEntry];
     try {
-      await persistCharges(updatedRows);
+      await persistCharges(updatedRows, updatedHistory);
       setRows(updatedRows);
+      setHistory(updatedHistory);
       setNewCharge(EMPTY_CHARGE);
       setAddDialogOpen(false);
       toast.success('Charge added');
-      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.description || 'New charge' }]);
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.charge_type || chargeWithId.description || 'New charge' }]);
     } catch {
       // error already toasted
     }
-  }, [newCharge, rows, persistCharges]);
+  }, [newCharge, rows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (disabled || selectedRows.size === 0) return;
     const updatedRows = rows.filter(r => !selectedRows.has(r.id));
+    const deletionEntries: ChargeHistoryEntry[] = Array.from(selectedRows).map(cid => ({
+      id: crypto.randomUUID(),
+      chargeId: cid,
+      action: 'deleted',
+      oldValue: rows.find(r => r.id === cid)?.charge_type || rows.find(r => r.id === cid)?.description || '',
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    }));
+    const updatedHistory = [...history, ...deletionEntries];
     try {
-      await persistCharges(updatedRows);
+      await persistCharges(updatedRows, updatedHistory);
       setRows(updatedRows);
+      setHistory(updatedHistory);
       setSelectedRows(new Set());
       toast.success(`${selectedRows.size} charge(s) deleted`);
       logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charges Deleted', oldValue: `${selectedRows.size} charge(s)`, newValue: '(deleted)' }]);
     } catch {
       // error already toasted
     }
-  }, [rows, selectedRows, persistCharges]);
+  }, [rows, selectedRows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
+
+  // Apply adjustment (does NOT overwrite original_amount; appends to adjustments[])
+  const handleApplyAdjustment = useCallback(async () => {
+    if (disabled || !activeChargeId) return;
+    const amt = parseFloat(adjustAmount);
+    if (isNaN(amt) || amt === 0) {
+      toast.error('Enter a non-zero adjustment amount');
+      return;
+    }
+    const target = rows.find(r => r.id === activeChargeId);
+    if (!target) return;
+    const newAdjustment: ChargeAdjustment = {
+      id: crypto.randomUUID(),
+      amount: amt,
+      remarks: adjustRemarks.trim(),
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const previousFinal = computeFinal(target);
+    const updatedTarget: ChargeRow = {
+      ...target,
+      adjustments: [...(target.adjustments || []), newAdjustment],
+    };
+    const newFinal = computeFinal(updatedTarget);
+    const updatedRows = rows.map(r => r.id === activeChargeId ? updatedTarget : r);
+    const histEntry: ChargeHistoryEntry = {
+      id: crypto.randomUUID(),
+      chargeId: activeChargeId,
+      action: 'adjusted',
+      field: 'final_amount',
+      oldValue: `$${previousFinal.toFixed(2)}`,
+      newValue: `$${newFinal.toFixed(2)} (adj ${amt >= 0 ? '+' : ''}${amt.toFixed(2)}${newAdjustment.remarks ? ` — ${newAdjustment.remarks}` : ''})`,
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedHistory = [...history, histEntry];
+    try {
+      await persistCharges(updatedRows, updatedHistory);
+      setRows(updatedRows);
+      setHistory(updatedHistory);
+      setAdjustAmount('');
+      setAdjustRemarks('');
+      setAdjustOpen(false);
+      toast.success('Adjustment applied');
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Adjusted', oldValue: histEntry.oldValue || '', newValue: histEntry.newValue || '' }]);
+    } catch {
+      // error already toasted
+    }
+  }, [activeChargeId, adjustAmount, adjustRemarks, rows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
