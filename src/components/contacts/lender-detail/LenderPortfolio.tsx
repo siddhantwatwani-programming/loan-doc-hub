@@ -30,6 +30,7 @@ interface PortfolioRow {
   id: string;
   dealId: string;
   dealNumber: string;
+  lenderCode: string;
   borrowerName: string;
   propertyAddress: string;
   loanAmount: number;
@@ -331,6 +332,7 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
           id: `${dealId}-${lenderId}`,
           dealId,
           dealNumber: deal.deal_number || '-',
+          lenderCode: lenderId || '',
           borrowerName: deal.borrower_name || '-',
           propertyAddress: deal.property_address || '-',
           loanAmount: totalLoanAmount,
