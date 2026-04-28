@@ -30,6 +30,7 @@ interface PortfolioRow {
   id: string;
   dealId: string;
   dealNumber: string;
+  lenderCode: string;
   borrowerName: string;
   propertyAddress: string;
   loanAmount: number;
