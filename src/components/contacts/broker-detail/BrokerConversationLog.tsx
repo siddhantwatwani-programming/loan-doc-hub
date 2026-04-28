@@ -121,6 +121,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [addAsOfOpen, setAddAsOfOpen] = useState(false);
+  const [addCompletedDateOpen, setAddCompletedDateOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logTypes, setLogTypes] = useState<string[]>([]);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
