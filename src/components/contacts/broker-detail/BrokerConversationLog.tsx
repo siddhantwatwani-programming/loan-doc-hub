@@ -98,6 +98,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
     status: '',
     content: '',
     highPriority: false,
+    followUp: false,
     reference: '',
     attachments: [],
     account: '',
