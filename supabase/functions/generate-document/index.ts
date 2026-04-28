@@ -767,6 +767,17 @@ async function generateSingleDocument(
       }
     }
 
+    // Alias pr_pd_estimateValue from pr_p_appraiseValue if not already set
+    // (RE851A "MARKET VALUE OF PROPERTY (SEE PART 9)" uses {{pr_pd_estimateValue}})
+    const existingEstimate = fieldValues.get("pr_pd_estimateValue");
+    if (!existingEstimate || existingEstimate.rawValue === undefined || existingEstimate.rawValue === null || existingEstimate.rawValue === "") {
+      const sourceEstimate = fieldValues.get("pr_p_appraiseValue") || fieldValues.get("property1.appraise_value");
+      if (sourceEstimate && sourceEstimate.rawValue !== undefined && sourceEstimate.rawValue !== null && sourceEstimate.rawValue !== "") {
+        fieldValues.set("pr_pd_estimateValue", { rawValue: sourceEstimate.rawValue, dataType: sourceEstimate.dataType || "currency" });
+        debugLog(`[generate-document] Aliased pr_pd_estimateValue from pr_p_appraiseValue = ${sourceEstimate.rawValue}`);
+      }
+    }
+
     // Auto-compute ln_p_months if not already set (bridge from number_of_payments)
     const existingMonths = fieldValues.get("ln_p_months");
     if (!existingMonths || !existingMonths.rawValue) {
