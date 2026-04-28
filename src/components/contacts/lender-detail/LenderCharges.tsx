@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { logContactEvent } from '@/hooks/useContactEventJournal';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
+import { numericKeyDown, numericPaste, formatCurrencyDisplay, unformatCurrencyDisplay } from '@/lib/numericInputFilter';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter, Download, Settings2 } from 'lucide-react';
@@ -175,7 +176,8 @@ const computeFinalUnpaid = (row: ChargeRow): number => {
 const computeAmountOwedByBorrower = (advBy: string, onBehalf: string): number =>
   parseMoney(advBy) + parseMoney(onBehalf);
 
-const fmtMoney = (n: number) => `$${n.toFixed(2)}`;
+const fmtMoney = (n: number) =>
+  `$${(isNaN(n) ? 0 : n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 // ─── Calculated read-only field derivations (Charges Grid) ───────────────────
 // Deferred amount: when row.deferred flag is set, the charge amount is postponed
@@ -283,6 +285,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Omit<ChargeRow, 'id'>>(EMPTY_CHARGE);
   const [isSaving, setIsSaving] = useState(false);
+  const [originalAmountFocused, setOriginalAmountFocused] = useState(false);
 
   // Adjustment + History state
   const [adjustOpen, setAdjustOpen] = useState(false);
@@ -834,10 +837,10 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   let display = raw || '-';
                   if (raw && CURRENCY_COLS.has(c.id)) {
                     const n = parseMoney(raw);
-                    display = `$${n.toFixed(2)}`;
+                    display = fmtMoney(n);
                   } else if (raw && c.id === 'owed_to_account') {
                     const n = parseMoney(raw);
-                    display = `$${n.toFixed(2)}`;
+                    display = fmtMoney(n);
                   } else if (raw && c.id === 'interest_rate') {
                     display = `${raw}%`;
                   }
@@ -970,11 +973,31 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     className="h-8 text-xs pl-6"
-                    value={draft.original_balance || ''}
+                    value={
+                      originalAmountFocused
+                        ? (draft.original_balance || '')
+                        : formatCurrencyDisplay(draft.original_balance || '')
+                    }
+                    onFocus={() => setOriginalAmountFocused(true)}
+                    onBlur={() => {
+                      setOriginalAmountFocused(false);
+                      // Normalize stored value to raw numeric (no commas)
+                      const raw = unformatCurrencyDisplay(draft.original_balance || '');
+                      if (raw !== (draft.original_balance || '')) {
+                        setDraftField('original_balance', raw);
+                        if (!editingId) setDraftField('unpaid_balance', raw);
+                      }
+                    }}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (val) => {
+                      setDraftField('original_balance', val);
+                      if (!editingId) setDraftField('unpaid_balance', val);
+                    })}
                     onChange={e => {
-                      setDraftField('original_balance', e.target.value);
+                      const raw = unformatCurrencyDisplay(e.target.value);
+                      setDraftField('original_balance', raw);
                       // also seed unpaid_balance on creation
-                      if (!editingId) setDraftField('unpaid_balance', e.target.value);
+                      if (!editingId) setDraftField('unpaid_balance', raw);
                     }}
                     placeholder="0.00"
                     inputMode="decimal"
