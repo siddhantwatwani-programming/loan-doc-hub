@@ -371,7 +371,7 @@ const LenderTrustLedger: React.FC<{ lenderId: string; contactDbId: string; disab
                 <SelectContent className="!z-[9999]" position="popper">
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="reserve">Reserve</SelectItem>
-                  <SelectItem value="impound">Impound</SelectItem>
+                  <SelectItem value="holdback">Holdback</SelectItem>
                 </SelectContent>
               </Select>
             </div>
