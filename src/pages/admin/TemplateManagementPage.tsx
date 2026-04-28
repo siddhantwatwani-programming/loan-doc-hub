@@ -1312,6 +1312,13 @@ export const TemplateManagementPage: React.FC = () => {
                             <Scan className="h-4 w-4 mr-2" />
                             Validate DOCX Tags
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadTemplate(template)}
+                            disabled={!template.file_path}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download Template
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleEdit(template)}>
                             <Pencil className="h-4 w-4 mr-2" />
