@@ -214,7 +214,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
     if (!newLog.type || newLog.type.trim() === '') errors.type = 'Type is required';
     if (newLog.name && newLog.name.length > 100) errors.name = 'Name must be 100 characters or less';
     if (newLog.account && newLog.account.length > 100) errors.account = 'Account must be 100 characters or less';
-    if (newLog.reference && newLog.reference.length > 100) errors.reference = 'Reference must be 100 characters or less';
+    if (newLog.reference && newLog.reference.length > 100) errors.reference = 'Topic must be 100 characters or less';
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -445,7 +445,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
                   <span className="text-xs">{viewingRow.type || '-'}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Reference</Label>
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Topic</Label>
                   <span className="text-xs">{viewingRow.reference || '-'}</span>
                 </div>
               </div>
@@ -561,7 +561,7 @@ const BorrowerConversationLog: React.FC<{ borrowerId: string; contactDbId: strin
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Label className="w-[80px] shrink-0 text-xs">Reference</Label>
+                  <Label className="w-[80px] shrink-0 text-xs">Topic</Label>
                   <Input value={newLog.reference} onChange={e => setNewLog(p => ({ ...p, reference: e.target.value }))} maxLength={100} className={cn("h-7 text-xs flex-1", validationErrors.reference && "border-destructive")} />
                 </div>
                 {validationErrors.reference && <p className="text-xs text-destructive ml-[88px]">{validationErrors.reference}</p>}
