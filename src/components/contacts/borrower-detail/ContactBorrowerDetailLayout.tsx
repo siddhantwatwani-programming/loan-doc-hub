@@ -28,15 +28,21 @@ interface ContactBorrowerDetailLayoutProps {
   contact: ContactRecord;
   onBack: () => void;
   onSave: (id: string, contactData: Record<string, string>) => Promise<boolean>;
+  initialSection?: BorrowerSection;
+  backLabel?: string;
+  titlePrefix?: string;
 }
 
 const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = ({
   contact,
   onBack,
   onSave,
+  initialSection = 'borrower',
+  backLabel = 'Back to Borrowers',
+  titlePrefix = 'Borrower',
 }) => {
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
-  const [activeSection, setActiveSection] = useState<BorrowerSection>('borrower');
+  const [activeSection, setActiveSection] = useState<BorrowerSection>(initialSection);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
   const isReadOnly = permissionsLoading || isFormViewOnly('borrower');
