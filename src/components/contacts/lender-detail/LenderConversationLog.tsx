@@ -56,7 +56,7 @@ const ALL_COLUMNS = [
   { id: 'to', label: 'Assigned To' },
   { id: 'asOfDate', label: 'Follow Up Date' },
   { id: 'completed', label: 'Completed?' },
-  { id: 'completedBy', label: 'Completed By' },
+  
   { id: 'completedDate', label: 'Completed Date' },
 ];
 
@@ -623,13 +623,6 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
                   </PopoverContent>
                 </Popover>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs">Completed By</Label>
-                <Input value={newLog.completedBy || ''} onChange={e => { const v = e.target.value.replace(/[0-9]/g, ''); setNewLog(p => ({ ...p, completedBy: v })); }} maxLength={100} className="h-7 text-xs flex-1" />
-              </div>
-              <div />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Conversation Log</Label>
