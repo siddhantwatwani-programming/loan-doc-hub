@@ -24,6 +24,9 @@ const directItems = [
   { label: 'Borrower', path: '/contacts/borrowers' },
   { label: 'Lender', path: '/contacts/lenders' },
   { label: 'Broker', path: '/contacts/brokers' },
+  { label: 'Co-borrowers', path: '/contacts/co-borrowers' },
+  { label: 'Additional Guarantor', path: '/contacts/additional-guarantors' },
+  { label: 'Authorized Party', path: '/contacts/authorized-parties' },
 ];
 
 const othersItems = [
@@ -32,8 +35,6 @@ const othersItems = [
   { label: 'Insurance Company', path: '/contacts/others/insurance-company' },
   { label: 'Title Company', path: '/contacts/others/title-company' },
   { label: 'Notary', path: '/contacts/others/notary' },
-  { label: 'Additional Guarantor', path: '/contacts/others/additional-guarantor' },
-  { label: 'Authorized Party', path: '/contacts/others/authorized-party' },
   { label: 'Attorney', path: '/contacts/others/attorney' },
 ];
 

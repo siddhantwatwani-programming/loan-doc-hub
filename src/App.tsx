@@ -84,6 +84,9 @@ const App = () => (
                   <Route path="/contacts/others/insurance-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/title-company" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/notary" element={<ComingSoonPage />} />
+                  <Route path="/contacts/co-borrowers" element={<ComingSoonPage />} />
+                  <Route path="/contacts/additional-guarantors" element={<ComingSoonPage />} />
+                  <Route path="/contacts/authorized-parties" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/additional-guarantor" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/authorized-party" element={<ComingSoonPage />} />
                   <Route path="/contacts/others/attorney" element={<ComingSoonPage />} />
