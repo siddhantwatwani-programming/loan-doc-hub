@@ -98,18 +98,19 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
     lastAgentRef.current = agentValue;
 
     const writeFromKeys = (sourceKeys: Record<string, string>) => {
-      const mappings: [string, string][] = [
-        [sourceKeys.name, FK.tp_name],
-        [sourceKeys.street, FK.tp_street],
-        [sourceKeys.city, FK.tp_city],
-        [sourceKeys.state, FK.tp_state],
-        [sourceKeys.zip, FK.tp_zip],
-        [sourceKeys.phone, FK.tp_phone],
-        [sourceKeys.email, FK.tp_email],
+      const mappings: [string, string, string][] = [
+        [sourceKeys.name, FK.tp_name, FK.sp_name],
+        [sourceKeys.street, FK.tp_street, FK.sp_street],
+        [sourceKeys.city, FK.tp_city, FK.sp_city],
+        [sourceKeys.state, FK.tp_state, FK.sp_state],
+        [sourceKeys.zip, FK.tp_zip, FK.sp_zip],
+        [sourceKeys.phone, FK.tp_phone, FK.sp_phone],
+        [sourceKeys.email, FK.tp_email, FK.sp_email],
       ];
-      mappings.forEach(([src, dst]) => {
+      mappings.forEach(([src, dstTp, dstSp]) => {
         const srcVal = src ? (values[src] || '') : '';
-        sv(dst, srcVal);
+        sv(dstTp, srcVal);
+        sv(dstSp, srcVal);
       });
     };
 
