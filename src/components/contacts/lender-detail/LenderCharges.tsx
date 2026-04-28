@@ -661,7 +661,11 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
     const headers = activeColumns.map(c => c.label).join(',');
     const csvRows = filtered.map(r =>
       activeColumns.map(c => {
-        if (c.id === 'unpaid_balance') return computeFinalUnpaid(r).toFixed(2);
+        if (c.id === 'unpaid_balance') return computeUnpaidBalance(r).toFixed(2);
+        if (c.id === 'total_due') return computeTotalDue(r).toFixed(2);
+        if (c.id === 'accrued_interest') return computeAccruedInterest(r).toFixed(2);
+        if (c.id === 'owed_to_account') return computeOwedToAccount(r).toFixed(2);
+        if (c.id === 'deferred') return isDeferredFlag(r.deferred) ? 'Yes' : 'No';
         return (r as any)[c.id] || '';
       }).join(',')
     );
