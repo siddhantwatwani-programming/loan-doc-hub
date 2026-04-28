@@ -496,9 +496,19 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
+              <TableRow
+                key={r.id}
+                className={`${selectedRows.has(r.id) ? 'bg-primary/5' : ''} cursor-pointer hover:bg-muted/40`}
+                onClick={() => {
+                  if (disabled) return;
+                  setActiveChargeId(r.id);
+                  setAdjustAmount('');
+                  setAdjustRemarks('');
+                  setAdjustOpen(true);
+                }}
+              >
                 {!disabled && (
-                  <TableCell className="w-10 px-2">
+                  <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedRows.has(r.id)}
@@ -514,6 +524,11 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                     display = `$ ${val}`;
                   } else if (val && c.id === 'interest_rate') {
                     display = `${val} %`;
+                  }
+                  // For unpaid_balance, show final (original ± adjustments) without changing the column itself
+                  if (c.id === 'unpaid_balance' && (r.adjustments?.length || 0) > 0) {
+                    const final = computeFinal(r);
+                    display = `$ ${final.toFixed(2)}`;
                   }
                   return (
                     <TableCell key={c.id} className="whitespace-nowrap text-xs">
