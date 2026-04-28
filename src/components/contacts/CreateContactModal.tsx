@@ -82,7 +82,9 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   if (contactType === 'broker') {
     return {
-      company: '', first_name: '', last_name: '',
+      company: '', licensee_name_if_entity: '',
+      first_name: '', middle_name: '', last_name: '',
+      capacity: '',
       email: '', License: '',
       'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
       'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
@@ -91,8 +93,13 @@ const getInitialForm = (contactType: string): Record<string, string> => {
       'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
       brokers_representative: '',
       rep_phone: '', rep_email: '', rep_license: '',
-      frozen: 'false', agreement_on_file: 'false',
+      frozen: 'false', agreement_on_file: 'false', agreement_on_file_date: '',
       issue_1099: 'false',
+      'delivery.online': 'false', 'delivery.mailing_address': 'false', 'delivery.sms': 'false',
+      'send_pref.payment_notification': 'false', 'send_pref.late_notice': 'false',
+      'send_pref.borrower_statement': 'false', 'send_pref.maturity_notice': 'false',
+      'ford.1': '', 'ford.2': '', 'ford.3': '', 'ford.4': '',
+      'ford.5': '', 'ford.6': '', 'ford.7': '', 'ford.8': '',
     };
   }
   // borrower
