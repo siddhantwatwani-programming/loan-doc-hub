@@ -136,6 +136,8 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
   const [dobOpen, setDobOpen] = useState(false);
   const [investorDateOpen, setInvestorDateOpen] = useState(false);
+  const [agreementDateOpen, setAgreementDateOpen] = useState(false);
+  const [frozenDateOpen, setFrozenDateOpen] = useState(false);
 
   const wrapField = (key: keyof typeof FIELD_KEYS, children: React.ReactNode) => (
     <DirtyFieldWrapper fieldKey={FIELD_KEYS[key]}>{children}</DirtyFieldWrapper>
@@ -482,29 +484,63 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* Extra fields */}
           <div className="space-y-3 mt-4 border-t pt-3">
-            {wrapField('ach', <div className="flex items-center gap-2">
-              <Checkbox
-                checked={getBoolValue('ach')}
-                onCheckedChange={(checked) => handleChange('ach', !!checked)}
-                disabled={disabled}
-              />
-              <Label className="text-sm text-muted-foreground">ACH</Label>
-            </div>)}
             {wrapField('servicingAgreementOnFile', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('servicingAgreementOnFile')}
-                onCheckedChange={(checked) => handleChange('servicingAgreementOnFile', !!checked)}
+                onCheckedChange={(checked) => {
+                  handleChange('servicingAgreementOnFile', !!checked);
+                  if (!checked) handleChange('servicingAgreementOnFileDate', '');
+                }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">Agreement on File</Label>
+              <Label className="text-sm text-muted-foreground mr-2">Agreement on File</Label>
+              <Popover open={agreementDateOpen} onOpenChange={setAgreementDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('servicingAgreementOnFileDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('servicingAgreementOnFile')}>
+                    {safeFormatDate(getValue('servicingAgreementOnFileDate'), 'MM/dd/yyyy') || 'MM/DD/YYYY'}
+                    <CalendarIcon className="ml-auto h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar
+                    mode="single"
+                    selected={safeParseDateStr(getValue('servicingAgreementOnFileDate'))}
+                    onSelect={(date) => { handleChange('servicingAgreementOnFileDate', date ? format(date, 'yyyy-MM-dd') : ''); setAgreementDateOpen(false); }}
+                    onClear={() => { handleChange('servicingAgreementOnFileDate', ''); setAgreementDateOpen(false); }}
+                    onToday={() => { handleChange('servicingAgreementOnFileDate', format(new Date(), 'yyyy-MM-dd')); setAgreementDateOpen(false); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>)}
             {wrapField('freezeOutgoingDisbursements', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('freezeOutgoingDisbursements')}
-                onCheckedChange={(checked) => handleChange('freezeOutgoingDisbursements', !!checked)}
+                onCheckedChange={(checked) => {
+                  handleChange('freezeOutgoingDisbursements', !!checked);
+                  if (!checked) handleChange('freezeOutgoingDisbursementsDate', '');
+                }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground">Frozen</Label>
+              <Label className="text-sm text-muted-foreground mr-2">Frozen</Label>
+              <Popover open={frozenDateOpen} onOpenChange={setFrozenDateOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('freezeOutgoingDisbursementsDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('freezeOutgoingDisbursements')}>
+                    {safeFormatDate(getValue('freezeOutgoingDisbursementsDate'), 'MM/dd/yyyy') || 'MM/DD/YYYY'}
+                    <CalendarIcon className="ml-auto h-3 w-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                  <EnhancedCalendar
+                    mode="single"
+                    selected={safeParseDateStr(getValue('freezeOutgoingDisbursementsDate'))}
+                    onSelect={(date) => { handleChange('freezeOutgoingDisbursementsDate', date ? format(date, 'yyyy-MM-dd') : ''); setFrozenDateOpen(false); }}
+                    onClear={() => { handleChange('freezeOutgoingDisbursementsDate', ''); setFrozenDateOpen(false); }}
+                    onToday={() => { handleChange('freezeOutgoingDisbursementsDate', format(new Date(), 'yyyy-MM-dd')); setFrozenDateOpen(false); }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>)}
             {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox
@@ -517,7 +553,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground mr-2">Investor Questionaire Due</Label>
+              <Label className="text-sm text-muted-foreground mr-2">Investor Questionnaire Due</Label>
               <Popover open={investorDateOpen} onOpenChange={setInvestorDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('investorQuestionnaireDue')}>
