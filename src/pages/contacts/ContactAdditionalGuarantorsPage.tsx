@@ -61,74 +61,18 @@ interface AdditionalGuarantorDetailProps {
   contact: ContactRecord;
   onBack: () => void;
   onSave: (id: string, contactData: Record<string, string>) => Promise<boolean>;
-  isReadOnly: boolean;
 }
 
-const AdditionalGuarantorDetail: React.FC<AdditionalGuarantorDetailProps> = ({ contact, onBack, onSave, isReadOnly }) => {
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    const result: Record<string, string> = {};
-    Object.entries(contact.contact_data || {}).forEach(([key, value]) => {
-      if (typeof value !== 'string') return;
-      const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
-      result[needsPrefix ? `borrower.${key}` : key] = value;
-    });
-    return result;
-  });
-
-  const initialRef = useRef<Record<string, string>>({ ...values });
-  const isDirty = JSON.stringify(values) !== JSON.stringify(initialRef.current);
-  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-
-  const handleValueChange = useCallback((fieldKey: string, value: string) => {
-    if (isReadOnly) return;
-    setValues(prev => ({ ...prev, [fieldKey]: value }));
-  }, [isReadOnly]);
-
-  const handleSave = useCallback(async (): Promise<boolean> => {
-    if (isReadOnly) return false;
-    const contactData: Record<string, string> = {};
-    Object.entries(values).forEach(([key, value]) => {
-      const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
-      contactData[stripped] = value;
-    });
-    const saved = await onSave(contact.id, contactData);
-    if (saved) initialRef.current = { ...values };
-    return !!saved;
-  }, [values, contact.id, onSave, isReadOnly]);
-
+const AdditionalGuarantorDetail: React.FC<AdditionalGuarantorDetailProps> = ({ contact, onBack, onSave }) => {
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-6 py-3 border-b border-border">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Additional Guarantors
-          </Button>
-          <h3 className="font-semibold text-lg text-foreground">
-            Additional Guarantor — {contact.contact_id}
-          </h3>
-        </div>
-        {!isReadOnly && isDirty && (
-          <Button size="sm" onClick={() => setShowSaveConfirm(true)} className="gap-1">
-            <Save className="h-4 w-4" /> Save Changes
-          </Button>
-        )}
-      </div>
-      <div className="flex-1 overflow-auto p-4">
-        <DirtyFieldsProvider dirtyFieldKeys={new Set<string>()}>
-          <BorrowerAdditionalGuarantorForm
-            fields={[]}
-            values={values}
-            onValueChange={handleValueChange}
-            disabled={isReadOnly}
-          />
-        </DirtyFieldsProvider>
-      </div>
-      <SaveConfirmationDialog
-        open={showSaveConfirm}
-        onConfirm={() => { setShowSaveConfirm(false); handleSave(); }}
-        onCancel={() => setShowSaveConfirm(false)}
-      />
-    </div>
+    <ContactBorrowerDetailLayout
+      contact={contact}
+      onBack={onBack}
+      onSave={onSave}
+      initialSection="additional-guarantor"
+      backLabel="Back to Additional Guarantors"
+      titlePrefix="Additional Guarantor"
+    />
   );
 };
 
