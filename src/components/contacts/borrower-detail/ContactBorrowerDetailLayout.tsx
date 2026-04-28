@@ -206,10 +206,10 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       <div className="flex items-center justify-between px-6 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={onBack}>
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Borrowers
+            <ArrowLeft className="h-4 w-4 mr-1" /> {backLabel}
           </Button>
           <h3 className="font-semibold text-lg text-foreground">
-          Borrower — {contact.contact_id}
+          {titlePrefix} — {contact.contact_id}
           </h3>
         </div>
         {!isReadOnly && isDirty && (
