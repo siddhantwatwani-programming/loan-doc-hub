@@ -21,15 +21,52 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { History, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format } from 'date-fns';
 
+// Predefined Charge Types (no free text allowed)
+const CHARGE_TYPE_OPTIONS = [
+  'Late Fee',
+  'NSF Fee',
+  'Inspection Fee',
+  'Legal Fee',
+  'Servicing Fee',
+  'Modification Fee',
+  'Demand / Reinstatement Fee',
+  'Recording Fee',
+  'Wire Fee',
+  'Other',
+];
+
+interface ChargeAdjustment {
+  id: string;
+  amount: number; // positive or negative
+  remarks: string;
+  user: string;
+  timestamp: string;
+}
+
+interface ChargeHistoryEntry {
+  id: string;
+  chargeId: string;
+  action: 'created' | 'updated' | 'adjusted' | 'deleted';
+  field?: string;
+  oldValue?: string;
+  newValue?: string;
+  user: string;
+  timestamp: string;
+}
+
 interface ChargeRow {
   id: string;
   date: string;
   description: string;
+  charge_type?: string;
   interest_rate: string;
   interest_from: string;
   deferred: string;
@@ -39,6 +76,8 @@ interface ChargeRow {
   accrued_interest: string;
   total_due_to_you: string;
   total_owed_by_you: string;
+  original_amount?: string; // Snapshot of unpaid_balance at creation; never overwritten
+  adjustments?: ChargeAdjustment[];
 }
 
 const ALL_COLUMNS = [
@@ -58,6 +97,7 @@ const ALL_COLUMNS = [
 const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
   date: '',
   description: '',
+  charge_type: '',
   interest_rate: '',
   interest_from: '',
   deferred: '',
@@ -67,6 +107,22 @@ const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
   accrued_interest: '',
   total_due_to_you: '',
   total_owed_by_you: '',
+  original_amount: '',
+  adjustments: [],
+};
+
+const parseMoney = (v: string | number | undefined): number => {
+  if (v === undefined || v === null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+  return isNaN(n) ? 0 : n;
+};
+
+const sumAdjustments = (adjs?: ChargeAdjustment[]): number =>
+  (adjs || []).reduce((s, a) => s + (Number(a.amount) || 0), 0);
+
+const computeFinal = (row: ChargeRow): number => {
+  const original = parseMoney(row.original_amount || row.unpaid_balance);
+  return original + sumAdjustments(row.adjustments);
 };
 
 interface LenderChargesProps {
@@ -89,7 +145,23 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
   const [newCharge, setNewCharge] = useState<Omit<ChargeRow, 'id'>>(EMPTY_CHARGE);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load charges from contact_data on mount
+  // Adjustment + History state (no UI structure changes to existing grid)
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [activeChargeId, setActiveChargeId] = useState<string | null>(null);
+  const [adjustAmount, setAdjustAmount] = useState<string>('');
+  const [adjustRemarks, setAdjustRemarks] = useState<string>('');
+  const [history, setHistory] = useState<ChargeHistoryEntry[]>([]);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('Unknown');
+
+  // Resolve current user once for audit trail
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserEmail(data.user?.email || data.user?.id || 'Unknown');
+    });
+  }, []);
+
+  // Load charges + history from contact_data on mount
   useEffect(() => {
     const loadCharges = async () => {
       const { data, error } = await supabase
@@ -100,14 +172,23 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
       if (!error && data?.contact_data) {
         const cd = data.contact_data as Record<string, any>;
         if (Array.isArray(cd._charges)) {
-          setRows(cd._charges);
+          // Backfill original_amount + adjustments for legacy rows
+          const normalized = cd._charges.map((r: any) => ({
+            ...r,
+            original_amount: r.original_amount !== undefined ? r.original_amount : (r.unpaid_balance || ''),
+            adjustments: Array.isArray(r.adjustments) ? r.adjustments : [],
+          })) as ChargeRow[];
+          setRows(normalized);
+        }
+        if (Array.isArray(cd._charges_history)) {
+          setHistory(cd._charges_history as ChargeHistoryEntry[]);
         }
       }
     };
     if (contactDbId) loadCharges();
   }, [contactDbId]);
 
-  const persistCharges = useCallback(async (updatedRows: ChargeRow[]) => {
+  const persistCharges = useCallback(async (updatedRows: ChargeRow[], updatedHistory?: ChargeHistoryEntry[]) => {
     setIsSaving(true);
     try {
       // Fetch current contact_data first to merge
@@ -119,7 +200,8 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
       if (fetchErr) throw fetchErr;
 
       const existingData = (current?.contact_data as Record<string, any>) || {};
-      const merged = { ...existingData, _charges: updatedRows } as any;
+      const merged: any = { ...existingData, _charges: updatedRows };
+      if (updatedHistory) merged._charges_history = updatedHistory;
 
       const { error } = await supabase
         .from('contacts')
@@ -137,36 +219,109 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
 
   const handleAddCharge = useCallback(async () => {
     if (disabled) return;
+    const chargeId = crypto.randomUUID();
     const chargeWithId: ChargeRow = {
       ...newCharge,
-      id: crypto.randomUUID(),
+      id: chargeId,
+      // Snapshot original amount so adjustments never overwrite it
+      original_amount: newCharge.unpaid_balance || newCharge.original_amount || '',
+      adjustments: [],
     };
     const updatedRows = [...rows, chargeWithId];
+    const newHistoryEntry: ChargeHistoryEntry = {
+      id: crypto.randomUUID(),
+      chargeId,
+      action: 'created',
+      newValue: `${chargeWithId.charge_type || chargeWithId.description || 'Charge'} | $${chargeWithId.original_amount || '0'}`,
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedHistory = [...history, newHistoryEntry];
     try {
-      await persistCharges(updatedRows);
+      await persistCharges(updatedRows, updatedHistory);
       setRows(updatedRows);
+      setHistory(updatedHistory);
       setNewCharge(EMPTY_CHARGE);
       setAddDialogOpen(false);
       toast.success('Charge added');
-      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.description || 'New charge' }]);
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Added', oldValue: '', newValue: chargeWithId.charge_type || chargeWithId.description || 'New charge' }]);
     } catch {
       // error already toasted
     }
-  }, [newCharge, rows, persistCharges]);
+  }, [newCharge, rows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
 
   const handleDeleteSelected = useCallback(async () => {
     if (disabled || selectedRows.size === 0) return;
     const updatedRows = rows.filter(r => !selectedRows.has(r.id));
+    const deletionEntries: ChargeHistoryEntry[] = Array.from(selectedRows).map(cid => ({
+      id: crypto.randomUUID(),
+      chargeId: cid,
+      action: 'deleted',
+      oldValue: rows.find(r => r.id === cid)?.charge_type || rows.find(r => r.id === cid)?.description || '',
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    }));
+    const updatedHistory = [...history, ...deletionEntries];
     try {
-      await persistCharges(updatedRows);
+      await persistCharges(updatedRows, updatedHistory);
       setRows(updatedRows);
+      setHistory(updatedHistory);
       setSelectedRows(new Set());
       toast.success(`${selectedRows.size} charge(s) deleted`);
       logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charges Deleted', oldValue: `${selectedRows.size} charge(s)`, newValue: '(deleted)' }]);
     } catch {
       // error already toasted
     }
-  }, [rows, selectedRows, persistCharges]);
+  }, [rows, selectedRows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
+
+  // Apply adjustment (does NOT overwrite original_amount; appends to adjustments[])
+  const handleApplyAdjustment = useCallback(async () => {
+    if (disabled || !activeChargeId) return;
+    const amt = parseFloat(adjustAmount);
+    if (isNaN(amt) || amt === 0) {
+      toast.error('Enter a non-zero adjustment amount');
+      return;
+    }
+    const target = rows.find(r => r.id === activeChargeId);
+    if (!target) return;
+    const newAdjustment: ChargeAdjustment = {
+      id: crypto.randomUUID(),
+      amount: amt,
+      remarks: adjustRemarks.trim(),
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const previousFinal = computeFinal(target);
+    const updatedTarget: ChargeRow = {
+      ...target,
+      adjustments: [...(target.adjustments || []), newAdjustment],
+    };
+    const newFinal = computeFinal(updatedTarget);
+    const updatedRows = rows.map(r => r.id === activeChargeId ? updatedTarget : r);
+    const histEntry: ChargeHistoryEntry = {
+      id: crypto.randomUUID(),
+      chargeId: activeChargeId,
+      action: 'adjusted',
+      field: 'final_amount',
+      oldValue: `$${previousFinal.toFixed(2)}`,
+      newValue: `$${newFinal.toFixed(2)} (adj ${amt >= 0 ? '+' : ''}${amt.toFixed(2)}${newAdjustment.remarks ? ` — ${newAdjustment.remarks}` : ''})`,
+      user: currentUserEmail,
+      timestamp: new Date().toISOString(),
+    };
+    const updatedHistory = [...history, histEntry];
+    try {
+      await persistCharges(updatedRows, updatedHistory);
+      setRows(updatedRows);
+      setHistory(updatedHistory);
+      setAdjustAmount('');
+      setAdjustRemarks('');
+      setAdjustOpen(false);
+      toast.success('Adjustment applied');
+      logContactEvent(contactDbId, 'Charges', [{ fieldLabel: 'Charge Adjusted', oldValue: histEntry.oldValue || '', newValue: histEntry.newValue || '' }]);
+    } catch {
+      // error already toasted
+    }
+  }, [activeChargeId, adjustAmount, adjustRemarks, rows, history, currentUserEmail, persistCharges, contactDbId, disabled]);
 
   const handleSort = (col: string) => {
     if (sortCol === col) {
@@ -268,6 +423,14 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
               Delete ({selectedRows.size})
             </Button>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1 h-8 text-xs"
+            onClick={() => { setActiveChargeId(null); setHistoryOpen(true); }}
+          >
+            <History className="h-3.5 w-3.5" /> History
+          </Button>
           {!disabled && (
             <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={() => setAddDialogOpen(true)}>
               <Plus className="h-3.5 w-3.5" /> Add Charge
@@ -333,9 +496,19 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                 </TableCell>
               </TableRow>
             ) : filtered.map(r => (
-              <TableRow key={r.id} className={selectedRows.has(r.id) ? 'bg-primary/5' : ''}>
+              <TableRow
+                key={r.id}
+                className={`${selectedRows.has(r.id) ? 'bg-primary/5' : ''} cursor-pointer hover:bg-muted/40`}
+                onClick={() => {
+                  if (disabled) return;
+                  setActiveChargeId(r.id);
+                  setAdjustAmount('');
+                  setAdjustRemarks('');
+                  setAdjustOpen(true);
+                }}
+              >
                 {!disabled && (
-                  <TableCell className="w-10 px-2">
+                  <TableCell className="w-10 px-2" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       checked={selectedRows.has(r.id)}
@@ -351,6 +524,11 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                     display = `$ ${val}`;
                   } else if (val && c.id === 'interest_rate') {
                     display = `${val} %`;
+                  }
+                  // For unpaid_balance, show final (original ± adjustments) without changing the column itself
+                  if (c.id === 'unpaid_balance' && (r.adjustments?.length || 0) > 0) {
+                    const final = computeFinal(r);
+                    display = `$ ${final.toFixed(2)}`;
                   }
                   return (
                     <TableCell key={c.id} className="whitespace-nowrap text-xs">
@@ -371,6 +549,21 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
             <DialogTitle>Add Charge</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
+            {/* Charge Type — predefined dropdown (no free text) */}
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Charge Type</Label>
+              <Select
+                value={newCharge.charge_type || ''}
+                onValueChange={(v) => setNewCharge(prev => ({ ...prev, charge_type: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select Charge Type" /></SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {CHARGE_TYPE_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {ALL_COLUMNS.map(col => (
               <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
                 <Label className="text-xs">{col.label}</Label>
@@ -433,6 +626,169 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
             <Button size="sm" onClick={handleAddCharge} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Add Charge'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjustment Dialog (opens on row click) */}
+      <Dialog open={adjustOpen} onOpenChange={setAdjustOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust Charge</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const target = rows.find(r => r.id === activeChargeId);
+            if (!target) return null;
+            const original = parseMoney(target.original_amount || target.unpaid_balance);
+            const sumAdj = sumAdjustments(target.adjustments);
+            const final = original + sumAdj;
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-md border border-border p-2">
+                    <p className="text-muted-foreground">Original</p>
+                    <p className="font-semibold">${original.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-md border border-border p-2">
+                    <p className="text-muted-foreground">Adjustments</p>
+                    <p className="font-semibold">{sumAdj >= 0 ? '+' : ''}${sumAdj.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-md border border-border p-2 bg-primary/5">
+                    <p className="text-muted-foreground">Final</p>
+                    <p className="font-semibold">${final.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Adjustment Amount (use negative to reduce)</Label>
+                  <Input
+                    className="h-8 text-xs"
+                    value={adjustAmount}
+                    onChange={(e) => setAdjustAmount(e.target.value)}
+                    placeholder="e.g., 50.00 or -25.00"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Remarks / Reason (optional)</Label>
+                  <Textarea
+                    className="text-xs"
+                    rows={3}
+                    value={adjustRemarks}
+                    onChange={(e) => setAdjustRemarks(e.target.value)}
+                    placeholder="Why is this adjustment being made?"
+                  />
+                </div>
+                {(target.adjustments?.length || 0) > 0 && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Previous Adjustments</Label>
+                    <div className="max-h-32 overflow-y-auto border border-border rounded-md p-2 space-y-1">
+                      {target.adjustments!.map(a => (
+                        <div key={a.id} className="text-[11px] flex justify-between gap-2">
+                          <span className={a.amount >= 0 ? 'text-foreground' : 'text-destructive'}>
+                            {a.amount >= 0 ? '+' : ''}${Number(a.amount).toFixed(2)}
+                          </span>
+                          <span className="text-muted-foreground truncate flex-1">{a.remarks || '—'}</span>
+                          <span className="text-muted-foreground">{new Date(a.timestamp).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setActiveChargeId(activeChargeId); setHistoryOpen(true); setAdjustOpen(false); }}
+              className="gap-1"
+            >
+              <History className="h-3.5 w-3.5" /> View History
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAdjustOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleApplyAdjustment} disabled={isSaving || disabled}>
+              <Pencil className="h-3.5 w-3.5 mr-1" /> Apply Adjustment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog (read-only audit trail) */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {activeChargeId ? 'Charge History' : 'All Charges History'}
+            </DialogTitle>
+          </DialogHeader>
+          {activeChargeId && (() => {
+            const target = rows.find(r => r.id === activeChargeId);
+            if (!target) return null;
+            const original = parseMoney(target.original_amount || target.unpaid_balance);
+            const final = computeFinal(target);
+            return (
+              <div className="grid grid-cols-4 gap-2 text-xs mb-2">
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Charge</p>
+                  <p className="font-semibold truncate">{target.charge_type || target.description || '—'}</p>
+                </div>
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Original</p>
+                  <p className="font-semibold">${original.toFixed(2)}</p>
+                </div>
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Adjustments</p>
+                  <p className="font-semibold">{target.adjustments?.length || 0}</p>
+                </div>
+                <div className="rounded-md border border-border p-2 bg-primary/5">
+                  <p className="text-muted-foreground">Final</p>
+                  <p className="font-semibold">${final.toFixed(2)}</p>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="border border-border rounded-md overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-xs">When</TableHead>
+                  <TableHead className="text-xs">User</TableHead>
+                  <TableHead className="text-xs">Action</TableHead>
+                  <TableHead className="text-xs">Old Value</TableHead>
+                  <TableHead className="text-xs">New Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(() => {
+                  const filteredHist = activeChargeId
+                    ? history.filter(h => h.chargeId === activeChargeId)
+                    : history;
+                  const sorted = [...filteredHist].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+                  if (sorted.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
+                          No history records yet.
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return sorted.map(h => (
+                    <TableRow key={h.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{new Date(h.timestamp).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{h.user}</TableCell>
+                      <TableCell className="text-xs capitalize">{h.action}</TableCell>
+                      <TableCell className="text-xs">{h.oldValue || '—'}</TableCell>
+                      <TableCell className="text-xs">{h.newValue || '—'}</TableCell>
+                    </TableRow>
+                  ));
+                })()}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setHistoryOpen(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
