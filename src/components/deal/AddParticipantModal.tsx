@@ -52,9 +52,9 @@ type ParticipantType =
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
+  { value: 'co_borrower', label: 'Co-borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
-  { value: 'vendor', label: 'Vendor', disabled: false },
   { value: 'additional_guarantor', label: 'Additional Guarantor', disabled: false },
   { value: 'authorized_party', label: 'Authorized Party', disabled: false },
 ];
@@ -62,7 +62,7 @@ const PARTICIPANT_TYPES = [
 // Types that don't map to a native app_role enum value — persisted as 'other' role
 // with the original selection retained as the participant's capacity label.
 const EXTENDED_TYPE_LABELS: Record<string, string> = {
-  vendor: 'Vendor',
+  co_borrower: 'Co-borrower',
   additional_guarantor: 'Additional Guarantor',
   authorized_party: 'Authorized Party',
 };
