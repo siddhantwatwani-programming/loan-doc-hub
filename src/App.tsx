@@ -36,6 +36,7 @@ import ContactBorrowersPage from "./pages/contacts/ContactBorrowersPage";
 import ContactBrokersPage from "./pages/contacts/ContactBrokersPage";
 import ContactCoBorrowersPage from "./pages/contacts/ContactCoBorrowersPage";
 import ContactAuthorizedPartiesPage from "./pages/contacts/ContactAuthorizedPartiesPage";
+import ContactAdditionalGuarantorsPage from "./pages/contacts/ContactAdditionalGuarantorsPage";
 
 
 const queryClient = new QueryClient({
@@ -88,7 +89,8 @@ const App = () => (
                   <Route path="/contacts/others/notary" element={<ComingSoonPage />} />
                   <Route path="/contacts/co-borrowers" element={<ContactCoBorrowersPage />} />
                   <Route path="/contacts/co-borrowers/:contactId" element={<ContactCoBorrowersPage />} />
-                  <Route path="/contacts/additional-guarantors" element={<ComingSoonPage />} />
+                  <Route path="/contacts/additional-guarantors" element={<ContactAdditionalGuarantorsPage />} />
+                  <Route path="/contacts/additional-guarantors/:contactId" element={<ContactAdditionalGuarantorsPage />} />
                   <Route path="/contacts/authorized-parties" element={<ContactAuthorizedPartiesPage />} />
                   <Route path="/contacts/authorized-parties/:contactId" element={<ContactAuthorizedPartiesPage />} />
                   <Route path="/contacts/others/additional-guarantor" element={<ComingSoonPage />} />
