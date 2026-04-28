@@ -462,9 +462,35 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
                   <span className="text-xs">{viewingRow.name || '-'}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Priority</Label>
-                <span className="text-xs">{viewingRow.highPriority ? 'Yes' : 'No'}</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Subject</Label>
+                  <span className="text-xs">{viewingRow.subject || '-'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Assigned To</Label>
+                  <span className="text-xs">{viewingRow.to || '-'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">High Priority</Label>
+                  <span className="text-xs">{viewingRow.highPriority ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Follow Up</Label>
+                  <span className="text-xs">{viewingRow.followUp ? 'Yes' : 'No'}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Completed?</Label>
+                  <span className="text-xs">{viewingRow.completed ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="w-[80px] shrink-0 text-xs text-muted-foreground">Completed Date</Label>
+                  <span className="text-xs">{viewingRow.completedDate ? formatDateDisplay(viewingRow.completedDate) : '-'}</span>
+                </div>
               </div>
               {viewingRow.content && (
                 <div>
