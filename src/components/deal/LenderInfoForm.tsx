@@ -515,7 +515,7 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground mr-2">Investor Questionnaire Due</Label>
+              <Label className="text-sm text-muted-foreground mr-2">Investor Questionnaire Due Date</Label>
               <Popover open={investorDateOpen} onOpenChange={setInvestorDateOpen}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("h-7 text-xs", !getValue('investorQuestionnaireDueDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('investorQuestionnaireDue')}>
