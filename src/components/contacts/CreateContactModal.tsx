@@ -82,7 +82,9 @@ const getInitialForm = (contactType: string): Record<string, string> => {
   }
   if (contactType === 'broker') {
     return {
-      company: '', first_name: '', last_name: '',
+      company: '', licensee_name_if_entity: '',
+      first_name: '', middle_name: '', last_name: '',
+      capacity: '',
       email: '', License: '',
       'address.street': '', 'address.city': '', 'address.state': '', 'address.zip': '',
       'mailing.street': '', 'mailing.city': '', 'mailing.state': '', 'mailing.zip': '',
@@ -91,8 +93,13 @@ const getInitialForm = (contactType: string): Record<string, string> => {
       'preferred.home': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
       brokers_representative: '',
       rep_phone: '', rep_email: '', rep_license: '',
-      frozen: 'false', agreement_on_file: 'false',
+      frozen: 'false', agreement_on_file: 'false', agreement_on_file_date: '',
       issue_1099: 'false',
+      'delivery.online': 'false', 'delivery.mailing_address': 'false', 'delivery.sms': 'false',
+      'send_pref.payment_notification': 'false', 'send_pref.late_notice': 'false',
+      'send_pref.borrower_statement': 'false', 'send_pref.maturity_notice': 'false',
+      'ford.1': '', 'ford.2': '', 'ford.3': '', 'ford.4': '',
+      'ford.5': '', 'ford.6': '', 'ford.7': '', 'ford.8': '',
     };
   }
   // borrower
@@ -224,7 +231,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
       const errs: Record<string, string> = {};
       if (!(form['License'] || '').trim()) errs['License'] = 'Enter valid license number';
       else if ((form['License'] || '').length > 50) errs['License'] = 'Max 50 characters';
-      if (!(form['company'] || '').trim()) errs['company'] = 'Company name is required';
+      if (!(form['company'] || '').trim()) errs['company'] = 'Licensee Name is required';
       else if ((form['company'] || '').length > 100) errs['company'] = 'Max 100 characters';
       if (!(form['first_name'] || '').trim()) errs['first_name'] = 'Enter valid first name';
       if (!(form['last_name'] || '').trim()) errs['last_name'] = 'Enter valid last name';
@@ -651,78 +658,106 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'broker' && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
-            {/* Column 1: Broker Details + Representative */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
+            {/* Column 1: Name + Broker or Representative */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
-              {/* License - alphanumeric, max 50, required */}
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
+
+              {/* Broker ID (auto on save - read-only placeholder) */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">License</Label>
-                <Input value={form['License'] || ''} onChange={(e) => { set('License', e.target.value); clrKErr('License'); }} onKeyDown={alphaNumKD} onPaste={(e) => { e.preventDefault(); set('License', e.clipboardData.getData('text').replace(/[^A-Za-z0-9]/g, '')); }} onBlur={() => { const v = (form['License'] || '').trim(); set('License', v); if (!v) setKErr('License', 'Enter valid license number'); else clrKErr('License'); }} maxLength={50} className={cn("h-7 text-xs flex-1", brokerErrors['License'] && "border-destructive")} />
+                <Label className="w-[140px] shrink-0 text-xs">Broker ID</Label>
+                <Input value="" disabled placeholder="Auto-generated" className="h-7 text-xs flex-1 bg-muted" />
               </div>
-              {brokerErrors['License'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['License']}</p>}
 
-              {/* Company - required, max 100 */}
+              {/* Licensee Name If Entity - mirrors `company` for backward compat */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Company</Label>
-                <Input value={form['company'] || ''} onChange={(e) => { set('company', e.target.value); clrKErr('company'); }} onBlur={() => { const v = (form['company'] || '').trim(); set('company', v); if (!v) setKErr('company', 'Company name is required'); else clrKErr('company'); }} maxLength={100} className={cn("h-7 text-xs flex-1", brokerErrors['company'] && "border-destructive")} />
-              </div>
-              {brokerErrors['company'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['company']}</p>}
-
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker's Representative</h3>
-
-              {/* First Name - alpha only, required */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">First Name</Label>
-                <Input value={form['first_name'] || ''} onChange={(e) => { set('first_name', e.target.value); clrKErr('first_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('first_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['first_name'] || '').trim(); set('first_name', v); if (!v) setKErr('first_name', 'Enter valid first name'); else clrKErr('first_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['first_name'] && "border-destructive")} />
-              </div>
-              {brokerErrors['first_name'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['first_name']}</p>}
-
-              {/* Last Name - alpha only, required */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Last Name</Label>
-                <Input value={form['last_name'] || ''} onChange={(e) => { set('last_name', e.target.value); clrKErr('last_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('last_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['last_name'] || '').trim(); set('last_name', v); if (!v) setKErr('last_name', 'Enter valid last name'); else clrKErr('last_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['last_name'] && "border-destructive")} />
-              </div>
-              {brokerErrors['last_name'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['last_name']}</p>}
-
-              {/* Rep Phone */}
-              <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Phone</Label>
-                <PhoneInput
-                  value={form['rep_phone'] || ''}
-                  onValueChange={(v) => set('rep_phone', v)}
-                  className="h-7 text-xs flex-1"
+                <Label className="w-[140px] shrink-0 text-xs">Licensee Name If Entity</Label>
+                <Input
+                  value={form['licensee_name_if_entity'] || ''}
+                  onChange={(e) => { set('licensee_name_if_entity', e.target.value); set('company', e.target.value); clrKErr('company'); }}
+                  onBlur={() => { const v = (form['licensee_name_if_entity'] || '').trim(); set('licensee_name_if_entity', v); set('company', v); if (!v) setKErr('company', 'Licensee Name is required'); else clrKErr('company'); }}
+                  maxLength={100}
+                  className={cn("h-7 text-xs flex-1", brokerErrors['company'] && "border-destructive")}
                 />
               </div>
+              {brokerErrors['company'] && <p className="text-[10px] text-destructive ml-[148px]">{brokerErrors['company']}</p>}
 
-              {/* Rep Email */}
+              {/* License Number */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
-                <EmailInput value={form['rep_email'] || ''} onValueChange={(v) => set('rep_email', v)} className="h-7 text-xs" />
+                <Label className="w-[140px] shrink-0 text-xs">License Number</Label>
+                <Input value={form['License'] || ''} onChange={(e) => { set('License', e.target.value); clrKErr('License'); }} onKeyDown={alphaNumKD} onPaste={(e) => { e.preventDefault(); set('License', e.clipboardData.getData('text').replace(/[^A-Za-z0-9]/g, '')); }} onBlur={() => { const v = (form['License'] || '').trim(); set('License', v); if (!v) setKErr('License', 'Enter valid license number'); else clrKErr('License'); }} maxLength={50} className={cn("h-7 text-xs flex-1", brokerErrors['License'] && "border-destructive")} />
+              </div>
+              {brokerErrors['License'] && <p className="text-[10px] text-destructive ml-[148px]">{brokerErrors['License']}</p>}
+
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker or Representative</h3>
+
+              {/* First */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">First</Label>
+                <Input value={form['first_name'] || ''} onChange={(e) => { set('first_name', e.target.value); clrKErr('first_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('first_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['first_name'] || '').trim(); set('first_name', v); if (!v) setKErr('first_name', 'Enter valid first name'); else clrKErr('first_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['first_name'] && "border-destructive")} />
+              </div>
+              {brokerErrors['first_name'] && <p className="text-[10px] text-destructive ml-[148px]">{brokerErrors['first_name']}</p>}
+
+              {/* Middle */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">Middle</Label>
+                <Input value={form['middle_name'] || ''} onChange={(e) => set('middle_name', e.target.value)} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('middle_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => set('middle_name', (form['middle_name'] || '').trim())} className="h-7 text-xs flex-1" />
               </div>
 
-              {/* Rep License */}
+              {/* Last */}
               <div className="flex items-center gap-2">
-                <Label className="w-[100px] shrink-0 text-xs">License</Label>
+                <Label className="w-[140px] shrink-0 text-xs">Last</Label>
+                <Input value={form['last_name'] || ''} onChange={(e) => { set('last_name', e.target.value); clrKErr('last_name'); }} onKeyDown={alphaOnlyKD} onPaste={(e) => { e.preventDefault(); set('last_name', e.clipboardData.getData('text').replace(/[^A-Za-z]/g, '')); }} onBlur={() => { const v = (form['last_name'] || '').trim(); set('last_name', v); if (!v) setKErr('last_name', 'Enter valid last name'); else clrKErr('last_name'); }} className={cn("h-7 text-xs flex-1", brokerErrors['last_name'] && "border-destructive")} />
+              </div>
+              {brokerErrors['last_name'] && <p className="text-[10px] text-destructive ml-[148px]">{brokerErrors['last_name']}</p>}
+
+              {/* Capacity */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">Capacity</Label>
+                <Select value={form['capacity'] || ''} onValueChange={(v) => set('capacity', v)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    <SelectItem value="Broker">Broker</SelectItem>
+                    <SelectItem value="Broker's Representative">Broker's Representative</SelectItem>
+                    <SelectItem value="Unlicensed">Unlicensed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* License Number (Rep) */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">License Number</Label>
                 <Input value={form['rep_license'] || ''} onChange={(e) => set('rep_license', e.target.value)} onBlur={() => set('rep_license', (form['rep_license'] || '').trim())} maxLength={50} className="h-7 text-xs flex-1" />
               </div>
 
-              <div className="flex items-center gap-2 mt-2">
-                <Label className="w-[100px] shrink-0 text-xs">Email</Label>
+              {/* Email */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[140px] shrink-0 text-xs">Email</Label>
                 <EmailInput value={form['email'] || ''} onValueChange={(v) => { set('email', v); clrKErr('email'); }} className="h-7 text-xs" />
               </div>
-              {brokerErrors['email'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['email']}</p>}
+              {brokerErrors['email'] && <p className="text-[10px] text-destructive ml-[148px]">{brokerErrors['email']}</p>}
 
-              <div className="pt-2 space-y-1">
-                {renderCheckbox('Frozen', 'frozen')}
-                {renderCheckbox('Agreement on File', 'agreement_on_file')}
-                {renderCheckbox('Send 1099', 'issue_1099')}
+              {/* Agreement on File + Date */}
+              <div className="pt-2 flex items-center gap-2">
+                <div className="flex items-center gap-2 w-[160px] shrink-0">
+                  <Checkbox
+                    checked={form['agreement_on_file'] === 'true'}
+                    onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
+                  />
+                  <Label className="text-xs">Agreement on File</Label>
+                </div>
+                <Input
+                  type="date"
+                  value={form['agreement_on_file_date'] || ''}
+                  onChange={(e) => set('agreement_on_file_date', e.target.value)}
+                  className="h-7 text-xs flex-1"
+                />
               </div>
             </div>
 
-            {/* Column 2: Address */}
+            {/* Column 2: Primary Address + Mailing Address + Delivery Options */}
             <div className="space-y-1.5">
-              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Address</h3>
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
               <div className="flex items-center gap-2">
                 <Label className="w-[100px] shrink-0 text-xs">Street</Label>
                 <Input value={form['address.street'] || ''} onChange={(e) => { set('address.street', e.target.value); clrKErr('address.street'); }} onBlur={() => set('address.street', (form['address.street'] || '').trim())} maxLength={150} className={cn("h-7 text-xs flex-1", brokerErrors['address.street'] && "border-destructive")} />
@@ -748,9 +783,56 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrKErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {brokerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{brokerErrors['address.zip']}</p>}
+
+              <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-b border-border pb-1 mb-2 mt-4">
+                <h3 className="font-semibold text-xs text-foreground">Mailing Address</h3>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs">Same as Primary</Label>
+                  <Checkbox
+                    checked={form['mailing_same_as_primary'] === 'true'}
+                    onCheckedChange={(checked) => set('mailing_same_as_primary', String(!!checked))}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+                <Input value={form['mailing.street'] || ''} onChange={(e) => set('mailing.street', e.target.value)} disabled={form['mailing_same_as_primary'] === 'true'} className="h-7 text-xs flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">City</Label>
+                <Input value={form['mailing.city'] || ''} onChange={(e) => set('mailing.city', e.target.value)} disabled={form['mailing_same_as_primary'] === 'true'} className="h-7 text-xs flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">State</Label>
+                <Select value={form['mailing.state'] || ''} onValueChange={(v) => set('mailing.state', v)} disabled={form['mailing_same_as_primary'] === 'true'}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+                <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={form['mailing_same_as_primary'] === 'true'} className="h-7 text-xs" />
+              </div>
+
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Delivery Options</h3>
+              {([
+                { key: 'delivery.online', label: 'Online' },
+                { key: 'delivery.mailing_address', label: 'Mailing Address' },
+                { key: 'delivery.sms', label: 'SMS' },
+              ]).map(({ key, label }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <Label className="text-xs">{label}</Label>
+                  <Checkbox
+                    checked={form[key] === 'true'}
+                    onCheckedChange={(checked) => set(key, String(!!checked))}
+                  />
+                </div>
+              ))}
             </div>
 
-            {/* Column 3: Phone */}
+            {/* Column 3: Phone + FORD + Send */}
             <div className="space-y-1.5">
               <div className="grid grid-cols-[40px_1fr_72px] items-center gap-2 border-b border-border pb-1 mb-2">
                 <h3 className="font-semibold text-xs text-foreground">Phone</h3>
@@ -781,6 +863,32 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   </div>
                 ))}
               </RadioGroup>
+
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">FORD</h3>
+              <div className="space-y-1.5">
+                {[['ford.1', 'ford.2'], ['ford.3', 'ford.4'], ['ford.5', 'ford.6'], ['ford.7', 'ford.8']].map(([dKey, iKey], idx) => (
+                  <div key={idx} className="grid grid-cols-2 gap-2">
+                    <Input value={form[dKey] || ''} onChange={(e) => set(dKey, e.target.value)} className="h-7 text-xs" placeholder="Category" />
+                    <Input value={form[iKey] || ''} onChange={(e) => set(iKey, e.target.value)} className="h-7 text-xs" placeholder="Detail" />
+                  </div>
+                ))}
+              </div>
+
+              <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Send</h3>
+              {([
+                { key: 'send_pref.payment_notification', label: 'Payment Notification' },
+                { key: 'send_pref.late_notice', label: 'Late Notice' },
+                { key: 'send_pref.borrower_statement', label: 'Borrower Statement' },
+                { key: 'send_pref.maturity_notice', label: 'Maturity Notice' },
+              ]).map(({ key, label }) => (
+                <div key={key} className="flex items-center justify-between">
+                  <Label className="text-xs">{label}</Label>
+                  <Checkbox
+                    checked={form[key] === 'true'}
+                    onCheckedChange={(checked) => set(key, String(!!checked))}
+                  />
+                </div>
+              ))}
             </div>
           </div>
         )}
