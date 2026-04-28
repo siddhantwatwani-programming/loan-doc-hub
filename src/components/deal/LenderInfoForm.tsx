@@ -489,58 +489,20 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
                 checked={getBoolValue('servicingAgreementOnFile')}
                 onCheckedChange={(checked) => {
                   handleChange('servicingAgreementOnFile', !!checked);
-                  if (!checked) handleChange('servicingAgreementOnFileDate', '');
                 }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground mr-2">Agreement on File</Label>
-              <Popover open={agreementDateOpen} onOpenChange={setAgreementDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('servicingAgreementOnFileDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('servicingAgreementOnFile')}>
-                    {safeFormatDate(getValue('servicingAgreementOnFileDate'), 'MM/dd/yyyy') || 'MM/DD/YYYY'}
-                    <CalendarIcon className="ml-auto h-3 w-3" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={safeParseDateStr(getValue('servicingAgreementOnFileDate'))}
-                    onSelect={(date) => { handleChange('servicingAgreementOnFileDate', date ? format(date, 'yyyy-MM-dd') : ''); setAgreementDateOpen(false); }}
-                    onClear={() => { handleChange('servicingAgreementOnFileDate', ''); setAgreementDateOpen(false); }}
-                    onToday={() => { handleChange('servicingAgreementOnFileDate', format(new Date(), 'yyyy-MM-dd')); setAgreementDateOpen(false); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-sm text-muted-foreground mr-2">Servicing Agreement on File</Label>
             </div>)}
             {wrapField('freezeOutgoingDisbursements', <div className="flex items-center gap-2">
               <Checkbox
                 checked={getBoolValue('freezeOutgoingDisbursements')}
                 onCheckedChange={(checked) => {
                   handleChange('freezeOutgoingDisbursements', !!checked);
-                  if (!checked) handleChange('freezeOutgoingDisbursementsDate', '');
                 }}
                 disabled={disabled}
               />
-              <Label className="text-sm text-muted-foreground mr-2">Frozen</Label>
-              <Popover open={frozenDateOpen} onOpenChange={setFrozenDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("h-7 text-xs", !getValue('freezeOutgoingDisbursementsDate') && "text-muted-foreground")} disabled={disabled || !getBoolValue('freezeOutgoingDisbursements')}>
-                    {safeFormatDate(getValue('freezeOutgoingDisbursementsDate'), 'MM/dd/yyyy') || 'MM/DD/YYYY'}
-                    <CalendarIcon className="ml-auto h-3 w-3" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 z-[9999]" align="start">
-                  <EnhancedCalendar
-                    mode="single"
-                    selected={safeParseDateStr(getValue('freezeOutgoingDisbursementsDate'))}
-                    onSelect={(date) => { handleChange('freezeOutgoingDisbursementsDate', date ? format(date, 'yyyy-MM-dd') : ''); setFrozenDateOpen(false); }}
-                    onClear={() => { handleChange('freezeOutgoingDisbursementsDate', ''); setFrozenDateOpen(false); }}
-                    onToday={() => { handleChange('freezeOutgoingDisbursementsDate', format(new Date(), 'yyyy-MM-dd')); setFrozenDateOpen(false); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label className="text-sm text-muted-foreground mr-2">Freeze Outgoing Disbursements</Label>
             </div>)}
             {wrapField('investorQuestionnaireDue', <div className="flex items-center gap-2">
               <Checkbox
