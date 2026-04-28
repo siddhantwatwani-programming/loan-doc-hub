@@ -14,13 +14,36 @@ import { useFormPermissions } from '@/hooks/useFormPermissions';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Contact ID', visible: true },
+  { id: 'borrower_type', label: 'Type', visible: true },
   { id: 'full_name', label: 'Entity Name', visible: true },
   { id: 'first_name', label: 'First', visible: true },
+  { id: 'middle_initial', label: 'Middle', visible: false },
   { id: 'last_name', label: 'Last', visible: true },
+  { id: 'capacity', label: 'Capacity', visible: false },
   { id: 'email', label: 'Email', visible: true },
+  { id: 'phone.home', label: 'Home Phone', visible: true },
+  { id: 'phone.home2', label: 'Home Phone 2', visible: false },
+  { id: 'phone.work', label: 'Work Phone', visible: false },
+  { id: 'phone.cell', label: 'Cell Phone', visible: true },
+  { id: 'phone.fax', label: 'Fax', visible: false },
+  { id: 'preferred_phone', label: 'Preferred Phone', visible: false },
+  { id: 'address.street', label: 'Address Street', visible: false },
+  { id: 'address.city', label: 'Address City', visible: false },
+  { id: 'address.state', label: 'Address State', visible: false },
+  { id: 'address.zip', label: 'Address Zip', visible: false },
+  { id: 'mailing.street', label: 'Mailing Street', visible: false },
+  { id: 'mailing.city', label: 'Mailing City', visible: false },
+  { id: 'mailing.state', label: 'Mailing State', visible: false },
+  { id: 'mailing.zip', label: 'Mailing Zip', visible: false },
   { id: 'city', label: 'City', visible: true },
   { id: 'state', label: 'State', visible: true },
+  { id: 'delivery_print', label: 'Delivery Print', visible: false },
+  { id: 'delivery_email', label: 'Delivery Email', visible: false },
+  { id: 'delivery_sms', label: 'Delivery SMS', visible: false },
+  { id: 'agreement_on_file', label: 'Agreement on File', visible: false },
 ];
+
+const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file']);
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -185,14 +208,41 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
 
   const renderCellValue = useCallback((contact: ContactRecord, columnId: string): React.ReactNode => {
     const cd = (contact.contact_data || {}) as Record<string, string>;
+
+    if (columnId === 'preferred_phone') {
+      if (cd['preferred.home'] === 'true') return 'Home';
+      if (cd['preferred.home2'] === 'true') return 'Home 2';
+      if (cd['preferred.work'] === 'true') return 'Work';
+      if (cd['preferred.cell'] === 'true') return 'Cell';
+      if (cd['preferred.fax'] === 'true') return 'Fax';
+      return '-';
+    }
+
+    if (columnId === 'phone.cell') {
+      const val = cd['phone.cell'] || cd['phone.mobile'] || '';
+      return val || '-';
+    }
+
+    if (columnId === 'tax_id') {
+      const val = cd['tax_id'] || cd['tin'] || '';
+      return val || '-';
+    }
+
+    if (BOOLEAN_COLUMNS.has(columnId)) {
+      const val = cd[columnId];
+      return val === 'true' ? '✓' : '';
+    }
+
     const topLevel: Record<string, string | null | undefined> = {
       contact_id: contact.contact_id,
       full_name: contact.full_name,
       first_name: contact.first_name,
       last_name: contact.last_name,
       email: contact.email,
+      phone: contact.phone,
       city: contact.city,
       state: contact.state,
+      company: contact.company,
     };
     if (columnId in topLevel) {
       const val = topLevel[columnId] || '';
