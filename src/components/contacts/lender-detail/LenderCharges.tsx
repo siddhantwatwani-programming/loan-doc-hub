@@ -588,6 +588,26 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                       />
                     </PopoverContent>
                   </Popover>
+                ) : col.id === 'interest_from' ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full h-8 text-xs justify-start font-normal">
+                        {(newCharge as any).interest_from ? (newCharge as any).interest_from : <span className="text-muted-foreground">Interest From</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 !z-[9999]" align="start">
+                      <EnhancedCalendar
+                        mode="single"
+                        selected={(newCharge as any).interest_from ? new Date((newCharge as any).interest_from) : undefined}
+                        onSelect={(date) => {
+                          setNewCharge(prev => ({ ...prev, interest_from: date ? format(date, 'MM/dd/yyyy') : '' }));
+                        }}
+                        onClear={() => setNewCharge(prev => ({ ...prev, interest_from: '' }))}
+                        onToday={() => setNewCharge(prev => ({ ...prev, interest_from: format(new Date(), 'MM/dd/yyyy') }))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 ) : (col.id === 'unpaid_balance' || col.id === 'accrued_interest' || col.id === 'total_due_to_you') ? (
                   <div className="relative">
                     <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
