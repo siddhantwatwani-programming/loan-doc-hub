@@ -43,9 +43,9 @@ interface ContactResult {
 
 type ParticipantType =
   | 'borrower'
+  | 'co_borrower'
   | 'lender'
   | 'broker'
-  | 'vendor'
   | 'additional_guarantor'
   | 'authorized_party'
   | 'other';
