@@ -105,7 +105,58 @@ const BrokerTaxInfo: React.FC<BrokerTaxInfoProps> = ({
           </div>
         </DirtyFieldWrapper>
 
-        {/* Issue 1099 */}
+        {/* Broker Type (drives Issue 1099) */}
+        <DirtyFieldWrapper fieldKey={KEYS.brokerType}>
+          <div className="flex items-center gap-3">
+            <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
+              Broker Type
+            </Label>
+            <Select
+              value={get(KEYS.brokerType) || undefined}
+              onValueChange={(v) => {
+                set(KEYS.brokerType, v);
+                const auto = computeIssue1099(v, getBool(KEYS.taxedAsCorp));
+                if (auto) set(KEYS.issue1099, auto);
+              }}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 text-sm w-[200px]">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent className="z-[9999]">
+                {BROKER_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </DirtyFieldWrapper>
+
+        {/* Taxed as Corp (only relevant for situational types) */}
+        {(get(KEYS.brokerType) === 'llc' || get(KEYS.brokerType) === 'investment_fund') && (
+          <DirtyFieldWrapper fieldKey={KEYS.taxedAsCorp}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
+                Taxed as Corp
+              </Label>
+              <div className="w-[200px] flex items-center">
+                <Checkbox
+                  id="broker-tax-taxed-as-corp"
+                  checked={getBool(KEYS.taxedAsCorp)}
+                  onCheckedChange={(c) => {
+                    const checked = !!c;
+                    set(KEYS.taxedAsCorp, checked);
+                    const auto = computeIssue1099(get(KEYS.brokerType), checked);
+                    if (auto) set(KEYS.issue1099, auto);
+                  }}
+                  disabled={disabled}
+                />
+              </div>
+            </div>
+          </DirtyFieldWrapper>
+        )}
+
+        {/* Issue 1099 (auto-populated, still editable) */}
         <DirtyFieldWrapper fieldKey={KEYS.issue1099}>
           <div className="flex items-center gap-3">
             <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0">
@@ -117,6 +168,7 @@ const BrokerTaxInfo: React.FC<BrokerTaxInfoProps> = ({
               disabled={disabled}
               className="h-8 text-sm w-[200px]"
               maxLength={50}
+              placeholder="Yes / No"
             />
           </div>
         </DirtyFieldWrapper>
