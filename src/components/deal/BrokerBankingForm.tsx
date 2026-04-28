@@ -166,8 +166,10 @@ export const BrokerBankingForm: React.FC<BrokerBankingFormProps> = ({
               <Select value={getValue('accountType')} onValueChange={(v) => handleChange('accountType', v)} disabled={disabled}>
                 <SelectTrigger className="h-8 w-[160px] 3xl:w-[200px]"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Checking">Checking</SelectItem>
-                  <SelectItem value="Savings">Savings</SelectItem>
+                  <SelectItem value="Personal Banking">Personal Banking</SelectItem>
+                  <SelectItem value="Business Banking">Business Banking</SelectItem>
+                  <SelectItem value="Personal Checking">Personal Checking</SelectItem>
+                  <SelectItem value="Business Checking">Business Checking</SelectItem>
                 </SelectContent>
               </Select>
             </div>
