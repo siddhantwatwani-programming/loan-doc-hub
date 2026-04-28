@@ -526,7 +526,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
           <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             <div className="flex items-center gap-2">
               <Checkbox checked={newLog.highPriority} onCheckedChange={(c) => setNewLog(p => ({ ...p, highPriority: !!c }))} />
-              <Label className="text-xs">High Priority</Label>
+              <Label className="text-xs">Follow Up</Label>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
