@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { EmailInput } from '@/components/ui/email-input';
@@ -44,8 +45,37 @@ const FK = {
   fee_payable: 'origination_svc.broker_fee.payable',
 };
 
-const AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+const AGENT_OPTIONS = ['Company', 'Broker', 'Lender', 'Other / Third Party'];
 const PERIOD_OPTIONS = ['Monthly', 'Quarterly', 'Annually', 'Other'];
+
+// Source field keys for auto-populate by agent type (mirrors LoanTermsServicingForm)
+const COMPANY_SOURCE_KEYS = {
+  name: 'loan_terms.details_company',
+  street: '',
+  city: '',
+  state: '',
+  zip: '',
+  phone: '',
+  email: '',
+};
+const BROKER_SOURCE_KEYS = {
+  name: 'broker.company',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.address.state',
+  zip: 'broker.address.zip',
+  phone: 'broker.phone.work',
+  email: 'broker.email',
+};
+const LENDER_SOURCE_KEYS = {
+  name: 'lender.full_name',
+  street: 'lender.primary_address.street',
+  city: 'lender.primary_address.city',
+  state: 'lender.primary_address.state',
+  zip: 'lender.primary_address.zip',
+  phone: 'lender.phone.work',
+  email: 'lender.email',
+};
 
 export const OriginationServicingForm: React.FC<OriginationServicingFormProps> = ({
   values,
@@ -56,6 +86,92 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
   const sv = (key: string, val: string) => onValueChange(key, val);
   const bv = (key: string) => values[key] === 'true';
   const sbv = (key: string, val: boolean) => onValueChange(key, String(val));
+
+  // Auto-populate 3rd Party fields when Servicing Agent changes
+  // Company / Broker / Lender pull from existing keys; Other / Third Party leaves manual.
+  // For multi-lender loans, picks the lender with the largest principalBalance.
+  const agentValue = v(FK.servicing_agent);
+  const lastAgentRef = useRef<string>(agentValue);
+  useEffect(() => {
+    if (!agentValue) { lastAgentRef.current = agentValue; return; }
+    if (agentValue === lastAgentRef.current) return;
+    lastAgentRef.current = agentValue;
+
+    const writeFromKeys = (sourceKeys: Record<string, string>) => {
+      const mappings: [string, string][] = [
+        [sourceKeys.name, FK.tp_name],
+        [sourceKeys.street, FK.tp_street],
+        [sourceKeys.city, FK.tp_city],
+        [sourceKeys.state, FK.tp_state],
+        [sourceKeys.zip, FK.tp_zip],
+        [sourceKeys.phone, FK.tp_phone],
+        [sourceKeys.email, FK.tp_email],
+      ];
+      mappings.forEach(([src, dst]) => {
+        const srcVal = src ? (values[src] || '') : '';
+        sv(dst, srcVal);
+      });
+    };
+
+    if (agentValue === 'Company') {
+      writeFromKeys(COMPANY_SOURCE_KEYS);
+    } else if (agentValue === 'Broker') {
+      writeFromKeys(BROKER_SOURCE_KEYS);
+    } else if (agentValue === 'Lender') {
+      // Detect multi-lender via funding records JSON
+      let largestLenderAccount = '';
+      let largestLenderName = '';
+      let isMultiLender = false;
+      try {
+        const raw = values['loan_terms.funding_records'];
+        const records = raw ? JSON.parse(raw) : [];
+        if (Array.isArray(records) && records.length > 1) {
+          isMultiLender = true;
+          const largest = records.reduce((max: any, r: any) =>
+            Number(r?.principalBalance || 0) > Number(max?.principalBalance || 0) ? r : max,
+            records[0]
+          );
+          largestLenderAccount = largest?.lenderAccount || '';
+          largestLenderName = largest?.lenderName || '';
+        }
+      } catch { /* ignore parse errors */ }
+
+      if (!isMultiLender) {
+        writeFromKeys(LENDER_SOURCE_KEYS);
+      } else if (largestLenderAccount && largestLenderAccount === values['lender.id']) {
+        // Largest lender is the deal's primary lender — use existing keys
+        writeFromKeys(LENDER_SOURCE_KEYS);
+      } else if (largestLenderAccount) {
+        // Look up the contact by contact_id and populate from contact_data
+        (async () => {
+          try {
+            const { data } = await supabase
+              .from('contacts')
+              .select('full_name, contact_data')
+              .eq('contact_id', largestLenderAccount)
+              .eq('contact_type', 'lender')
+              .maybeSingle();
+            const cd = (data?.contact_data as Record<string, any>) || {};
+            const addr = cd.primary_address || {};
+            const phone = cd.phone || {};
+            sv(FK.tp_name, data?.full_name || cd.full_name || largestLenderName || '');
+            sv(FK.tp_street, addr.street || '');
+            sv(FK.tp_city, addr.city || '');
+            sv(FK.tp_state, addr.state || '');
+            sv(FK.tp_zip, addr.zip || '');
+            sv(FK.tp_phone, phone.work || cd.phone_work || '');
+            sv(FK.tp_email, cd.email || '');
+          } catch {
+            // Fallback to existing lender keys if lookup fails
+            writeFromKeys(LENDER_SOURCE_KEYS);
+          }
+        })();
+      } else {
+        writeFromKeys(LENDER_SOURCE_KEYS);
+      }
+    }
+    // 'Other / Third Party': no auto-populate; fields remain manually editable.
+  }, [agentValue]);
 
   // Auto-copy 3rd party values when "Same as 3rd Party" is checked
   const sameAsTP = bv(FK.sp_same_as_tp);
