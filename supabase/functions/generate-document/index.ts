@@ -21,7 +21,7 @@ import type {
   JobResult,
   FieldValueData,
 } from "../_shared/types.ts";
-import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb } from "../_shared/field-resolver.ts";
+import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb, getFieldData } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
@@ -663,6 +663,34 @@ async function generateSingleDocument(
     fieldValues.set("systemDate", { rawValue: systemDate, dataType: "date" });
     fieldValues.set("currentDate", { rawValue: systemDate, dataType: "date" });
     debugLog(`[generate-document] Injected systemDate and currentDate: ${systemDate}`);
+
+    // Auto-compute origination_app.income.total_income as the sum of all income components.
+    // Treats null/undefined/non-numeric values as 0. Does not overwrite if already provided.
+    {
+      const incomeKeys = [
+        "origination_app.income.salary",
+        "origination_app.income.interest",
+        "origination_app.income.dividend",
+        "origination_app.income.rental",
+        "origination_app.income.other",
+      ];
+      const toNumber = (v: unknown): number => {
+        if (v === null || v === undefined || v === "") return 0;
+        const n = typeof v === "number" ? v : parseFloat(String(v).replace(/[$,\s]/g, ""));
+        return isNaN(n) ? 0 : n;
+      };
+      const totalIncomeKey = "origination_app.income.total_income";
+      const existingTotal = fieldValues.get(totalIncomeKey);
+      if (!existingTotal || existingTotal.rawValue === null || existingTotal.rawValue === undefined || existingTotal.rawValue === "") {
+        let total = 0;
+        for (const k of incomeKeys) {
+          const fd = getFieldData(k, fieldValues);
+          if (fd) total += toNumber(fd.data.rawValue);
+        }
+        fieldValues.set(totalIncomeKey, { rawValue: total, dataType: "currency" });
+        debugLog(`[generate-document] Computed ${totalIncomeKey} = ${total}`);
+      }
+    }
 
     // Auto-compute borrower.borrower_description if not already set
     const existingDesc = fieldValues.get("borrower.borrower_description");
