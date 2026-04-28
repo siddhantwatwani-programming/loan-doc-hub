@@ -243,7 +243,7 @@ const ContactAuthorizedPartiesPage: React.FC = () => {
       <CreateContactModal
         open={modalOpen}
         onOpenChange={setModalOpen}
-        contactType="authorized_party"
+        contactType="borrower"
         onSubmit={handleCreate}
       />
     </>
