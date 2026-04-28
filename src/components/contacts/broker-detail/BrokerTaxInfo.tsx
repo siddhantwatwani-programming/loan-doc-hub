@@ -28,6 +28,8 @@ const KEYS = {
   tinVerified: `${PREFIX}tin_verified`,
   alternateReporting: `${PREFIX}alternate_reporting`,
   notes: `${PREFIX}notes`,
+  brokerType: `${PREFIX}broker_type`,
+  taxedAsCorp: `${PREFIX}taxed_as_corp`,
 } as const;
 
 const TIN_TYPE_OPTIONS = [
@@ -35,6 +37,40 @@ const TIN_TYPE_OPTIONS = [
   { value: '1', label: '1 - EIN' },
   { value: '2', label: '2 - SSN' },
 ];
+
+const BROKER_TYPE_OPTIONS = [
+  { value: 'individual', label: 'Individual' },
+  { value: 'joint', label: 'Joint' },
+  { value: 'family_trust', label: 'Family Trust' },
+  { value: 'llc', label: 'LLC' },
+  { value: 'c_s_corp', label: 'C Corp / S Corp' },
+  { value: 'ira_erisa', label: 'IRA / ERISA' },
+  { value: 'investment_fund', label: 'Investment Fund' },
+  { value: '401k', label: '401K' },
+  { value: 'foreign_holder_w8', label: 'Foreign Holder W-8' },
+  { value: 'non_profit', label: 'Non-profit' },
+];
+
+// Mapping per spec screenshot. 'situational' types depend on Taxed as Corp flag.
+const ISSUE_1099_BY_TYPE: Record<string, 'Yes' | 'No' | 'situational'> = {
+  individual: 'Yes',
+  joint: 'Yes',
+  family_trust: 'Yes',
+  llc: 'situational',
+  c_s_corp: 'No',
+  ira_erisa: 'No',
+  investment_fund: 'situational',
+  '401k': 'No',
+  foreign_holder_w8: 'No',
+  non_profit: 'No',
+};
+
+const computeIssue1099 = (brokerType: string, taxedAsCorp: boolean): string => {
+  const rule = ISSUE_1099_BY_TYPE[brokerType];
+  if (!rule) return '';
+  if (rule === 'situational') return taxedAsCorp ? 'No' : 'Yes';
+  return rule;
+};
 
 const BrokerTaxInfo: React.FC<BrokerTaxInfoProps> = ({
   values,
