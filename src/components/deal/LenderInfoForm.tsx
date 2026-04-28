@@ -578,33 +578,58 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
 
           {/* Delivery Options */}
           <div className="mt-4">
-            <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery Options</h4>
-            {wrapField('deliveryPrint', <div className="flex items-center gap-4 mb-3">
+            <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Delivery</h4>
+            {wrapField('deliveryOnline', <div className="flex items-center gap-4 mb-3">
               <div className="flex items-center gap-1">
                 <Checkbox
-                  checked={getBoolValue('deliveryPrint')}
-                  onCheckedChange={(checked) => handleChange('deliveryPrint', !!checked)}
+                  checked={getBoolValue('deliveryOnline')}
+                  onCheckedChange={(checked) => {
+                    const v = !!checked;
+                    handleChange('deliveryOnline', v);
+                    const parts: string[] = [];
+                    if (v) parts.push('Online');
+                    if (getBoolValue('deliveryMail')) parts.push('Mail');
+                    if (getBoolValue('deliverySms')) parts.push('SMS');
+                    handleChange('deliveryOptions', parts.join(','));
+                  }}
                   disabled={disabled}
                 />
-                <Label className="text-sm text-muted-foreground">Print</Label>
+                <Label className="text-sm text-muted-foreground">Online</Label>
               </div>
               <div className="flex items-center gap-1">
                 <Checkbox
-                  checked={getBoolValue('deliveryEmail')}
-                  onCheckedChange={(checked) => handleChange('deliveryEmail', !!checked)}
+                  checked={getBoolValue('deliveryMail')}
+                  onCheckedChange={(checked) => {
+                    const v = !!checked;
+                    handleChange('deliveryMail', v);
+                    const parts: string[] = [];
+                    if (getBoolValue('deliveryOnline')) parts.push('Online');
+                    if (v) parts.push('Mail');
+                    if (getBoolValue('deliverySms')) parts.push('SMS');
+                    handleChange('deliveryOptions', parts.join(','));
+                  }}
                   disabled={disabled}
                 />
-                <Label className="text-sm text-muted-foreground">Email</Label>
+                <Label className="text-sm text-muted-foreground">Mail</Label>
               </div>
               <div className="flex items-center gap-1">
                 <Checkbox
                   checked={getBoolValue('deliverySms')}
-                  onCheckedChange={(checked) => handleChange('deliverySms', !!checked)}
+                  onCheckedChange={(checked) => {
+                    const v = !!checked;
+                    handleChange('deliverySms', v);
+                    const parts: string[] = [];
+                    if (getBoolValue('deliveryOnline')) parts.push('Online');
+                    if (getBoolValue('deliveryMail')) parts.push('Mail');
+                    if (v) parts.push('SMS');
+                    handleChange('deliveryOptions', parts.join(','));
+                  }}
                   disabled={disabled}
                 />
                 <Label className="text-sm text-muted-foreground">SMS</Label>
               </div>
             </div>)}
+
 
             {/* Send section below */}
             <h4 className="text-sm font-semibold text-foreground border-b pb-1 mb-2">Send</h4>
