@@ -56,7 +56,7 @@ const ALL_COLUMNS = [
   { id: 'to', label: 'Assigned To' },
   { id: 'asOfDate', label: 'Follow Up Date' },
   { id: 'completed', label: 'Completed?' },
-  { id: 'completedBy', label: 'Completed By' },
+  
   { id: 'completedDate', label: 'Completed Date' },
 ];
 
