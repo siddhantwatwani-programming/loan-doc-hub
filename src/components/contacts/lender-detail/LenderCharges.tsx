@@ -177,6 +177,89 @@ const computeAmountOwedByBorrower = (advBy: string, onBehalf: string): number =>
 
 const fmtMoney = (n: number) => `$${n.toFixed(2)}`;
 
+// ─── Calculated read-only field derivations (Charges Grid) ───────────────────
+// Deferred amount: when row.deferred flag is set, the charge amount is postponed
+// per loan-terms/payment-schedule logic. Otherwise 0.
+const isDeferredFlag = (v: string | undefined): boolean => {
+  const s = String(v || '').trim().toLowerCase();
+  return s === 'yes' || s === 'true' || s === '1';
+};
+const computeDeferredAmount = (row: ChargeRow): number => {
+  if (!isDeferredFlag(row.deferred)) return 0;
+  // Deferred portion = original charge amount as scheduled to be postponed.
+  return parseMoney(row.original_balance || row.unpaid_balance);
+};
+
+// Accrued Interest: simple-interest accrual on the charge principal from
+// `interest_from` date (last accrual date) through today, using `interest_rate`
+// (annual %). Falls back to 0 if any input is missing/invalid.
+const parseGridDate = (s?: string): Date | null => {
+  if (!s) return null;
+  // Support MM/DD/YYYY and yyyy-MM-dd
+  const mdy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if (mdy) {
+    const d = new Date(Number(mdy[3]), Number(mdy[1]) - 1, Number(mdy[2]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (ymd) {
+    const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
+const computeAccruedInterest = (row: ChargeRow): number => {
+  const principal = parseMoney(row.original_balance || row.unpaid_balance);
+  if (principal <= 0) return 0;
+  const rate = parseFloat(String(row.interest_rate || '').replace(/[^0-9.\-]/g, ''));
+  if (!isFinite(rate) || rate <= 0) return 0;
+  const from = parseGridDate(row.interest_from) || parseGridDate(row.date);
+  if (!from) return 0;
+  const today = new Date();
+  const days = Math.max(0, Math.floor((today.getTime() - from.getTime()) / 86400000));
+  if (days <= 0) return 0;
+  // Simple interest: P * (r/100) * (days/365)
+  return principal * (rate / 100) * (days / 365);
+};
+
+// Unpaid Balance: Total Charges - Payments Received.
+// Total Charges per row = original (or seeded unpaid) + cumulative adjustments.
+// Payments Received = full original when row.paid, else 0 (no per-charge
+// partial-payment table exists; matches existing data model).
+const computeUnpaidBalance = (row: ChargeRow): number => {
+  const totalCharges = parseMoney(row.original_balance || row.unpaid_balance) + sumAdjustments(row.adjustments);
+  const payments = row.paid ? parseMoney(row.original_balance || row.unpaid_balance) : 0;
+  return totalCharges - payments;
+};
+
+// Total Due: Charges + Accrued Interest + Unpaid Balances ± Adjustments - Deferred.
+// "Charges" here = principal (original_balance). Adjustments are already in
+// Unpaid Balance, so we don't double-count them.
+const computeTotalDue = (row: ChargeRow): number => {
+  const charges = parseMoney(row.original_balance || row.unpaid_balance);
+  const accrued = computeAccruedInterest(row);
+  const unpaid = computeUnpaidBalance(row);
+  const deferred = computeDeferredAmount(row);
+  return charges + accrued + unpaid - deferred;
+};
+
+// Owed to Account: portion of Total Due allocated to this lender's account
+// based on the funding split captured on the charge (Advanced By + On Behalf Of
+// over the same two amounts — i.e. this lender's share of the distribution).
+// When no split exists, falls back to full Total Due.
+const computeOwedToAccount = (row: ChargeRow): number => {
+  const totalDue = computeTotalDue(row);
+  const adv = parseMoney(row.advanced_by_amount);
+  const ob = parseMoney(row.on_behalf_of_amount);
+  const distTotal = adv + ob;
+  if (distTotal <= 0) return totalDue;
+  // This lender's share = Advanced By portion of the distribution
+  const share = adv / distTotal;
+  return totalDue * share;
+};
+
+
 interface LenderChargesProps {
   lenderId: string;
   contactDbId: string;
@@ -289,11 +372,13 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
         reference: r.reference,
         type: r.charge_type || '',
         description: r.description,
-        owed_to_account: r.owed_to_account,
+        // Calculated read-only fields — derived for funding-grid sync
+        owed_to_account: computeOwedToAccount(r),
         original_balance: parseMoney(r.original_balance || r.unpaid_balance),
-        unpaid_balance: computeFinalUnpaid(r),
-        accrued_interest: parseMoney(r.accrued_interest),
-        total_due: parseMoney(r.total_due) + sumAdjustments(r.adjustments),
+        unpaid_balance: computeUnpaidBalance(r),
+        accrued_interest: computeAccruedInterest(r),
+        total_due: computeTotalDue(r),
+        deferred: computeDeferredAmount(r),
         amount_owed_by_borrower: computeAmountOwedByBorrower(r.advanced_by_amount || '', r.on_behalf_of_amount || ''),
         paid: !!r.paid,
       }));
@@ -528,15 +613,25 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
 
   // Totals row (per screenshot — totals of unpaid active bills)
   const totals = useMemo(() => {
-    const acc = { original_balance: 0, unpaid_balance: 0, accrued_interest: 0, total_due: 0 };
+    const acc = {
+      original_balance: 0,
+      unpaid_balance: 0,
+      accrued_interest: 0,
+      total_due: 0,
+      owed_to_account: 0,
+      deferred: 0,
+    };
     filtered.forEach(r => {
       acc.original_balance += parseMoney(r.original_balance || r.unpaid_balance);
-      acc.unpaid_balance += computeFinalUnpaid(r);
-      acc.accrued_interest += parseMoney(r.accrued_interest);
-      acc.total_due += parseMoney(r.total_due) + sumAdjustments(r.adjustments);
+      acc.unpaid_balance += computeUnpaidBalance(r);
+      acc.accrued_interest += computeAccruedInterest(r);
+      acc.total_due += computeTotalDue(r);
+      acc.owed_to_account += computeOwedToAccount(r);
+      acc.deferred += computeDeferredAmount(r);
     });
     return acc;
   }, [filtered]);
+
 
   const toggleRow = (id: string) => {
     setSelectedRows(prev => {
@@ -566,7 +661,11 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
     const headers = activeColumns.map(c => c.label).join(',');
     const csvRows = filtered.map(r =>
       activeColumns.map(c => {
-        if (c.id === 'unpaid_balance') return computeFinalUnpaid(r).toFixed(2);
+        if (c.id === 'unpaid_balance') return computeUnpaidBalance(r).toFixed(2);
+        if (c.id === 'total_due') return computeTotalDue(r).toFixed(2);
+        if (c.id === 'accrued_interest') return computeAccruedInterest(r).toFixed(2);
+        if (c.id === 'owed_to_account') return computeOwedToAccount(r).toFixed(2);
+        if (c.id === 'deferred') return isDeferredFlag(r.deferred) ? 'Yes' : 'No';
         return (r as any)[c.id] || '';
       }).join(',')
     );
@@ -718,16 +817,25 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                 )}
                 {activeColumns.map(c => {
                   let raw: any = (r as any)[c.id];
-                  // Final unpaid balance reflects adjustments (original preserved separately)
+                  // Calculated read-only fields — derived from existing data
                   if (c.id === 'unpaid_balance') {
-                    raw = computeFinalUnpaid(r).toFixed(2);
+                    raw = computeUnpaidBalance(r).toFixed(2);
                   } else if (c.id === 'total_due') {
-                    raw = (parseMoney(r.total_due) + sumAdjustments(r.adjustments)).toFixed(2);
+                    raw = computeTotalDue(r).toFixed(2);
+                  } else if (c.id === 'accrued_interest') {
+                    raw = computeAccruedInterest(r).toFixed(2);
+                  } else if (c.id === 'owed_to_account') {
+                    raw = computeOwedToAccount(r).toFixed(2);
+                  } else if (c.id === 'deferred') {
+                    raw = isDeferredFlag(r.deferred) ? 'Yes' : 'No';
                   } else if (c.id === 'original_balance') {
                     raw = r.original_balance || r.unpaid_balance || '';
                   }
                   let display = raw || '-';
                   if (raw && CURRENCY_COLS.has(c.id)) {
+                    const n = parseMoney(raw);
+                    display = `$${n.toFixed(2)}`;
+                  } else if (raw && c.id === 'owed_to_account') {
                     const n = parseMoney(raw);
                     display = `$${n.toFixed(2)}`;
                   } else if (raw && c.id === 'interest_rate') {
@@ -749,6 +857,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   if (c.id === 'unpaid_balance') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.unpaid_balance)}</TableCell>;
                   if (c.id === 'accrued_interest') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.accrued_interest)}</TableCell>;
                   if (c.id === 'total_due') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.total_due)}</TableCell>;
+                  if (c.id === 'owed_to_account') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.owed_to_account)}</TableCell>;
                   return <TableCell key={c.id} />;
                 })}
               </TableRow>
