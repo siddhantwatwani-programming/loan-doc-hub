@@ -82,6 +82,7 @@ interface ChargeRow {
 
 const ALL_COLUMNS = [
   { id: 'date', label: 'Date' },
+  { id: 'charge_type', label: 'Charge Type' },
   { id: 'description', label: 'Description' },
   { id: 'interest_rate', label: 'Interest Rate' },
   { id: 'interest_from', label: 'Interest From' },
