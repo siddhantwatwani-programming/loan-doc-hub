@@ -1,48 +1,47 @@
 ## Goal
 
-In RE851A documents, ensure exactly one of the three Servicing checkboxes is checked based on the CSR `Servicing Agent` dropdown:
+In the **RE851A** generated document, populate a new merge tag `{{ln_p_loanAmountDivByEstimateValue}}` with the value of **Loan Amount ÷ Estimate of Value**, computed in the document data preparation layer with no template, schema, or UI changes.
 
-- **Lender** → ☑ "THERE ARE NO SERVICING ARRANGEMENTS"
-- **Broker** → ☑ "BROKER IS THE SERVICING AGENT"
-- **Company** or **Other Servicer** → ☑ "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN"
+## Approach
 
-All other servicing checkboxes remain ☐. No template, schema, dropdown, or field-mapping changes.
+The doc-generation backend already auto-computes `ln_p_loanToValueRatio` from the same two source fields (`ln_p_loanAmount` and `pr_p_appraiseValue`) at `supabase/functions/generate-document/index.ts:735-749`. We will mirror that pattern for the new key, immediately after the existing LTV block, so behavior, fallbacks, and divide-by-zero handling stay identical and proven.
 
-## Diagnosis
+## Changes
 
-Engine logs confirm `sv_p_servicingAgent` and `oo_svc_servicingAgent` ARE populated correctly at runtime (e.g. `"Other Servicer"`, `"Broker"`). The `(eq …)` and `(or (eq …) (eq …))` helpers ARE supported and pass on a clean fixture. But in the live RE851A `.docx` the three `{{#if (eq sv_p_servicingAgent "…")}}` blocks live inside Word XML where each `{{`/`}}` is fragmented across multiple `<w:r>`/`<w:t>` runs (often inside SDT checkbox containers). When that fragmentation breaks any one of the three conditional blocks, the conditional resolver leaves a static `☐` glyph in place — exactly the failure the user reports.
+### 1. `supabase/functions/generate-document/index.ts` — single insertion (~10 lines)
 
-This is the same class of issue we already fixed for **Subordination Provision** and **Broker-capacity A/B** with a label-anchored safety pass. The fix here mirrors that proven pattern.
+Right after the `ln_p_loanToValueRatio` auto-compute block (after line 749), add:
 
-## Approach (engine-side, scoped to RE851A Servicing only)
+- Read `ln_p_loanAmount` (fallback `loan_terms.loan_amount`).
+- Read `pr_p_appraiseValue` (fallback `property1.appraise_value`).
+- Parse both as numbers, stripping non-numeric characters (same sanitizer as LTV).
+- If either is missing/NaN **or** the divisor is `0`, do nothing → tag renders blank (existing engine behavior for unset keys).
+- Otherwise compute `loanAmount / estimateValue` and publish it under the new key in two formats so whichever the template needs renders correctly:
+  - `ln_p_loanAmountDivByEstimateValue` → raw decimal ratio rounded to 4 places (e.g. `"0.7500"`)
+  - `ln_p_loanAmountDivByEstimateValue_pct` → percentage rounded to 2 places (e.g. `"75.00"`) — provided as a safety alias only; not required for the requirement.
+- Skip if the key already has a value (so any future explicit override wins, matching the LTV pattern).
+- Add a `debugLog(...)` line consistent with surrounding code.
 
-Add a new safety pass in `supabase/functions/_shared/tag-parser.ts` (immediately after the broker-capacity pass, before the final SDT conversion) that:
+That single insertion satisfies the entire requirement.
 
-1. Reads the canonical servicing-agent value already published by `generate-document/index.ts` (`sv_p_servicingAgent` / `oo_svc_servicingAgent` / `origination_svc.servicing_agent` / `loan_terms.servicing_agent`).
-2. Normalizes it to one of `lender` | `broker` | `other` (Company OR Other Servicer collapses to `other`). Skips entirely if blank/unknown.
-3. Forces the glyph immediately preceding each of the three literal RE851A labels:
-   - `THERE ARE NO SERVICING ARRANGEMENTS` → ☑ when `lender`, else ☐
-   - `BROKER IS THE SERVICING AGENT` → ☑ when `broker`, else ☐
-   - `ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN` → ☑ when `other`, else ☐
-4. Uses the same `forceGlyphBeforeLabel` helper pattern as the broker-capacity pass — case-insensitive, XML-fragment-tolerant (works whether the glyph is inside `<w:t>`, plain text, or split across runs), and replaces ONLY the glyph character (no formatting, spacing, alignment, font, or surrounding text touched).
-5. Logs the resolved state for traceability: `[generate-document] Forced RE851A servicing-agent glyphs: agent=…, lender=☐/☑, broker=☐/☑, other=☐/☑`.
+### 2. No other changes
 
-## Files
+- No template edits — the template author will place `{{ln_p_loanAmountDivByEstimateValue}}` where needed (as stated in the requirement).
+- No `merge_tag_aliases` row needed — the field is published directly under its canonical key. (Optional follow-up if the template uses a different tag name; not required now.)
+- No schema, RLS, UI, field_dictionary, or migration changes.
+- No impact to existing `ln_p_loanToValueRatio`, `ln_p_loanAmount`, `pr_p_appraiseValue`, or any other RE851A mapping.
 
-- `supabase/functions/_shared/tag-parser.ts` — add the safety-pass block (≈40 lines, label-anchored). No other code changed.
-- `supabase/functions/_shared/tag-parser.servicing-labels.test.ts` — new regression test pinning all 4 cases (`Lender`, `Broker`, `Company`, `Other Servicer`) against a DOCX-shaped fixture mimicking the live RE851A run-split structure (with SDT sentinel so `replaceMergeTags` enters its post-processing pipeline). Asserts exactly one ☑ and two ☐ per case, and that document-formatting tags are unchanged.
+## Behavior guarantees
 
-## Constraints respected
+| Scenario | Result in document |
+|---|---|
+| Both values present, Estimate > 0 | Computed ratio renders (e.g. `0.7500`) |
+| Estimate of Value = 0 | Tag renders blank (no divide-by-zero) |
+| Estimate of Value missing/null | Tag renders blank |
+| Loan Amount missing/null | Tag renders blank |
+| Either value non-numeric | Tag renders blank |
+| Key already explicitly set elsewhere | Existing value preserved |
 
-- No template `.docx` edits.
-- No DB schema, dropdown, or UI changes.
-- No changes to existing field mappings (`sv_p_servicingAgent`, `oo_svc_servicingAgent`, `origination_svc.servicing_agent`, etc. — all preserved as published today).
-- No formatting / spacing / alignment / font / checkbox-position changes — only the glyph CHAR (`☐` ↔ `☑`) toggles.
-- Other RE851A sections (subordination, amortization, broker-capacity, etc.) unaffected — pass is strictly scoped to the three literal servicing labels.
+## Acceptance check
 
-## Acceptance
-
-- Existing 4 servicing tests pass.
-- New 4 label-anchored regression cases pass (Lender / Broker / Company / Other Servicer each → exactly one ☑ on the correct line).
-- Document generates without corruption (deploy `generate-document` after the change).
-- No regression in the other 21 RE851A tests (broker-capacity, amortization, subordination, soft-break paragraph-split).
+After deploy, regenerating RE851A on a deal with Loan Amount = `$300,000` and Estimate of Value = `$400,000` should produce `0.7500` at the `{{ln_p_loanAmountDivByEstimateValue}}` location, document layout untouched, all other tags unaffected.
