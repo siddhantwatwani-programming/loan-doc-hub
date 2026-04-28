@@ -40,7 +40,8 @@ import {
   ClipboardCheck,
   AlertCircle,
   Scan,
-  FileSearch
+  FileSearch,
+  Download
 } from 'lucide-react';
 import {
   DropdownMenu,
