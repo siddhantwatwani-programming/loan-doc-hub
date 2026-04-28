@@ -1,13 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save } from 'lucide-react';
 import { useContactsCrud, type ContactRecord } from '@/hooks/useContactsCrud';
 import { ContactsListView } from '@/components/contacts/ContactsListView';
 import { CreateContactModal } from '@/components/contacts/CreateContactModal';
-import { BorrowerAdditionalGuarantorForm } from '@/components/deal/BorrowerAdditionalGuarantorForm';
-import { Button } from '@/components/ui/button';
-import { SaveConfirmationDialog } from '@/components/workspace/SaveConfirmationDialog';
-import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
+import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/ContactBorrowerDetailLayout';
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
