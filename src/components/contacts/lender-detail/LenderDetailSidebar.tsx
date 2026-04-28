@@ -1,13 +1,13 @@
 import React from 'react';
 import {
   LayoutDashboard, Briefcase, History, DollarSign, BookOpen,
-  MessageSquare, Building2, FileText, UserCheck, Paperclip, ScrollText,
+  MessageSquare, Building2, FileText, UserCheck, Paperclip, ScrollText, Receipt,
 } from 'lucide-react';
 
 export type LenderSection =
   | 'dashboard' | 'portfolio' | 'history' | 'charges' | 'trust-ledger'
   | 'conversation-log' | 'lender-info' | 'authorized-party' | 'banking' | '1099'
-  | 'attachments' | 'events-journal';
+  | 'tax-reporting' | 'attachments' | 'events-journal';
 
 const SECTIONS: { id: LenderSection; label: string; icon: React.ElementType }[] = [
   { id: 'lender-info', label: 'Lender Info', icon: FileText },
