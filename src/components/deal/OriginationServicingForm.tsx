@@ -155,13 +155,20 @@ export const OriginationServicingForm: React.FC<OriginationServicingFormProps> =
             const cd = (data?.contact_data as Record<string, any>) || {};
             const addr = cd.primary_address || {};
             const phone = cd.phone || {};
-            sv(FK.tp_name, data?.full_name || cd.full_name || largestLenderName || '');
-            sv(FK.tp_street, addr.street || '');
-            sv(FK.tp_city, addr.city || '');
-            sv(FK.tp_state, addr.state || '');
-            sv(FK.tp_zip, addr.zip || '');
-            sv(FK.tp_phone, phone.work || cd.phone_work || '');
-            sv(FK.tp_email, cd.email || '');
+            const nameVal = data?.full_name || cd.full_name || largestLenderName || '';
+            const streetVal = addr.street || '';
+            const cityVal = addr.city || '';
+            const stateVal = addr.state || '';
+            const zipVal = addr.zip || '';
+            const phoneVal = phone.work || cd.phone_work || '';
+            const emailVal = cd.email || '';
+            sv(FK.tp_name, nameVal); sv(FK.sp_name, nameVal);
+            sv(FK.tp_street, streetVal); sv(FK.sp_street, streetVal);
+            sv(FK.tp_city, cityVal); sv(FK.sp_city, cityVal);
+            sv(FK.tp_state, stateVal); sv(FK.sp_state, stateVal);
+            sv(FK.tp_zip, zipVal); sv(FK.sp_zip, zipVal);
+            sv(FK.tp_phone, phoneVal); sv(FK.sp_phone, phoneVal);
+            sv(FK.tp_email, emailVal); sv(FK.sp_email, emailVal);
           } catch {
             // Fallback to existing lender keys if lookup fails
             writeFromKeys(LENDER_SOURCE_KEYS);
