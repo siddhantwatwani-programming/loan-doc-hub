@@ -629,6 +629,169 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Adjustment Dialog (opens on row click) */}
+      <Dialog open={adjustOpen} onOpenChange={setAdjustOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adjust Charge</DialogTitle>
+          </DialogHeader>
+          {(() => {
+            const target = rows.find(r => r.id === activeChargeId);
+            if (!target) return null;
+            const original = parseMoney(target.original_amount || target.unpaid_balance);
+            const sumAdj = sumAdjustments(target.adjustments);
+            const final = original + sumAdj;
+            return (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="rounded-md border border-border p-2">
+                    <p className="text-muted-foreground">Original</p>
+                    <p className="font-semibold">${original.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-md border border-border p-2">
+                    <p className="text-muted-foreground">Adjustments</p>
+                    <p className="font-semibold">{sumAdj >= 0 ? '+' : ''}${sumAdj.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-md border border-border p-2 bg-primary/5">
+                    <p className="text-muted-foreground">Final</p>
+                    <p className="font-semibold">${final.toFixed(2)}</p>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Adjustment Amount (use negative to reduce)</Label>
+                  <Input
+                    className="h-8 text-xs"
+                    value={adjustAmount}
+                    onChange={(e) => setAdjustAmount(e.target.value)}
+                    placeholder="e.g., 50.00 or -25.00"
+                    inputMode="decimal"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Remarks / Reason (optional)</Label>
+                  <Textarea
+                    className="text-xs"
+                    rows={3}
+                    value={adjustRemarks}
+                    onChange={(e) => setAdjustRemarks(e.target.value)}
+                    placeholder="Why is this adjustment being made?"
+                  />
+                </div>
+                {(target.adjustments?.length || 0) > 0 && (
+                  <div className="space-y-1">
+                    <Label className="text-xs">Previous Adjustments</Label>
+                    <div className="max-h-32 overflow-y-auto border border-border rounded-md p-2 space-y-1">
+                      {target.adjustments!.map(a => (
+                        <div key={a.id} className="text-[11px] flex justify-between gap-2">
+                          <span className={a.amount >= 0 ? 'text-foreground' : 'text-destructive'}>
+                            {a.amount >= 0 ? '+' : ''}${Number(a.amount).toFixed(2)}
+                          </span>
+                          <span className="text-muted-foreground truncate flex-1">{a.remarks || '—'}</span>
+                          <span className="text-muted-foreground">{new Date(a.timestamp).toLocaleDateString()}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { setActiveChargeId(activeChargeId); setHistoryOpen(true); setAdjustOpen(false); }}
+              className="gap-1"
+            >
+              <History className="h-3.5 w-3.5" /> View History
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setAdjustOpen(false)}>Cancel</Button>
+            <Button size="sm" onClick={handleApplyAdjustment} disabled={isSaving || disabled}>
+              <Pencil className="h-3.5 w-3.5 mr-1" /> Apply Adjustment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* History Dialog (read-only audit trail) */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {activeChargeId ? 'Charge History' : 'All Charges History'}
+            </DialogTitle>
+          </DialogHeader>
+          {activeChargeId && (() => {
+            const target = rows.find(r => r.id === activeChargeId);
+            if (!target) return null;
+            const original = parseMoney(target.original_amount || target.unpaid_balance);
+            const final = computeFinal(target);
+            return (
+              <div className="grid grid-cols-4 gap-2 text-xs mb-2">
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Charge</p>
+                  <p className="font-semibold truncate">{target.charge_type || target.description || '—'}</p>
+                </div>
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Original</p>
+                  <p className="font-semibold">${original.toFixed(2)}</p>
+                </div>
+                <div className="rounded-md border border-border p-2">
+                  <p className="text-muted-foreground">Adjustments</p>
+                  <p className="font-semibold">{target.adjustments?.length || 0}</p>
+                </div>
+                <div className="rounded-md border border-border p-2 bg-primary/5">
+                  <p className="text-muted-foreground">Final</p>
+                  <p className="font-semibold">${final.toFixed(2)}</p>
+                </div>
+              </div>
+            );
+          })()}
+          <div className="border border-border rounded-md overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="text-xs">When</TableHead>
+                  <TableHead className="text-xs">User</TableHead>
+                  <TableHead className="text-xs">Action</TableHead>
+                  <TableHead className="text-xs">Old Value</TableHead>
+                  <TableHead className="text-xs">New Value</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(() => {
+                  const filteredHist = activeChargeId
+                    ? history.filter(h => h.chargeId === activeChargeId)
+                    : history;
+                  const sorted = [...filteredHist].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+                  if (sorted.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-6 text-muted-foreground text-xs">
+                          No history records yet.
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                  return sorted.map(h => (
+                    <TableRow key={h.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{new Date(h.timestamp).toLocaleString()}</TableCell>
+                      <TableCell className="text-xs whitespace-nowrap">{h.user}</TableCell>
+                      <TableCell className="text-xs capitalize">{h.action}</TableCell>
+                      <TableCell className="text-xs">{h.oldValue || '—'}</TableCell>
+                      <TableCell className="text-xs">{h.newValue || '—'}</TableCell>
+                    </TableRow>
+                  ));
+                })()}
+              </TableBody>
+            </Table>
+          </div>
+          <DialogFooter>
+            <Button size="sm" variant="outline" onClick={() => setHistoryOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
