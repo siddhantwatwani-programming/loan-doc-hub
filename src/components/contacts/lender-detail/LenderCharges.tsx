@@ -177,6 +177,89 @@ const computeAmountOwedByBorrower = (advBy: string, onBehalf: string): number =>
 
 const fmtMoney = (n: number) => `$${n.toFixed(2)}`;
 
+// ─── Calculated read-only field derivations (Charges Grid) ───────────────────
+// Deferred amount: when row.deferred flag is set, the charge amount is postponed
+// per loan-terms/payment-schedule logic. Otherwise 0.
+const isDeferredFlag = (v: string | undefined): boolean => {
+  const s = String(v || '').trim().toLowerCase();
+  return s === 'yes' || s === 'true' || s === '1';
+};
+const computeDeferredAmount = (row: ChargeRow): number => {
+  if (!isDeferredFlag(row.deferred)) return 0;
+  // Deferred portion = original charge amount as scheduled to be postponed.
+  return parseMoney(row.original_balance || row.unpaid_balance);
+};
+
+// Accrued Interest: simple-interest accrual on the charge principal from
+// `interest_from` date (last accrual date) through today, using `interest_rate`
+// (annual %). Falls back to 0 if any input is missing/invalid.
+const parseGridDate = (s?: string): Date | null => {
+  if (!s) return null;
+  // Support MM/DD/YYYY and yyyy-MM-dd
+  const mdy = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if (mdy) {
+    const d = new Date(Number(mdy[3]), Number(mdy[1]) - 1, Number(mdy[2]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const ymd = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (ymd) {
+    const d = new Date(Number(ymd[1]), Number(ymd[2]) - 1, Number(ymd[3]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
+const computeAccruedInterest = (row: ChargeRow): number => {
+  const principal = parseMoney(row.original_balance || row.unpaid_balance);
+  if (principal <= 0) return 0;
+  const rate = parseFloat(String(row.interest_rate || '').replace(/[^0-9.\-]/g, ''));
+  if (!isFinite(rate) || rate <= 0) return 0;
+  const from = parseGridDate(row.interest_from) || parseGridDate(row.date);
+  if (!from) return 0;
+  const today = new Date();
+  const days = Math.max(0, Math.floor((today.getTime() - from.getTime()) / 86400000));
+  if (days <= 0) return 0;
+  // Simple interest: P * (r/100) * (days/365)
+  return principal * (rate / 100) * (days / 365);
+};
+
+// Unpaid Balance: Total Charges - Payments Received.
+// Total Charges per row = original (or seeded unpaid) + cumulative adjustments.
+// Payments Received = full original when row.paid, else 0 (no per-charge
+// partial-payment table exists; matches existing data model).
+const computeUnpaidBalance = (row: ChargeRow): number => {
+  const totalCharges = parseMoney(row.original_balance || row.unpaid_balance) + sumAdjustments(row.adjustments);
+  const payments = row.paid ? parseMoney(row.original_balance || row.unpaid_balance) : 0;
+  return totalCharges - payments;
+};
+
+// Total Due: Charges + Accrued Interest + Unpaid Balances ± Adjustments - Deferred.
+// "Charges" here = principal (original_balance). Adjustments are already in
+// Unpaid Balance, so we don't double-count them.
+const computeTotalDue = (row: ChargeRow): number => {
+  const charges = parseMoney(row.original_balance || row.unpaid_balance);
+  const accrued = computeAccruedInterest(row);
+  const unpaid = computeUnpaidBalance(row);
+  const deferred = computeDeferredAmount(row);
+  return charges + accrued + unpaid - deferred;
+};
+
+// Owed to Account: portion of Total Due allocated to this lender's account
+// based on the funding split captured on the charge (Advanced By + On Behalf Of
+// over the same two amounts — i.e. this lender's share of the distribution).
+// When no split exists, falls back to full Total Due.
+const computeOwedToAccount = (row: ChargeRow): number => {
+  const totalDue = computeTotalDue(row);
+  const adv = parseMoney(row.advanced_by_amount);
+  const ob = parseMoney(row.on_behalf_of_amount);
+  const distTotal = adv + ob;
+  if (distTotal <= 0) return totalDue;
+  // This lender's share = Advanced By portion of the distribution
+  const share = adv / distTotal;
+  return totalDue * share;
+};
+
+
 interface LenderChargesProps {
   lenderId: string;
   contactDbId: string;
