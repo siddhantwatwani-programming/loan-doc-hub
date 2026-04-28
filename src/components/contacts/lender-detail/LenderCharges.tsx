@@ -973,11 +973,31 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                   <Input
                     className="h-8 text-xs pl-6"
-                    value={draft.original_balance || ''}
+                    value={
+                      originalAmountFocused
+                        ? (draft.original_balance || '')
+                        : formatCurrencyDisplay(draft.original_balance || '')
+                    }
+                    onFocus={() => setOriginalAmountFocused(true)}
+                    onBlur={() => {
+                      setOriginalAmountFocused(false);
+                      // Normalize stored value to raw numeric (no commas)
+                      const raw = unformatCurrencyDisplay(draft.original_balance || '');
+                      if (raw !== (draft.original_balance || '')) {
+                        setDraftField('original_balance', raw);
+                        if (!editingId) setDraftField('unpaid_balance', raw);
+                      }
+                    }}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (val) => {
+                      setDraftField('original_balance', val);
+                      if (!editingId) setDraftField('unpaid_balance', val);
+                    })}
                     onChange={e => {
-                      setDraftField('original_balance', e.target.value);
+                      const raw = unformatCurrencyDisplay(e.target.value);
+                      setDraftField('original_balance', raw);
                       // also seed unpaid_balance on creation
-                      if (!editingId) setDraftField('unpaid_balance', e.target.value);
+                      if (!editingId) setDraftField('unpaid_balance', raw);
                     }}
                     placeholder="0.00"
                     inputMode="decimal"
