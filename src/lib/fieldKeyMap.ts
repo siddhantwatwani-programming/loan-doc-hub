@@ -695,6 +695,13 @@ export const BROKER_INFO_KEYS = {
   ford6: 'broker.ford.6',
   ford7: 'broker.ford.7',
   ford8: 'broker.ford.8',
+  licenseeNameIfEntity: 'broker.licensee_name_if_entity',
+  middleName: 'broker.middle_name',
+  capacity: 'broker.capacity',
+  agreementOnFileDate: 'broker.agreement_on_file_date',
+  deliveryOnline: 'broker.delivery.online',
+  deliveryMailingAddress: 'broker.delivery.mailing_address',
+  deliverySms: 'broker.delivery.sms',
 } as const;
 
 export const BROKER_BANKING_KEYS = {
