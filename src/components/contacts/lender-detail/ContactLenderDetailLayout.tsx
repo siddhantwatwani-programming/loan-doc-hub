@@ -9,6 +9,7 @@ import { LenderInfoForm } from '@/components/deal/LenderInfoForm';
 import { LenderAuthorizedPartyForm } from '@/components/deal/LenderAuthorizedPartyForm';
 import { LenderBankingForm } from '@/components/deal/LenderBankingForm';
 import Lender1099 from './Lender1099';
+import LenderTaxReporting from './LenderTaxReporting';
 import LenderDashboard from './LenderDashboard';
 import LenderPortfolio from './LenderPortfolio';
 import LenderHistory from './LenderHistory';
@@ -164,6 +165,16 @@ const ContactLenderDetailLayout: React.FC<ContactLenderDetailLayoutProps> = ({
               values={values}
               onValueChange={handleValueChange}
               onSave={async () => { await handleSave(); }}
+              disabled={isReadOnly}
+            />
+          </div>
+        );
+      case 'tax-reporting':
+        return (
+          <div className="p-6">
+            <LenderTaxReporting
+              values={values}
+              onValueChange={handleValueChange}
               disabled={isReadOnly}
             />
           </div>
