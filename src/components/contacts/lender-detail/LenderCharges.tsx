@@ -161,7 +161,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
     });
   }, []);
 
-  // Load charges from contact_data on mount
+  // Load charges + history from contact_data on mount
   useEffect(() => {
     const loadCharges = async () => {
       const { data, error } = await supabase
@@ -172,14 +172,23 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
       if (!error && data?.contact_data) {
         const cd = data.contact_data as Record<string, any>;
         if (Array.isArray(cd._charges)) {
-          setRows(cd._charges);
+          // Backfill original_amount + adjustments for legacy rows
+          const normalized = cd._charges.map((r: any) => ({
+            ...r,
+            original_amount: r.original_amount !== undefined ? r.original_amount : (r.unpaid_balance || ''),
+            adjustments: Array.isArray(r.adjustments) ? r.adjustments : [],
+          })) as ChargeRow[];
+          setRows(normalized);
+        }
+        if (Array.isArray(cd._charges_history)) {
+          setHistory(cd._charges_history as ChargeHistoryEntry[]);
         }
       }
     };
     if (contactDbId) loadCharges();
   }, [contactDbId]);
 
-  const persistCharges = useCallback(async (updatedRows: ChargeRow[]) => {
+  const persistCharges = useCallback(async (updatedRows: ChargeRow[], updatedHistory?: ChargeHistoryEntry[]) => {
     setIsSaving(true);
     try {
       // Fetch current contact_data first to merge
@@ -191,7 +200,8 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
       if (fetchErr) throw fetchErr;
 
       const existingData = (current?.contact_data as Record<string, any>) || {};
-      const merged = { ...existingData, _charges: updatedRows } as any;
+      const merged: any = { ...existingData, _charges: updatedRows };
+      if (updatedHistory) merged._charges_history = updatedHistory;
 
       const { error } = await supabase
         .from('contacts')
