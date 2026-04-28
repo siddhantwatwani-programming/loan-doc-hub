@@ -45,8 +45,37 @@ const FK = {
   fee_payable: 'origination_svc.broker_fee.payable',
 };
 
-const AGENT_OPTIONS = ['Company', 'Other Servicer', 'Lender', 'Broker'];
+const AGENT_OPTIONS = ['Company', 'Broker', 'Lender', 'Other / Third Party'];
 const PERIOD_OPTIONS = ['Monthly', 'Quarterly', 'Annually', 'Other'];
+
+// Source field keys for auto-populate by agent type (mirrors LoanTermsServicingForm)
+const COMPANY_SOURCE_KEYS = {
+  name: 'loan_terms.details_company',
+  street: '',
+  city: '',
+  state: '',
+  zip: '',
+  phone: '',
+  email: '',
+};
+const BROKER_SOURCE_KEYS = {
+  name: 'broker.company',
+  street: 'broker.address.street',
+  city: 'broker.address.city',
+  state: 'broker.address.state',
+  zip: 'broker.address.zip',
+  phone: 'broker.phone.work',
+  email: 'broker.email',
+};
+const LENDER_SOURCE_KEYS = {
+  name: 'lender.full_name',
+  street: 'lender.primary_address.street',
+  city: 'lender.primary_address.city',
+  state: 'lender.primary_address.state',
+  zip: 'lender.primary_address.zip',
+  phone: 'lender.phone.work',
+  email: 'lender.email',
+};
 
 export const OriginationServicingForm: React.FC<OriginationServicingFormProps> = ({
   values,
