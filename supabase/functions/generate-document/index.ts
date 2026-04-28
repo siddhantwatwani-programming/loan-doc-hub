@@ -748,6 +748,25 @@ async function generateSingleDocument(
       }
     }
 
+    // Auto-compute ln_p_loanAmountDivByEstimateValue if not already set
+    // Formula: Loan Amount / Estimate of Value (pr_p_appraiseValue)
+    // Renders blank when Estimate is missing or 0 (no divide-by-zero).
+    const existingLoanDivEstimate = fieldValues.get("ln_p_loanAmountDivByEstimateValue");
+    if (!existingLoanDivEstimate || !existingLoanDivEstimate.rawValue) {
+      const loanAmountVal2 = fieldValues.get("ln_p_loanAmount")?.rawValue || fieldValues.get("loan_terms.loan_amount")?.rawValue;
+      const estimateVal = fieldValues.get("pr_p_appraiseValue")?.rawValue || fieldValues.get("property1.appraise_value")?.rawValue;
+      const loanNum2 = parseFloat(String(loanAmountVal2 || "").replace(/[^0-9.-]/g, ""));
+      const estimateNum = parseFloat(String(estimateVal || "").replace(/[^0-9.-]/g, ""));
+      if (!isNaN(loanNum2) && !isNaN(estimateNum) && estimateNum > 0) {
+        const ratio = loanNum2 / estimateNum;
+        const ratioStr = ratio.toFixed(4);
+        const pctStr = (ratio * 100).toFixed(2);
+        fieldValues.set("ln_p_loanAmountDivByEstimateValue", { rawValue: ratioStr, dataType: "number" });
+        fieldValues.set("ln_p_loanAmountDivByEstimateValue_pct", { rawValue: pctStr, dataType: "percentage" });
+        debugLog(`[generate-document] Auto-computed ln_p_loanAmountDivByEstimateValue = ${ratioStr} (pct=${pctStr}%)`);
+      }
+    }
+
     // Auto-compute ln_p_months if not already set (bridge from number_of_payments)
     const existingMonths = fieldValues.get("ln_p_months");
     if (!existingMonths || !existingMonths.rawValue) {
