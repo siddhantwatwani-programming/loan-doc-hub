@@ -98,31 +98,32 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-x-6 gap-y-0">
-        {/* Column 1 - Broker Details + Representative */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
+        {/* Column 1 - Name + Broker or Representative */}
         <div className="space-y-1.5">
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Broker Details</h3>
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Name</h3>
           {renderInlineField('brokerId', 'Broker ID')}
-          {renderInlineField('company', 'Company')}
-          {renderInlineField('license', 'License')}
+          {renderInlineField('licenseeNameIfEntity', 'Licensee Name If Entity')}
+          {renderInlineField('license', 'License Number')}
 
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker's Representative</h3>
-          {renderInlineField('firstName', 'First Name')}
-          {renderInlineField('lastName', 'Last Name')}
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.repPhone}>
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Broker or Representative</h3>
+          {renderInlineField('firstName', 'First')}
+          {renderInlineField('middleName', 'Middle')}
+          {renderInlineField('lastName', 'Last')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.capacity}>
             <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">Phone</Label>
-              <PhoneInput value={getValue('repPhone')} onValueChange={(v) => handleChange('repPhone', v)} disabled={disabled} className="h-7 text-xs flex-1" />
+              <Label className="w-[100px] shrink-0 text-xs">Capacity</Label>
+              <Select value={getValue('capacity') || undefined} onValueChange={(v) => handleChange('capacity', v)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Broker">Broker</SelectItem>
+                  <SelectItem value="Broker's Representative">Broker's Representative</SelectItem>
+                  <SelectItem value="Unlicensed">Unlicensed</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={FIELD_KEYS.repEmail}>
-            <div className="flex items-center gap-2">
-              <Label className="w-[100px] shrink-0 text-xs">Email</Label>
-              <EmailInput value={getValue('repEmail')} onValueChange={(v) => handleChange('repEmail', v)} disabled={disabled} className="h-7 text-xs" />
-            </div>
-          </DirtyFieldWrapper>
-          {renderInlineField('repLicense', 'License')}
-
+          {renderInlineField('repLicense', 'License Number')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Email</Label>
@@ -130,27 +131,28 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-
-          <div className="space-y-1.5 pt-2">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.frozen}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="broker-frozen" checked={getBoolValue('frozen')} onCheckedChange={(checked) => handleChange('frozen', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor="broker-frozen" className="text-xs font-normal cursor-pointer">Frozen</Label>
-              </div>
-            </DirtyFieldWrapper>
+          <div className="pt-2 flex items-center gap-2">
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
               <div className="flex items-center space-x-2">
                 <Checkbox id="broker-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
                 <Label htmlFor="broker-agreementOnFile" className="text-xs font-normal cursor-pointer">Agreement on File</Label>
               </div>
             </DirtyFieldWrapper>
-            {renderInlineField('issue1099', 'Send 1099')}
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFileDate}>
+              <Input
+                type="date"
+                value={getValue('agreementOnFileDate')}
+                onChange={(e) => handleChange('agreementOnFileDate', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-xs flex-1"
+              />
+            </DirtyFieldWrapper>
           </div>
         </div>
 
-        {/* Column 2 - Address */}
+        {/* Column 2 - Primary Address + Mailing Address + Delivery Options */}
         <div className="space-y-1.5">
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Address</h3>
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Primary Address</h3>
           {renderInlineField('street', 'Street')}
           {renderInlineField('city', 'City')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.state}>
@@ -170,9 +172,52 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               <ZipInput value={getValue('zip')} onValueChange={(v) => handleChange('zip', v)} disabled={disabled} className="h-7 text-xs" />
             </div>
           </DirtyFieldWrapper>
+
+          <div className="grid grid-cols-[1fr_auto] items-center gap-2 border-b border-border pb-1 mb-2 mt-4">
+            <h3 className="font-semibold text-xs text-foreground">Mailing Address</h3>
+            <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingSameAsPrimary}>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="broker-mailingSameAsPrimary" className="text-xs font-normal cursor-pointer">Same as Primary</Label>
+                <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleChange('mailingSameAsPrimary', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+              </div>
+            </DirtyFieldWrapper>
+          </div>
+          {renderInlineField('mailingStreet', 'Street')}
+          {renderInlineField('mailingCity', 'City')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">State</Label>
+              <Select value={getValue('mailingState') || ''} onValueChange={(val) => handleChange('mailingState', val)} disabled={disabled || isMailingSame}>
+                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  {US_STATES.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingZip}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
+              <ZipInput value={getValue('mailingZip')} onValueChange={(v) => handleChange('mailingZip', v)} disabled={disabled || isMailingSame} className="h-7 text-xs" />
+            </div>
+          </DirtyFieldWrapper>
+
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Delivery Options</h3>
+          {([
+            { key: 'deliveryOnline' as const, label: 'Online' },
+            { key: 'deliveryMailingAddress' as const, label: 'Mailing Address' },
+            { key: 'deliverySms' as const, label: 'SMS' },
+          ]).map(({ key, label }) => (
+            <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`broker-${key}`} className="text-xs font-normal cursor-pointer">{label}</Label>
+                <Checkbox id={`broker-${key}`} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+              </div>
+            </DirtyFieldWrapper>
+          ))}
         </div>
 
-        {/* Column 3 - Phone */}
+        {/* Column 3 - Phone + FORD + Send */}
         <div className="space-y-1.5">
           <div className="grid grid-cols-[56px_1fr_72px] items-center gap-2 border-b border-border pb-1 mb-2">
             <h3 className="font-semibold text-xs text-foreground">Phone</h3>
@@ -199,45 +244,13 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
                     disabled={disabled}
                     className="h-7 text-xs flex-1"
                   />
-                <div className="flex justify-center">
-                  <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
-                </div>
+                  <div className="flex justify-center">
+                    <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                  </div>
                 </div>
               </DirtyFieldWrapper>
             ))}
           </RadioGroup>
-
-          <div className="space-y-1.5 pt-3">
-            <Label className="text-xs font-medium">Send:</Label>
-            {[
-              { key: 'paymentNotification' as const, label: 'Payment Notification' },
-              { key: 'lateNotice' as const, label: 'Late Notice' },
-              { key: 'lenderStatement' as const, label: 'Lender Statement' },
-            ].map(({ key, label }) => (
-              <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
-                <div className="flex items-center space-x-2">
-                  <Checkbox id={key} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                  <Label htmlFor={key} className="text-xs font-normal cursor-pointer">{label}</Label>
-                </div>
-              </DirtyFieldWrapper>
-            ))}
-          </div>
-        </div>
-
-        {/* Column 4 - Send Preferences */}
-        <div className="space-y-1.5">
-          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2">Send Preferences</h3>
-          {[
-            { key: 'borrowerStatement' as const, label: 'Borrower Statement' },
-            { key: 'maturityNotice' as const, label: 'Maturity Notice' },
-          ].map(({ key, label }) => (
-            <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
-              <div className="flex items-center space-x-2">
-                <Checkbox id={key} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
-                <Label htmlFor={key} className="text-xs font-normal cursor-pointer">{label}</Label>
-              </div>
-            </DirtyFieldWrapper>
-          ))}
 
           <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">FORD</h3>
           <div className="space-y-1.5">
@@ -255,6 +268,21 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               </DirtyFieldWrapper>
             ))}
           </div>
+
+          <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-2 mt-4">Send</h3>
+          {([
+            { key: 'paymentNotification' as const, label: 'Payment Notification' },
+            { key: 'lateNotice' as const, label: 'Late Notice' },
+            { key: 'borrowerStatement' as const, label: 'Borrower Statement' },
+            { key: 'maturityNotice' as const, label: 'Maturity Notice' },
+          ]).map(({ key, label }) => (
+            <DirtyFieldWrapper key={key} fieldKey={FIELD_KEYS[key]}>
+              <div className="flex items-center justify-between">
+                <Label htmlFor={`broker-send-${key}`} className="text-xs font-normal cursor-pointer">{label}</Label>
+                <Checkbox id={`broker-send-${key}`} checked={getBoolValue(key)} onCheckedChange={(checked) => handleChange(key, !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+              </div>
+            </DirtyFieldWrapper>
+          ))}
         </div>
       </div>
     </div>
