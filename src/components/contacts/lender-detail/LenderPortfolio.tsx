@@ -500,70 +500,12 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
     <div className="space-y-4">
       <h4 className="text-lg font-semibold text-foreground">Portfolio</h4>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Total Loans</p>
-          <p className="text-xl font-semibold text-foreground">{summary.totalLoans}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Active Loans</p>
-          <p className="text-xl font-semibold text-foreground">{summary.activeLoans}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Total Invested</p>
-          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalInvested)}</p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Total Outstanding (UPB)</p>
-          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalOutstanding)}</p>
-        </CardContent></Card>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Delinquency Rate</p>
-          <p className={`text-xl font-semibold ${summary.delinquencyRate > 0 ? 'text-destructive' : 'text-foreground'}`}>
-            {summary.delinquencyRate.toFixed(1)}%
-          </p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Avg ROI / Yield</p>
-          <p className={`text-xl font-semibold ${summary.avgRoi > 8 ? 'text-emerald-600' : 'text-foreground'}`}>
-            {summary.avgRoi.toFixed(2)}%
-          </p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Delinquent Loans</p>
-          <p className={`text-xl font-semibold ${summary.delinquentLoans > 0 ? 'text-destructive' : 'text-foreground'}`}>
-            {summary.delinquentLoans}
-          </p>
-        </CardContent></Card>
-        <Card><CardContent className="p-3">
-          <p className="text-xs text-muted-foreground">Accrued Interest</p>
-          <p className="text-xl font-semibold text-foreground">{fmtSumCurrency(summary.totalAccruedInterest)}</p>
-        </CardContent></Card>
-      </div>
-
       {/* Toolbar */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input placeholder="Search deals..." value={search} onChange={e => setSearch(e.target.value)} className="pl-7 h-8 w-[200px] text-xs" />
         </div>
-        <Select value={capacityFilter} onValueChange={setCapacityFilter}>
-          <SelectTrigger className="h-8 w-[160px] text-xs"><SelectValue placeholder="Capacity" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Capacities</SelectItem>
-            {CAPACITY_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
         <Button size="sm" variant="outline" className="gap-1 h-8 text-xs" onClick={handleExport}>
           <Download className="h-3.5 w-3.5" /> Export
         </Button>
