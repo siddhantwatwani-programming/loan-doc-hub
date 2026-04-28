@@ -584,6 +584,38 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
                 {validationErrors.name && <p className="text-xs text-destructive ml-[88px]">{validationErrors.name}</p>}
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs">Subject</Label>
+                <Input value={newLog.subject} onChange={e => setNewLog(p => ({ ...p, subject: e.target.value }))} maxLength={200} className="h-7 text-xs flex-1" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs">Assigned To</Label>
+                <Input value={newLog.to} onChange={e => setNewLog(p => ({ ...p, to: e.target.value }))} maxLength={100} className="h-7 text-xs flex-1" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs">Completed?</Label>
+                <div className="flex-1 flex items-center">
+                  <Checkbox checked={!!newLog.completed} onCheckedChange={(c) => setNewLog(p => ({ ...p, completed: !!c, completedDate: !!c ? (p.completedDate || new Date().toISOString()) : '' }))} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs">Completed Date</Label>
+                <Popover modal={true} open={addCompletedDateOpen} onOpenChange={setAddCompletedDateOpen}>
+                  <PopoverTrigger asChild>
+                    <div className="relative flex-1 cursor-pointer">
+                      <Input value={newLog.completedDate ? formatDateDisplay(newLog.completedDate) : ''} readOnly placeholder="Select date..." className="h-7 text-xs pr-7 cursor-pointer" />
+                      <CalendarIcon className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+                    </div>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar mode="single" selected={newLog.completedDate ? (() => { try { const d = new Date(newLog.completedDate); return isNaN(d.getTime()) ? undefined : d; } catch { return undefined; } })() : undefined} onSelect={(d) => { if (d) setNewLog(p => ({ ...p, completedDate: d.toISOString() })); setAddCompletedDateOpen(false); }} onClear={() => { setNewLog(p => ({ ...p, completedDate: '' })); setAddCompletedDateOpen(false); }} onToday={() => { setNewLog(p => ({ ...p, completedDate: new Date().toISOString() })); setAddCompletedDateOpen(false); }} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
             <div className="space-y-1">
               <Label className="text-xs">Conversation Log</Label>
               <div className="h-[160px] border border-border rounded-md overflow-hidden">
