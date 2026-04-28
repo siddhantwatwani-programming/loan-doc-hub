@@ -811,16 +811,25 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                 )}
                 {activeColumns.map(c => {
                   let raw: any = (r as any)[c.id];
-                  // Final unpaid balance reflects adjustments (original preserved separately)
+                  // Calculated read-only fields — derived from existing data
                   if (c.id === 'unpaid_balance') {
-                    raw = computeFinalUnpaid(r).toFixed(2);
+                    raw = computeUnpaidBalance(r).toFixed(2);
                   } else if (c.id === 'total_due') {
-                    raw = (parseMoney(r.total_due) + sumAdjustments(r.adjustments)).toFixed(2);
+                    raw = computeTotalDue(r).toFixed(2);
+                  } else if (c.id === 'accrued_interest') {
+                    raw = computeAccruedInterest(r).toFixed(2);
+                  } else if (c.id === 'owed_to_account') {
+                    raw = computeOwedToAccount(r).toFixed(2);
+                  } else if (c.id === 'deferred') {
+                    raw = isDeferredFlag(r.deferred) ? 'Yes' : 'No';
                   } else if (c.id === 'original_balance') {
                     raw = r.original_balance || r.unpaid_balance || '';
                   }
                   let display = raw || '-';
                   if (raw && CURRENCY_COLS.has(c.id)) {
+                    const n = parseMoney(raw);
+                    display = `$${n.toFixed(2)}`;
+                  } else if (raw && c.id === 'owed_to_account') {
                     const n = parseMoney(raw);
                     display = `$${n.toFixed(2)}`;
                   } else if (raw && c.id === 'interest_rate') {
@@ -842,6 +851,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
                   if (c.id === 'unpaid_balance') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.unpaid_balance)}</TableCell>;
                   if (c.id === 'accrued_interest') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.accrued_interest)}</TableCell>;
                   if (c.id === 'total_due') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.total_due)}</TableCell>;
+                  if (c.id === 'owed_to_account') return <TableCell key={c.id} className="text-xs">{fmtMoney(totals.owed_to_account)}</TableCell>;
                   return <TableCell key={c.id} />;
                 })}
               </TableRow>
