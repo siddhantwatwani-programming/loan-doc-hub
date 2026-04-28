@@ -236,8 +236,15 @@ const LenderPortfolio: React.FC<LenderPortfolioProps> = ({ lenderId, contactDbId
         const ch = chargesMap.get(dealId) || {};
         const fundingRecords = parseFundingRecords(lt);
 
+        // Strict Lender Code mapping: match funding record by Lender Code (contact_id),
+        // contact UUID, or lender name as a fallback.
         const fundingRec = fundingRecords.find(
-          r => r.lenderAccount === lenderId || r.lenderName === lenderId
+          r =>
+            r.lenderAccount === lenderId ||
+            r.lenderCode === lenderId ||
+            r.lenderId === contactDbId ||
+            r.lenderContactId === contactDbId ||
+            r.lenderName === lenderId
         ) || null;
 
         const totalLoanAmount = Number(
