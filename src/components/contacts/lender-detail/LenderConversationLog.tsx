@@ -36,6 +36,7 @@ interface LogRow {
   status: string;
   content: string;
   highPriority: boolean;
+  followUp?: boolean;
   reference: string;
   attachments: (string | AttachmentMeta)[];
   account: string;
@@ -97,6 +98,7 @@ const getEmptyLog = (): Omit<LogRow, 'id'> => {
     status: '',
     content: '',
     highPriority: false,
+    followUp: false,
     reference: '',
     attachments: [],
     account: '',
@@ -523,9 +525,15 @@ const LenderConversationLog: React.FC<{ lenderId: string; contactDbId: string; d
             <DialogTitle className="text-sm">Add New Conversation Log</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-            <div className="flex items-center gap-2">
-              <Checkbox checked={newLog.highPriority} onCheckedChange={(c) => setNewLog(p => ({ ...p, highPriority: !!c }))} />
-              <Label className="text-xs">Follow Up</Label>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={newLog.highPriority} onCheckedChange={(c) => setNewLog(p => ({ ...p, highPriority: !!c }))} />
+                <Label className="text-xs">High Priority</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={!!newLog.followUp} onCheckedChange={(c) => setNewLog(p => ({ ...p, followUp: !!c }))} />
+                <Label className="text-xs">Follow Up</Label>
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
