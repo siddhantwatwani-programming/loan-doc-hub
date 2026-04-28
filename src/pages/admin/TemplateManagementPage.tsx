@@ -390,6 +390,47 @@ export const TemplateManagementPage: React.FC = () => {
     setIsPreviewOpen(true);
   };
 
+  const handleDownloadTemplate = async (template: Template) => {
+    if (!template.file_path) {
+      toast({
+        title: 'No file available',
+        description: 'This template does not have an uploaded file to download',
+        variant: 'destructive',
+      });
+      return;
+    }
+    try {
+      const { data, error } = await supabase.storage
+        .from('templates')
+        .download(template.file_path);
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      // Derive a friendly filename, preserving the stored extension
+      const ext = template.file_path.split('.').pop() || 'docx';
+      const safeName = template.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      a.download = `${safeName}_v${template.version}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Download started',
+        description: `Downloading ${template.name}`,
+      });
+    } catch (error: any) {
+      console.error('Download error:', error);
+      toast({
+        title: 'Download failed',
+        description: error.message || 'Failed to download template file',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const handleValidateMapping = async (template: Template) => {
     setValidating(true);
     setIsValidationOpen(true);
