@@ -549,6 +549,21 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
             <DialogTitle>Add Charge</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
+            {/* Charge Type — predefined dropdown (no free text) */}
+            <div className="space-y-1 col-span-2">
+              <Label className="text-xs">Charge Type</Label>
+              <Select
+                value={newCharge.charge_type || ''}
+                onValueChange={(v) => setNewCharge(prev => ({ ...prev, charge_type: v }))}
+              >
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Select Charge Type" /></SelectTrigger>
+                <SelectContent className="z-[9999]">
+                  {CHARGE_TYPE_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {ALL_COLUMNS.map(col => (
               <div key={col.id} className={`space-y-1 ${col.id === 'total_owed_by_you' ? 'col-span-1' : ''}`}>
                 <Label className="text-xs">{col.label}</Label>
