@@ -284,6 +284,7 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Omit<ChargeRow, 'id'>>(EMPTY_CHARGE);
   const [isSaving, setIsSaving] = useState(false);
+  const [originalAmountFocused, setOriginalAmountFocused] = useState(false);
 
   // Adjustment + History state
   const [adjustOpen, setAdjustOpen] = useState(false);
