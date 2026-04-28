@@ -526,7 +526,7 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
           <div className="space-y-3 mt-3 flex-1 overflow-y-auto overflow-x-hidden min-h-0">
             <div className="flex items-center gap-2">
               <Checkbox checked={newLog.highPriority} onCheckedChange={(c) => setNewLog(p => ({ ...p, highPriority: !!c }))} />
-              <Label className="text-xs">High Priority</Label>
+              <Label className="text-xs">Follow Up</Label>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2">
@@ -616,6 +616,13 @@ const BrokerConversationLog: React.FC<{ brokerId: string; contactDbId: string; d
                   </PopoverContent>
                 </Popover>
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Label className="w-[80px] shrink-0 text-xs">Completed By</Label>
+                <Input value={newLog.completedBy || ''} onChange={e => { const v = e.target.value.replace(/[0-9]/g, ''); setNewLog(p => ({ ...p, completedBy: v })); }} maxLength={100} className="h-7 text-xs flex-1" />
+              </div>
+              <div />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Conversation Log</Label>
