@@ -14,7 +14,7 @@ const SECTIONS: { key: OriginationFeesSubSection; label: string }[] = [
   { key: 'escrow_title', label: 'Escrow & Title' },
   { key: 'document_provisions', label: 'Document Provisions' },
   { key: 'insurance_conditions', label: 'Insurance Conditions' },
-  { key: 'servicing', label: 'Servicing' },
+  { key: 'servicing', label: 'Servicing Agent' },
   { key: 'origination_fees', label: 'Origination Fees' },
 ];
 
