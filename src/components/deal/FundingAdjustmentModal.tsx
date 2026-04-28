@@ -263,9 +263,9 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 p-4 space-y-4">
-          {/* Header Fields - Left side and Distribute checkbox */}
-          <div className="flex items-start justify-between gap-6">
-            {/* Left header fields */}
+          {/* Header Fields - Two-column layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 items-start">
+            {/* Left column */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Label className="text-xs font-medium min-w-[110px]">Account</Label>
@@ -294,8 +294,12 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Right column */}
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium min-w-[110px]">Adjustment Amount</Label>
+                <Label className="text-xs font-medium min-w-[130px]">Adjustment Amount</Label>
                 <div className="relative">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                   <Input
@@ -313,7 +317,7 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Label className="text-xs font-medium min-w-[110px]">As of Date</Label>
+                <Label className="text-xs font-medium min-w-[130px]">As of Date</Label>
                 <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
                   <PopoverTrigger asChild>
                     <Button
@@ -340,7 +344,6 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
                 </Popover>
               </div>
             </div>
-
           </div>
 
           {/* Distribute checkbox + Add button - top right of table */}
