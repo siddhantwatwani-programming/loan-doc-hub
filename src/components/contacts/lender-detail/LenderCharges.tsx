@@ -66,6 +66,7 @@ interface ChargeRow {
   id: string;
   date: string;
   description: string;
+  charge_type?: string;
   interest_rate: string;
   interest_from: string;
   deferred: string;
@@ -75,6 +76,8 @@ interface ChargeRow {
   accrued_interest: string;
   total_due_to_you: string;
   total_owed_by_you: string;
+  original_amount?: string; // Snapshot of unpaid_balance at creation; never overwritten
+  adjustments?: ChargeAdjustment[];
 }
 
 const ALL_COLUMNS = [
@@ -94,6 +97,7 @@ const ALL_COLUMNS = [
 const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
   date: '',
   description: '',
+  charge_type: '',
   interest_rate: '',
   interest_from: '',
   deferred: '',
@@ -103,6 +107,22 @@ const EMPTY_CHARGE: Omit<ChargeRow, 'id'> = {
   accrued_interest: '',
   total_due_to_you: '',
   total_owed_by_you: '',
+  original_amount: '',
+  adjustments: [],
+};
+
+const parseMoney = (v: string | number | undefined): number => {
+  if (v === undefined || v === null || v === '') return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''));
+  return isNaN(n) ? 0 : n;
+};
+
+const sumAdjustments = (adjs?: ChargeAdjustment[]): number =>
+  (adjs || []).reduce((s, a) => s + (Number(a.amount) || 0), 0);
+
+const computeFinal = (row: ChargeRow): number => {
+  const original = parseMoney(row.original_amount || row.unpaid_balance);
+  return original + sumAdjustments(row.adjustments);
 };
 
 interface LenderChargesProps {
