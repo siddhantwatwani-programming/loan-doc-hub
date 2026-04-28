@@ -372,11 +372,13 @@ const LenderCharges: React.FC<LenderChargesProps> = ({ contactDbId, disabled }) 
         reference: r.reference,
         type: r.charge_type || '',
         description: r.description,
-        owed_to_account: r.owed_to_account,
+        // Calculated read-only fields — derived for funding-grid sync
+        owed_to_account: computeOwedToAccount(r),
         original_balance: parseMoney(r.original_balance || r.unpaid_balance),
-        unpaid_balance: computeFinalUnpaid(r),
-        accrued_interest: parseMoney(r.accrued_interest),
-        total_due: parseMoney(r.total_due) + sumAdjustments(r.adjustments),
+        unpaid_balance: computeUnpaidBalance(r),
+        accrued_interest: computeAccruedInterest(r),
+        total_due: computeTotalDue(r),
+        deferred: computeDeferredAmount(r),
         amount_owed_by_borrower: computeAmountOwedByBorrower(r.advanced_by_amount || '', r.on_behalf_of_amount || ''),
         paid: !!r.paid,
       }));
