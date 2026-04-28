@@ -193,6 +193,16 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
             />
           </div>
         );
+      case 'tax-info':
+        return (
+          <div className="p-6">
+            <BrokerTaxInfo
+              values={values}
+              onValueChange={handleValueChange}
+              disabled={isReadOnly}
+            />
+          </div>
+        );
       case '1099':
         return (
           <div className="p-6">
