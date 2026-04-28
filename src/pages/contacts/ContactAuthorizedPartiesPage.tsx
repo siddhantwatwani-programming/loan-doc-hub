@@ -201,7 +201,6 @@ const ContactAuthorizedPartiesPage: React.FC = () => {
           navigate('/contacts/authorized-parties');
         }}
         onSave={handleSave}
-        isReadOnly={isReadOnly}
       />
     );
   }
