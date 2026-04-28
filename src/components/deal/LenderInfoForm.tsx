@@ -697,37 +697,6 @@ export const LenderInfoForm: React.FC<LenderInfoFormProps> = ({
           </div>
         </div>
       </div>
-
-      {/* If Entity, sig line should be: */}
-      <div className="mt-6 border-t pt-4">
-        <h3 className="text-sm font-semibold text-destructive mb-3">If Entity, sig line should be:</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-3">
-          {wrapField('entitySignBorrower', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Borrower:</Label>
-            <Input value={getValue('entitySignBorrower')} onChange={(e) => handleChange('entitySignBorrower', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-          {wrapField('entitySignEntityName', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Entity Name</Label>
-            <Input value={getValue('entitySignEntityName')} onChange={(e) => handleChange('entitySignEntityName', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-          {wrapField('entitySignBy', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">By:</Label>
-            <Input value={getValue('entitySignBy')} onChange={(e) => handleChange('entitySignBy', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-          {wrapField('entitySignFirstLast', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">First, Last</Label>
-            <Input value={getValue('entitySignFirstLast')} onChange={(e) => handleChange('entitySignFirstLast', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-          {wrapField('entitySignIts', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Its:</Label>
-            <Input value={getValue('entitySignIts')} onChange={(e) => handleChange('entitySignIts', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-          {wrapField('entitySignCapacity', <div className="flex items-center gap-2">
-            <Label className="text-xs text-muted-foreground min-w-[100px] max-w-[100px] shrink-0">Capacity</Label>
-            <Input value={getValue('entitySignCapacity')} onChange={(e) => handleChange('entitySignCapacity', e.target.value)} disabled={disabled} className="h-8 flex-1" />
-          </div>)}
-        </div>
-      </div>
     </div>
   );
 };
