@@ -21,10 +21,46 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { History, Pencil } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format } from 'date-fns';
+
+// Predefined Charge Types (no free text allowed)
+const CHARGE_TYPE_OPTIONS = [
+  'Late Fee',
+  'NSF Fee',
+  'Inspection Fee',
+  'Legal Fee',
+  'Servicing Fee',
+  'Modification Fee',
+  'Demand / Reinstatement Fee',
+  'Recording Fee',
+  'Wire Fee',
+  'Other',
+];
+
+interface ChargeAdjustment {
+  id: string;
+  amount: number; // positive or negative
+  remarks: string;
+  user: string;
+  timestamp: string;
+}
+
+interface ChargeHistoryEntry {
+  id: string;
+  chargeId: string;
+  action: 'created' | 'updated' | 'adjusted' | 'deleted';
+  field?: string;
+  oldValue?: string;
+  newValue?: string;
+  user: string;
+  timestamp: string;
+}
 
 interface ChargeRow {
   id: string;
