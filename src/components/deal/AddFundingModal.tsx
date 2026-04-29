@@ -647,6 +647,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleCancel = () => { onOpenChange(false); };
 
   const servicingDisabled = !(formData.overrideServicing ?? false);
+  const vendorDisabled = !(formData.vendorId && String(formData.vendorId).trim() !== '');
 
   const fundingDate = formData.fundingDate ? new Date(formData.fundingDate) : undefined;
   const interestFromDate = formData.interestFrom ? new Date(formData.interestFrom) : undefined;
