@@ -178,12 +178,37 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingSameAsPrimary}>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="broker-mailingSameAsPrimary" className="text-xs font-normal cursor-pointer">Same as Primary</Label>
-                <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleChange('mailingSameAsPrimary', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => {
+                  const isChecked = !!checked;
+                  handleChange('mailingSameAsPrimary', isChecked);
+                  if (isChecked) {
+                    handleChange('mailingStreet', primaryStreetVal);
+                    handleChange('mailingCity', primaryCityVal);
+                    handleChange('mailingState', primaryStateVal);
+                    handleChange('mailingZip', primaryZipVal);
+                  } else {
+                    handleChange('mailingStreet', '');
+                    handleChange('mailingCity', '');
+                    handleChange('mailingState', '');
+                    handleChange('mailingZip', '');
+                  }
+                }} disabled={disabled} className="h-3.5 w-3.5" />
               </div>
             </DirtyFieldWrapper>
           </div>
-          {renderInlineField('mailingStreet', 'Street')}
-          {renderInlineField('mailingCity', 'City')}
+          {/* mailing Street/City: disable when same as primary */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingStreet}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || isMailingSame} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingCity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || isMailingSame} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">State</Label>
