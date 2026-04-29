@@ -276,7 +276,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                       className={cn('cursor-pointer hover:bg-primary/5')}
                       onClick={() => setSelectedRecord(record)}
                     >
-                      {isVisible('fundingDate') && <TableCell>{record.fundingDate}</TableCell>}
+                      {isVisible('fundingDate') && <TableCell>{formatFundingDate(record.fundingDate)}</TableCell>}
                       {isVisible('reference') && <TableCell>{record.reference}</TableCell>}
                       {isVisible('lenderAccount') && (
                         <TableCell className="text-primary font-medium">{record.lenderAccount}</TableCell>
