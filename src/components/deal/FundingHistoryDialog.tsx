@@ -239,7 +239,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
           </div>
 
           {/* Grid */}
-          <div className="border rounded-lg overflow-auto">
+          <div className="border rounded-lg overflow-auto relative z-[1]">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
