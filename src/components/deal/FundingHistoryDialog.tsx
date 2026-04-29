@@ -433,6 +433,81 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
           </DialogContent>
         </Dialog>
 
+        {/* Columns Modal — shown as a centered modal (same as Export) */}
+        <Dialog open={columnsModalOpen} onOpenChange={setColumnsModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center justify-between pr-6">
+                <span>Configure Columns</span>
+                {resetColumns && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetColumns}
+                    className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                  >
+                    <RotateCcw className="h-3 w-3" />
+                    Reset
+                  </Button>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <p className="text-xs text-muted-foreground">
+                Drag to reorder, toggle to show/hide
+              </p>
+              <div className="space-y-1 max-h-[320px] overflow-y-auto">
+                {columns.map((column, index) => {
+                  const visibleCount = columns.filter((c) => c.visible).length;
+                  const isLastVisible = column.visible && visibleCount <= 1;
+                  return (
+                    <div
+                      key={column.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', index.toString());
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const dragIndex = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                        if (dragIndex === index) return;
+                        const next = [...columns];
+                        const [moved] = next.splice(dragIndex, 1);
+                        next.splice(index, 0, moved);
+                        setColumns(next);
+                      }}
+                      className="flex items-center gap-2 p-2 rounded-md hover:bg-muted/50 cursor-move group"
+                    >
+                      <GripVertical className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
+                      <Checkbox
+                        checked={column.visible}
+                        disabled={isLastVisible}
+                        onCheckedChange={(checked) => {
+                          if (!checked && visibleCount <= 1) return;
+                          setColumns(
+                            columns.map((c) =>
+                              c.id === column.id ? { ...c, visible: !!checked } : c,
+                            ),
+                          );
+                        }}
+                      />
+                      <span className="text-sm flex-1">{column.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setColumnsModalOpen(false)}>Done</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <DeleteConfirmationDialog
           open={!!deleteTarget}
           onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
