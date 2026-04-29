@@ -171,12 +171,14 @@ const LenderTaxReporting: React.FC<LenderTaxReportingProps> = ({ values, onValue
           <div>
             <Label>TIN Number</Label>
             <Input
-              value={tinNumber}
+              value={tinDisplay}
+              onFocus={() => setTinFocused(true)}
+              onBlur={() => { setTinFocused(false); setTinTouched(true); }}
               onChange={(e) => handleTinChange(e.target.value)}
-              onBlur={() => setTinTouched(true)}
               disabled={disabled}
-              maxLength={9}
+              maxLength={mappedTinKind === 'SSN' ? 11 : 10}
               inputMode="numeric"
+              placeholder={mappedTinKind === 'SSN' ? 'XXX-XX-XXXX' : 'XX-XXXXXXX'}
               aria-invalid={!!tinError}
             />
             {tinError && (
