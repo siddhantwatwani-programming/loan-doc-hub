@@ -338,7 +338,7 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
                 <SelectContent className="z-[9999]">
                   <SelectItem value="Broker">Broker</SelectItem>
                   <SelectItem value="Borrower">Borrower</SelectItem>
-                  <SelectItem value="Public Record">Public Record</SelectItem>
+                  <SelectItem value="Lender">Lender</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
@@ -448,31 +448,6 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           </div>
         </div>
 
-        {/* Column 3: Document Request */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Document Request</h3>
-          {renderDualCheckboxField('Balance Sheet Received', FIELD_KEYS.doc_balance_sheet, FIELD_KEYS.doc_balance_sheet_2)}
-          {renderDualCheckboxField('Income Statement Received', FIELD_KEYS.doc_income_statement, FIELD_KEYS.doc_income_statement_2)}
-          {renderDualCheckboxField('Audited Financials', FIELD_KEYS.doc_audited_financials, FIELD_KEYS.doc_audited_financials_2)}
-          {renderTextField('Periods Reviewed', FIELD_KEYS.doc_periods_reviewed)}
-          {renderCheckboxField('IS BROKER ALSO A BORROWER?', FIELD_KEYS.is_broker_borrower_yes)}
-          <DirtyFieldWrapper fieldKey="origination_app.doc.additional_info_check1">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm shrink-0 flex-1">Additional Information Attached</Label>
-              <Checkbox
-                checked={getBoolValue('origination_app.doc.additional_info_check1')}
-                onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check1', !!checked)}
-                disabled={disabled}
-              />
-              <Checkbox
-                checked={getBoolValue('origination_app.doc.additional_info_check2')}
-                onCheckedChange={(checked) => setBoolValue('origination_app.doc.additional_info_check2', !!checked)}
-                disabled={disabled}
-              />
-            </div>
-          </DirtyFieldWrapper>
-          {ADDITIONAL_ROWS.map(renderAdditionalDocRow)}
-        </div>
       </div>
 
       {/* Financials (additive — extends existing Application area) */}
