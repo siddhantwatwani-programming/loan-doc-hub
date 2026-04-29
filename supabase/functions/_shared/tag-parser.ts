@@ -676,9 +676,36 @@ function getLabelQuickNeedle(label: string, mapping: LabelMapping): string {
 function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
   const checkedVal = isChecked ? '1' : '0';
   const displayChar = isChecked ? '\u2611' : '\u2610'; // ☑ or ☐
-  const wrappedRPr = rPr
-    ? (rPr.startsWith('<w:rPr>') ? rPr : `<w:rPr>${rPr}</w:rPr>`)
-    : `<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:hint="eastAsia"/></w:rPr>`;
+
+  // Normalize the run-property block so the rendered checkbox glyph in the
+  // SDT's display run matches the template's expected size and font (MS
+  // Gothic). Without this, glyphs constructed from static template ☐/☑
+  // runs render visibly smaller than the template's native SDT checkboxes
+  // because:
+  //   - the body default font (Arial/Times) provides a thinner ☐/☑ glyph
+  //   - no <w:sz> means the run inherits the body default size (often 9-10pt)
+  //
+  // Strategy:
+  //   1. Start from the original rPr inner content (everything inside
+  //      <w:rPr>...</w:rPr>) when provided, otherwise empty.
+  //   2. Force <w:rFonts> to MS Gothic (overriding any proportional font).
+  //   3. Inject <w:sz w:val="24"/> + <w:szCs w:val="24"/> ONLY if the
+  //      preserved rPr does not already declare an explicit <w:sz>, so
+  //      template-defined larger sizes are kept intact.
+  let rPrInner = '';
+  if (rPr) {
+    const stripped = rPr.startsWith('<w:rPr>') && rPr.endsWith('</w:rPr>')
+      ? rPr.slice('<w:rPr>'.length, rPr.length - '</w:rPr>'.length)
+      : rPr;
+    // Remove any existing <w:rFonts .../> so we can replace with MS Gothic.
+    rPrInner = stripped.replace(/<w:rFonts\b[^>]*\/>/g, '');
+  }
+
+  const fontsTag = '<w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:cs="MS Gothic" w:hint="eastAsia"/>';
+  const hasExplicitSize = /<w:sz\b/.test(rPrInner);
+  const sizeTags = hasExplicitSize ? '' : '<w:sz w:val="24"/><w:szCs w:val="24"/>';
+
+  const wrappedRPr = `<w:rPr>${fontsTag}${sizeTags}${rPrInner}</w:rPr>`;
 
   return `<w:sdt><w:sdtPr>${wrappedRPr}<w14:checkbox><w14:checked w14:val="${checkedVal}"/><w14:checkedState w14:val="2611" w14:font="MS Gothic"/><w14:uncheckedState w14:val="2610" w14:font="MS Gothic"/></w14:checkbox></w:sdtPr><w:sdtContent><w:r>${wrappedRPr}<w:t>${displayChar}</w:t></w:r></w:sdtContent></w:sdt>`;
 }
