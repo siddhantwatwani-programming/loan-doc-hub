@@ -179,7 +179,17 @@ export const CoBorrowerModal: React.FC<CoBorrowerModalProps> = ({ open, onOpenCh
               <div className="font-semibold text-xs text-foreground pb-1 mt-2 mb-1.5 flex items-center gap-2">
                 Mailing Address
                 <div className="flex items-center gap-1.5 ml-auto">
-                  <Checkbox id="modal-mailingSame" checked={formData.mailingSameAsPrimary} onCheckedChange={(checked) => handleInputChange('mailingSameAsPrimary', !!checked)} className="h-3 w-3" />
+                  <Checkbox id="modal-mailingSame" checked={formData.mailingSameAsPrimary} onCheckedChange={(checked) => {
+                    const isChecked = !!checked;
+                    setFormData(prev => ({
+                      ...prev,
+                      mailingSameAsPrimary: isChecked,
+                      mailingStreet: isChecked ? (prev.primaryStreet || '') : '',
+                      mailingCity: isChecked ? (prev.primaryCity || '') : '',
+                      mailingState: isChecked ? (prev.primaryState || '') : '',
+                      mailingZip: isChecked ? (prev.primaryZip || '') : '',
+                    }));
+                  }} className="h-3 w-3" />
                   <Label htmlFor="modal-mailingSame" className="font-normal text-[10px]">Same as Primary</Label>
                 </div>
               </div>
