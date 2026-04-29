@@ -197,10 +197,16 @@ const LenderTaxReporting: React.FC<LenderTaxReportingProps> = ({ values, onValue
             <Label>TIN Number</Label>
             <Input
               value={tinNumber}
-              onChange={(e) => onValueChange(K.tinNumber, e.target.value)}
+              onChange={(e) => handleTinChange(e.target.value)}
+              onBlur={() => setTinTouched(true)}
               disabled={disabled}
-              maxLength={20}
+              maxLength={9}
+              inputMode="numeric"
+              aria-invalid={!!tinError}
             />
+            {tinError && (
+              <p className="text-[11px] text-destructive mt-1">{tinError}</p>
+            )}
           </div>
           <div>
             <Label>TIN Type</Label>
