@@ -403,7 +403,7 @@ const LenderHistory: React.FC<Props> = ({ lenderId, contactDbId }) => {
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
           <TableHeader>
-            <TableRow className="bg-primary text-primary-foreground">
+            <TableRow className="bg-muted/50">
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
