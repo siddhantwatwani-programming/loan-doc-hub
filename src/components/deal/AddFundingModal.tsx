@@ -346,6 +346,22 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
     } catch { /* ignore quota errors */ }
   }, [formData, open, draftKey]);
 
+  // Warn the user before the browser/tab is closed if the modal has entered (unsaved) data.
+  // Triggers the browser's native "Leave site?" confirmation dialog.
+  React.useEffect(() => {
+    if (!open) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const filled = hasModalFormData(formData, ['loan', 'borrower', 'rateSelection', 'rateNoteValue', 'rateSoldValue', 'rateLenderValue', 'percentOwned', 'regularPayment', 'lenderRate', 'disbursements', 'payments', 'principalBalance', 'noteRateDisplay', 'overrideServicing', 'companyBaseFee', 'companyBaseFeePct', 'companyAdditionalServices', 'companyMinimum', 'companyMaximum', 'companyNrSitSplitPct', 'companyNrSitSplit', 'companyTotal', 'vendorId', 'vendorName', 'vendorBaseFee', 'vendorBaseFeePct', 'vendorAdditionalServices', 'vendorMinimum', 'vendorMaximum', 'vendorNrSitSplitPct', 'vendorNrSitSplit', 'vendorTotal'], { brokerParticipates: false, overrideServicingFees: false, overrideDefaultFees: false, roundingAdjustment: false });
+      if (filled) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [open, formData]);
+
   // Keep the legacy rateLenderValue in sync with the editable Lender Rate field without overwriting user input.
   React.useEffect(() => {
     if ((formData.rateLenderValue || '') !== (formData.lenderRate || '')) {

@@ -148,6 +148,28 @@ export const FundingAdjustmentModal: React.FC<FundingAdjustmentModalProps> = ({
     }
   }, [open, editData, existingAdjustments, loanNumber, borrowerName, loanBalance, fundingRecords]);
 
+  // Warn the user before the browser/tab is closed if the modal has entered (unsaved) data.
+  // Triggers the browser's native "Leave site?" confirmation dialog.
+  useEffect(() => {
+    if (!open) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const hasEntry =
+        !!adjustmentAmount ||
+        !!asOfDate ||
+        distributeByProRata ||
+        !!description ||
+        !!descriptionType ||
+        lenders.some((l) => !!l.adjustment);
+      if (hasEntry) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [open, adjustmentAmount, asOfDate, distributeByProRata, description, descriptionType, lenders]);
+
   // Distribute by Pro Rata
   useEffect(() => {
     if (!distributeByProRata || !adjustmentAmount) return;
