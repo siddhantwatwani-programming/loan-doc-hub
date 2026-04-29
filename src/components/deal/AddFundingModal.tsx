@@ -653,7 +653,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
   const renderCurrencyInput = (field: keyof FundingFormData, placeholder = '-', disabled = false) => (
     <div className="relative flex-1">
-      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+      <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
       <Input
         value={(formData[field] as string) || ''}
         onChange={(e) => handleChange(field, e.target.value.replace(/[^0-9.]/g, ''))}
@@ -661,7 +661,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         onPaste={(e) => numericPaste(e, (val) => handleChange(field, val))}
         onBlur={() => { const raw = formData[field] as string; if (raw) handleChange(field, formatCurrencyDisplay(raw)); }}
         onFocus={() => { const raw = formData[field] as string; if (raw) handleChange(field, unformatCurrencyDisplay(raw)); }}
-        className="h-6 text-[11px] pl-4"
+        className="h-6 text-xs pl-4"
         inputMode="decimal"
         placeholder={placeholder}
         disabled={disabled}
@@ -675,19 +675,19 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
         value={(formData[field] as string) || ''}
         onChange={(e) => handleChange(field, e.target.value.replace(/[^0-9.]/g, ''))}
         onKeyDown={numericKeyDown}
-        className="h-6 text-[11px] pr-4"
+        className="h-6 text-xs pr-4"
         inputMode="decimal"
         placeholder={placeholder}
         disabled={disabled}
       />
-      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
     </div>
   );
 
   const renderDateField = (value: Date | undefined, onSelect: (d: Date | undefined) => void, isOpen: boolean, setOpen: (v: boolean) => void) => (
     <Popover open={isOpen} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className={cn('h-6 text-[11px] w-full justify-start text-left font-normal flex-1', !value && 'text-muted-foreground')}>
+        <Button variant="outline" className={cn('h-6 text-xs w-full justify-start text-left font-normal flex-1', !value && 'text-muted-foreground')}>
           {value && !isNaN(value.getTime()) ? format(value, 'MM/dd/yyyy') : 'Date'}
           <CalendarIcon className="ml-auto h-3 w-3" />
         </Button>
@@ -708,11 +708,11 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold">Principal Balance</span>
             <div className="relative w-24">
-              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+              <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
               <Input
                 value={loanPrincipalBalance ?? ''}
                 readOnly
-                className="h-6 text-[11px] pl-4 bg-muted/50"
+                className="h-6 text-xs pl-4 bg-muted/50"
                 placeholder="-"
               />
             </div>
@@ -725,7 +725,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
             {/* COLUMN 1: Lender Details */}
             <div className="space-y-1">
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender ID</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Lender ID</Label>
                 <LenderIdSearch
                   value={formData.lenderId}
                   onChange={(lenderId, lenderFullName) => {
@@ -735,19 +735,19 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       ...(lenderFullName ? { lenderFullName } : {}),
                     }));
                   }}
-                  className="h-6 text-[11px]"
+                  className="h-6 text-xs"
                 />
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Name</Label>
-                <Input value={formData.lenderFullName} readOnly className="h-6 text-[11px] bg-muted/30" />
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Name</Label>
+                <Input value={formData.lenderFullName} readOnly className="h-6 text-xs bg-muted/30" />
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Note Rate</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Note Rate</Label>
                 {renderPercentInput('noteRateDisplay', '%', true)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Lender Rate</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Lender Rate</Label>
                 {(() => {
                   const hasLenderRate = !!(formData.lenderRate && String(formData.lenderRate).trim() !== '');
                   return (
@@ -779,17 +779,17 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         }}
                         onKeyDown={numericKeyDown}
                         disabled={hasLenderRate}
-                        className={cn("h-6 text-[11px] pr-4", hasLenderRate && "opacity-60 bg-muted cursor-not-allowed")}
+                        className={cn("h-6 text-xs pr-4", hasLenderRate && "opacity-60 bg-muted cursor-not-allowed")}
                         inputMode="decimal"
                         placeholder="%"
                       />
-                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                     </div>
                   );
                 })()}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0 flex items-center gap-1">
+                <Label className="text-xs font-bold min-w-[75px] shrink-0 flex items-center gap-1">
                   <span>Override</span>
                   {(() => {
                     const isOn = !!formData.lenderRateOverride;
@@ -836,43 +836,43 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           }
                         }}
                         onKeyDown={numericKeyDown}
-                        className="h-6 text-[11px] pr-4"
+                        className="h-6 text-xs pr-4"
                         inputMode="decimal"
                         placeholder="%"
                         disabled={!isOn}
                       />
-                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                      <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                     </div>
                   );
                 })()}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Funding Date</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Funding Date</Label>
                 {renderDateField(fundingDate, (d) => handleChange('fundingDate', d ? format(d, 'yyyy-MM-dd') : ''), fundingDateOpen, setFundingDateOpen)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Original Funding</Label>
+                <Label className="text-xs font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Original Funding</Label>
                 {renderCurrencyInput('fundingAmount', '0.00')}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Current Balance</Label>
+                <Label className="text-xs font-bold min-w-[75px] max-w-[75px] shrink-0 whitespace-normal leading-tight">Current Balance</Label>
                 {renderCurrencyInput('currentBalance', '0.00')}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Interest From</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Interest From</Label>
                 {renderDateField(interestFromDate, (d) => handleChange('interestFrom', d ? format(d, 'yyyy-MM-dd') : ''), interestFromOpen, setInterestFromOpen)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] font-bold min-w-[75px] shrink-0">Pro Rata</Label>
+                <Label className="text-xs font-bold min-w-[75px] shrink-0">Pro Rata</Label>
                 {renderPercentInput('percentOwned', '%', true)}
               </div>
             </div>
 
             {/* COLUMN 2: Fees to Company */}
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-center border-b border-border pb-0.5">Fees to Company</p>
+              <p className="text-xs font-bold text-center border-b border-border pb-0.5">Fees to Company</p>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">Override</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">Override</Label>
                 <Checkbox
                   checked={formData.overrideServicing ?? false}
                   onCheckedChange={(checked) => handleChange('overrideServicing', !!checked)}
@@ -880,40 +880,40 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 />
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">Base Fee</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">Base Fee</Label>
                 {renderCurrencyInput('companyBaseFee', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">% of Principal</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">% of Principal</Label>
                 {renderPercentInput('companyBaseFeePct', '%', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">Services</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">Services</Label>
                 {renderCurrencyInput('companyAdditionalServices', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">Minimum</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">Minimum</Label>
                 {renderCurrencyInput('companyMinimum', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">Maximum</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">Maximum</Label>
                 {renderCurrencyInput('companyMaximum', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0">NR / Sit Split</Label>
+                <Label className="text-xs min-w-[80px] shrink-0">NR / Sit Split</Label>
                 <div className="flex items-center gap-0.5 flex-1">
                   {renderPercentInput('companyNrSitSplitPct', '%', servicingDisabled)}
                   {renderCurrencyInput('companyNrSitSplit', '-', servicingDisabled)}
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[80px] shrink-0 font-bold">Total</Label>
+                <Label className="text-xs min-w-[80px] shrink-0 font-bold">Total</Label>
                 <div className="relative flex-1">
-                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                   <Input
                     value={(formData.companyTotal as string) || ''}
                     readOnly
-                    className="h-6 text-[11px] pl-4 bg-muted/30 font-semibold"
+                    className="h-6 text-xs pl-4 bg-muted/30 font-semibold"
                     placeholder="-"
                   />
                 </div>
@@ -922,9 +922,9 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
             {/* COLUMN 3: Fees to Vendor */}
             <div className="space-y-1">
-              <p className="text-[11px] font-bold text-center border-b border-border pb-0.5">Fees to Vendor</p>
+              <p className="text-xs font-bold text-center border-b border-border pb-0.5">Fees to Vendor</p>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Vendor ID</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">Vendor ID</Label>
                 <AccountIdSearch
                   value={formData.vendorId || ''}
                   onChange={(vendorId, vendorName) => {
@@ -934,44 +934,44 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                       ...(vendorName ? { vendorName } : {}),
                     }));
                   }}
-                  className="h-6 text-[11px]"
+                  className="h-6 text-xs"
                 />
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Name</Label>
-                <Input value={formData.vendorName || ''} readOnly className="h-6 text-[11px] bg-muted/30" />
+                <Label className="text-xs min-w-[70px] shrink-0">Name</Label>
+                <Input value={formData.vendorName || ''} readOnly className="h-6 text-xs bg-muted/30" />
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Base Fee</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">Base Fee</Label>
                 {renderCurrencyInput('vendorBaseFee', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Additional</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">Additional</Label>
                 {renderCurrencyInput('vendorAdditionalServices', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Minimum</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">Minimum</Label>
                 {renderCurrencyInput('vendorMinimum', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">Maximum</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">Maximum</Label>
                 {renderCurrencyInput('vendorMaximum', '-', servicingDisabled)}
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0">NR / Sit Split</Label>
+                <Label className="text-xs min-w-[70px] shrink-0">NR / Sit Split</Label>
                 <div className="flex items-center gap-0.5 flex-1">
                   {renderPercentInput('vendorNrSitSplitPct', '%', servicingDisabled)}
                   {renderCurrencyInput('vendorNrSitSplit', '-', servicingDisabled)}
                 </div>
               </div>
               <div className="flex items-center gap-1">
-                <Label className="text-[11px] min-w-[70px] shrink-0 font-bold">Total</Label>
+                <Label className="text-xs min-w-[70px] shrink-0 font-bold">Total</Label>
                 <div className="relative flex-1">
-                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">$</span>
+                  <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                   <Input
                     value={(formData.vendorTotal as string) || ''}
                     readOnly
-                    className="h-6 text-[11px] pl-4 bg-muted/30 font-semibold"
+                    className="h-6 text-xs pl-4 bg-muted/30 font-semibold"
                     placeholder="-"
                   />
                 </div>
@@ -981,10 +981,10 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
 
           {/* Validation messages */}
           {percentOwnedError && (
-            <p className="text-[10px] text-destructive font-medium">Percent Owned cannot exceed 100%</p>
+            <p className="text-xs text-destructive font-medium">Percent Owned cannot exceed 100%</p>
           )}
           {totalPercentError && !percentOwnedError && (
-            <p className="text-[10px] text-destructive font-medium">Total ownership across all lenders exceeds 100%</p>
+            <p className="text-xs text-destructive font-medium">Total ownership across all lenders exceeds 100%</p>
           )}
 
           {/* Checkboxes row */}
@@ -998,7 +998,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Label className="text-[11px] font-medium cursor-pointer">Rounding Adjustment</Label>
+                    <Label className="text-xs font-medium cursor-pointer">Rounding Adjustment</Label>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="text-xs">
                     This lender will receive any rounding difference (e.g., $0.01).
@@ -1013,25 +1013,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                 onCheckedChange={(checked) => handleChange('brokerParticipates', !!checked)}
                 className="h-3.5 w-3.5"
               />
-              <Label className="text-[11px] font-medium italic cursor-pointer">Lender is Originating Broker, Employee of Broker, or Family Member</Label>
+              <Label className="text-xs font-medium italic cursor-pointer">Lender is Originating Broker, Employee of Broker, or Family Member</Label>
             </div>
           </div>
 
           {/* Disbursements from Lender Proceeds */}
           <div className="space-y-1 border-t border-border pt-2">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
+              <p className="text-xs font-bold underline text-foreground">Disbursements from Lender Proceeds</p>
               <div className="flex items-center gap-2">
 
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1">
+                    <Button variant="outline" size="sm" className="h-6 text-xs gap-1">
                       <SlidersHorizontal className="h-3 w-3" />
                       Columns
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent align="end" className="w-48 p-2 z-[9999]">
-                    <p className="text-[11px] font-semibold mb-2 text-foreground">Show / Hide Columns</p>
+                    <p className="text-xs font-semibold mb-2 text-foreground">Show / Hide Columns</p>
                     <div className="space-y-1.5">
                       {([
                         ['active', 'Active'],
@@ -1043,7 +1043,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                         ['type', 'Type'],
                         ['comment', 'Comment'],
                       ] as const).map(([key, label]) => (
-                        <label key={key} className="flex items-center gap-2 text-[11px] cursor-pointer hover:text-foreground text-muted-foreground">
+                        <label key={key} className="flex items-center gap-2 text-xs cursor-pointer hover:text-foreground text-muted-foreground">
                           <Checkbox
                             checked={disbColVisibility[key]}
                             onCheckedChange={() => toggleDisbCol(key)}
@@ -1055,7 +1055,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                     </div>
                   </PopoverContent>
                 </Popover>
-                <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={handleAddDisbursement}>
+                <Button variant="outline" size="sm" className="h-6 text-xs gap-1" onClick={handleAddDisbursement}>
                   <Plus className="h-3 w-3" />
                   Add Disbursement
                 </Button>
@@ -1068,7 +1068,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               );
               return (
               <div className="overflow-x-auto border border-border rounded">
-                <table className="w-full text-[11px] table-fixed">
+                <table className="w-full text-xs table-fixed">
                   <colgroup>
                     {disbColVisibility.active && <col className="w-[50px]" />}
                     {disbColVisibility.accountId && <col className="w-[80px]" />}
@@ -1113,15 +1113,15 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                             />
                           </td>
                         )}
-                        {disbColVisibility.accountId && <td className="py-0.5 px-1 text-[10px]">{row.accountId || '-'}</td>}
-                        {disbColVisibility.name && <td className="py-0.5 px-1 text-[10px]">{row.name || '-'}</td>}
-                        {disbColVisibility.startDate && <td className="py-0.5 px-1 text-[10px]">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>}
+                        {disbColVisibility.accountId && <td className="py-0.5 px-1 text-xs">{row.accountId || '-'}</td>}
+                        {disbColVisibility.name && <td className="py-0.5 px-1 text-xs">{row.name || '-'}</td>}
+                        {disbColVisibility.startDate && <td className="py-0.5 px-1 text-xs">{row.startDate ? format(new Date(row.startDate), 'MM/dd/yyyy') : '-'}</td>}
                         {showEndDateCol && (
-                          <td className="py-0.5 px-1 text-[10px]">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
+                          <td className="py-0.5 px-1 text-xs">{row.endDate ? format(new Date(row.endDate), 'MM/dd/yyyy') : (row.debitThrough === 'date' && row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-')}</td>
                         )}
-                        {disbColVisibility.amount && <td className="py-0.5 px-1 text-[10px] text-right">{row.amount ? `$${row.amount}` : '-'}</td>}
+                        {disbColVisibility.amount && <td className="py-0.5 px-1 text-xs text-right">{row.amount ? `$${row.amount}` : '-'}</td>}
                         {disbColVisibility.debitThrough && (
-                          <td className="py-0.5 px-1 text-[10px]">
+                          <td className="py-0.5 px-1 text-xs">
                             {row.debitThrough === 'date' ? (row.debitThroughDate ? format(new Date(row.debitThroughDate), 'MM/dd/yyyy') : '-') :
                              row.debitThrough === 'amount' ? `$${row.debitThroughAmount}` :
                              row.debitThrough === 'payments' ? `${row.debitThroughPayments} Payments` :
@@ -1129,16 +1129,16 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
                           </td>
                         )}
                         {showPercentageCol && (
-                          <td className="py-0.5 px-1 text-[10px] text-right">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
+                          <td className="py-0.5 px-1 text-xs text-right">{row.debitPercent ? `${row.debitPercent}%` : '-'}</td>
                         )}
-                        {disbColVisibility.type && <td className="py-0.5 px-1 text-[10px]">{row.debitOf || row.from || '-'}</td>}
+                        {disbColVisibility.type && <td className="py-0.5 px-1 text-xs">{row.debitOf || row.from || '-'}</td>}
                         {disbColVisibility.comment && (
                           <td className="py-0.5 px-1">
                             <Input
                               value={row.comments || ''}
                               onChange={(e) => handleDisbursementCommentChange(idx, e.target.value)}
                               onBlur={(e) => handleDisbursementCommentChange(idx, e.target.value)}
-                              className="h-5 text-[10px]"
+                              className="h-5 text-xs"
                               placeholder="Add comment..."
                             />
                           </td>
@@ -1161,7 +1161,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               );
             })()}
             {formData.disbursements.length === 0 && (
-              <p className="text-[10px] text-muted-foreground italic py-1">No disbursements added.</p>
+              <p className="text-xs text-muted-foreground italic py-1">No disbursements added.</p>
             )}
           </div>
 
