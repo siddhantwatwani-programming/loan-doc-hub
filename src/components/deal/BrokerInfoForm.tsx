@@ -178,7 +178,21 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
             <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingSameAsPrimary}>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="broker-mailingSameAsPrimary" className="text-xs font-normal cursor-pointer">Same as Primary</Label>
-                <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => handleChange('mailingSameAsPrimary', !!checked)} disabled={disabled} className="h-3.5 w-3.5" />
+                <Checkbox id="broker-mailingSameAsPrimary" checked={getBoolValue('mailingSameAsPrimary')} onCheckedChange={(checked) => {
+                  const isChecked = !!checked;
+                  handleChange('mailingSameAsPrimary', isChecked);
+                  if (isChecked) {
+                    handleChange('mailingStreet', primaryStreetVal);
+                    handleChange('mailingCity', primaryCityVal);
+                    handleChange('mailingState', primaryStateVal);
+                    handleChange('mailingZip', primaryZipVal);
+                  } else {
+                    handleChange('mailingStreet', '');
+                    handleChange('mailingCity', '');
+                    handleChange('mailingState', '');
+                    handleChange('mailingZip', '');
+                  }
+                }} disabled={disabled} className="h-3.5 w-3.5" />
               </div>
             </DirtyFieldWrapper>
           </div>
