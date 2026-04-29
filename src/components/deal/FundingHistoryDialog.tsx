@@ -196,7 +196,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl max-h-[80vh]">
+      <DialogContent className="max-w-5xl max-h-[80vh] z-[80]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <span className="text-primary">💾</span>
