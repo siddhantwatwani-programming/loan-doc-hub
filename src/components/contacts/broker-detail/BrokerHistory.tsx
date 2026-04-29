@@ -403,7 +403,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
           <TableHeader>
-            <TableRow className="bg-primary text-primary-foreground">
+            <TableRow className="bg-muted/50">
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
@@ -412,7 +412,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
                   sortColumnId={sortCol}
                   sortDirection={sortDir}
                   onSort={handleSort}
-                  className="whitespace-nowrap text-xs text-primary-foreground"
+                  className="whitespace-nowrap text-xs"
                 />
               ))}
             </TableRow>
