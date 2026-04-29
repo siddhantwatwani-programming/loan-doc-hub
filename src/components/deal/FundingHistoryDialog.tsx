@@ -221,11 +221,15 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
             )}
           </DialogTitle>
           <div className="flex justify-end -mt-6 mr-6 gap-2">
-            <ColumnConfigPopover
-              columns={columns}
-              onColumnsChange={setColumns}
-              onResetColumns={resetColumns}
-            />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => setColumnsModalOpen(true)}
+            >
+              <Settings2 className="h-4 w-4" />
+              Columns
+            </Button>
             <Button variant="outline" size="sm" className="gap-1" onClick={openCustomize}>
               Customize Grid
             </Button>
