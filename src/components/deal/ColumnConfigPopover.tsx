@@ -77,7 +77,7 @@ export const ColumnConfigPopover: React.FC<ColumnConfigPopoverProps> = ({
           Columns
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-3" align="end">
+      <PopoverContent className="w-64 p-3 z-[100]" align="end">
         <div className="space-y-1">
           <div className="flex items-center justify-between mb-3">
             <p className="text-sm font-medium text-foreground">
