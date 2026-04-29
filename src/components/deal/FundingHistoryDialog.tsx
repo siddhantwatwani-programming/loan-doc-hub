@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Download, Trash2, Lock, Search } from 'lucide-react';
+import { Download, Trash2, Lock, Search, Settings2, GripVertical, RotateCcw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { GridExportDialog, ExportColumn } from './GridExportDialog';
