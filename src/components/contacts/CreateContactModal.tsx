@@ -124,6 +124,24 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
   const [form, setForm] = useState<Record<string, string>>(() => getInitialForm(contactType));
   const [confirmOpen, setConfirmOpen] = useState(false);
 
+  // Warn the user before the browser/tab is closed if any field has been entered (unsaved).
+  // Triggers the browser's native "Leave site?" confirmation dialog.
+  useEffect(() => {
+    if (!open) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const initial = getInitialForm(contactType);
+      const hasEntry = Object.keys(form).some((k) => (form[k] || '') !== (initial[k] || ''))
+        || Object.keys(form).some((k) => !(k in initial) && !!form[k]);
+      if (hasEntry) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [open, form, contactType]);
+
   // Determine primary address key prefix based on contact type
   const primaryPrefix = contactType === 'lender' ? 'primary_address' : 'address';
 
