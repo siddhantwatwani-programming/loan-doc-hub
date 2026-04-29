@@ -1,59 +1,59 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Download, Filter, Settings2 } from 'lucide-react';
+import { Search, Download, Settings2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import SortableTableHead from '@/components/deal/SortableTableHead';
 import { type SortDirection } from '@/hooks/useGridSortFilter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 
 interface HistoryRow {
   id: string;
   dealId: string;
-  date: string;
-  dateRaw: string;
-  account: string;
-  reference: string;
+  transactionDate: string;
+  transactionDateRaw: string;
+  accountNumber: string;
+  address: string;
+  borrower: string;
+  status: string;
+  total: string;
+  totalNum: number;
   principal: string;
   principalNum: number;
   interest: string;
   interestNum: number;
-  defaultInterest: string;
-  defaultInterestNum: number;
-  lateFee: string;
-  lateFeeNum: number;
-  prepayPenalty: string;
-  prepayPenaltyNum: number;
+  lateFeePaid: string;
+  lateFeePaidNum: number;
   servicingFees: string;
   servicingFeesNum: number;
-  otherCharges: string;
-  otherChargesNum: number;
-  totalAmount: string;
-  totalAmountNum: number;
+  other: string;
+  otherNum: number;
+  principalBalance: string;
+  principalBalanceNum: number;
 }
 
 const ALL_COLUMNS = [
-  { id: 'date', label: 'Date' },
-  { id: 'account', label: 'Account' },
-  { id: 'reference', label: 'Reference' },
+  { id: 'transactionDate', label: 'Transaction Date' },
+  { id: 'accountNumber', label: 'Account Number' },
+  { id: 'address', label: 'Address' },
+  { id: 'borrower', label: 'Borrower' },
+  { id: 'status', label: 'Status' },
+  { id: 'total', label: 'Total' },
   { id: 'principal', label: 'Principal' },
   { id: 'interest', label: 'Interest' },
-  { id: 'defaultInterest', label: 'Default Interest' },
-  { id: 'lateFee', label: 'Late Fee' },
-  { id: 'prepayPenalty', label: 'Prepay Penalty' },
+  { id: 'lateFeePaid', label: 'Late Fee Paid' },
   { id: 'servicingFees', label: 'Servicing Fees' },
-  { id: 'otherCharges', label: 'Other Charges' },
-  { id: 'totalAmount', label: 'Total Transaction Amount' },
+  { id: 'other', label: 'Other' },
+  { id: 'principalBalance', label: 'Principal Balance' },
 ];
 
 const formatCurrency = (val: any) => {
-  if (val == null || val === '' || val === 0) return '-';
+  if (val == null || val === '') return '$0.00';
   const num = typeof val === 'number' ? val : parseFloat(String(val));
-  if (isNaN(num) || num === 0) return '-';
+  if (isNaN(num)) return '$0.00';
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
 };
 
@@ -72,21 +72,6 @@ const parseNum = (val: any): number => {
   return isNaN(n) ? 0 : n;
 };
 
-const resolveField = (fv: any, ...keyFragments: string[]): any => {
-  if (!fv || typeof fv !== 'object') return null;
-  for (const [key, val] of Object.entries(fv)) {
-    for (const frag of keyFragments) {
-      if (key.toLowerCase().includes(frag.toLowerCase())) {
-        if (typeof val === 'object' && val !== null) {
-          return (val as any).value_number ?? (val as any).value_text ?? (val as any).value_date ?? val;
-        }
-        return val;
-      }
-    }
-  }
-  return null;
-};
-
 interface Props {
   brokerId: string;
   contactDbId?: string;
@@ -97,12 +82,13 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
-  const [sortCol, setSortCol] = useState<string | null>('date');
+  const [sortCol, setSortCol] = useState<string | null>('transactionDate');
   const [sortDir, setSortDir] = useState<SortDirection>('desc');
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
     new Set(ALL_COLUMNS.map(c => c.id))
   );
-  const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const lookupId = contactDbId || brokerId;
@@ -112,13 +98,11 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
       setIsLoading(true);
       try {
         // 1. Find deal_participants for this broker
-        const { data: participants, error: pErr } = await supabase
+        const { data: participants } = await supabase
           .from('deal_participants')
           .select('deal_id')
           .eq('contact_id', contactDbId || '')
           .eq('role', 'broker');
-
-        if (pErr) throw pErr;
 
         let allParticipants = participants || [];
 
@@ -162,95 +146,68 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
         const dealIds = [...new Set(allParticipants.map(p => p.deal_id))];
 
         // 2. Fetch deals
-        const { data: deals, error: dErr } = await supabase
+        const { data: deals } = await supabase
           .from('deals')
-          .select('id, deal_number, created_at, status')
+          .select('id, deal_number, borrower_name, property_address, status')
           .in('id', dealIds);
 
-        if (dErr) throw dErr;
         if (!deals || deals.length === 0) {
           setRows([]);
           setIsLoading(false);
           return;
         }
 
-        // 3. Fetch loan_terms section values for financial data
-        const { data: loanTermsSections } = await supabase
-          .from('deal_section_values')
-          .select('deal_id, field_values')
-          .in('deal_id', dealIds)
-          .eq('section', 'loan_terms');
-
-        const loanTermsMap = new Map<string, Record<string, any>>();
-        (loanTermsSections || []).forEach(sv => {
-          loanTermsMap.set(sv.deal_id, sv.field_values as Record<string, any>);
-        });
-
-        // 4. Fetch charges section values
-        const { data: chargesSections } = await supabase
-          .from('deal_section_values')
-          .select('deal_id, field_values')
-          .in('deal_id', dealIds)
-          .eq('section', 'charges');
-
-        const chargesMap = new Map<string, Record<string, any>>();
-        (chargesSections || []).forEach(sv => {
-          chargesMap.set(sv.deal_id, sv.field_values as Record<string, any>);
-        });
-
         const dealsMap = new Map(deals.map(d => [d.id, d]));
 
-        const historyRows: HistoryRow[] = [];
-        const seenDeals = new Set<string>();
+        // 3. Fetch loan_history for these deals
+        const { data: historyRecords } = await supabase
+          .from('loan_history')
+          .select('*')
+          .in('deal_id', dealIds)
+          .order('date_received', { ascending: false });
 
-        for (const p of allParticipants) {
-          if (seenDeals.has(p.deal_id)) continue;
-          seenDeals.add(p.deal_id);
-
-          const deal = dealsMap.get(p.deal_id);
-          if (!deal) continue;
-
-          const lt = loanTermsMap.get(p.deal_id) || {};
-          const ch = chargesMap.get(p.deal_id) || {};
-
-          const principalVal = parseNum(resolveField(lt, 'principal', 'principal_balance', 'current_balance'));
-          const interestVal = parseNum(resolveField(lt, 'interest_amount', 'interest_paid', 'accrued_interest'));
-          const defaultInterestVal = parseNum(resolveField(lt, 'default_interest', 'penalty_interest'));
-          const lateFeeVal = parseNum(resolveField(lt, 'late_fee', 'late_charge') ?? resolveField(ch, 'late_fee', 'late_charge'));
-          const prepayVal = parseNum(resolveField(lt, 'prepay', 'prepayment_penalty') ?? resolveField(ch, 'prepay'));
-          const servicingVal = parseNum(resolveField(lt, 'servicing_fee', 'servicing') ?? resolveField(ch, 'servicing'));
-          const otherVal = parseNum(resolveField(ch, 'other_charges', 'other_fees', 'misc'));
-
-          const total = principalVal + interestVal + defaultInterestVal + lateFeeVal + prepayVal + servicingVal + otherVal;
-
-          const txDate = resolveField(lt, 'origination_date', 'funding_date', 'closing_date') || deal.created_at;
-          const refVal = resolveField(lt, 'reference', 'transaction_id', 'payment_reference') || deal.deal_number;
-
-          historyRows.push({
-            id: deal.id,
-            dealId: deal.id,
-            date: formatDate(txDate),
-            dateRaw: txDate ? String(txDate) : '',
-            account: deal.deal_number || '-',
-            reference: String(refVal || '-'),
-            principal: formatCurrency(principalVal),
-            principalNum: principalVal,
-            interest: formatCurrency(interestVal),
-            interestNum: interestVal,
-            defaultInterest: formatCurrency(defaultInterestVal),
-            defaultInterestNum: defaultInterestVal,
-            lateFee: formatCurrency(lateFeeVal),
-            lateFeeNum: lateFeeVal,
-            prepayPenalty: formatCurrency(prepayVal),
-            prepayPenaltyNum: prepayVal,
-            servicingFees: formatCurrency(servicingVal),
-            servicingFeesNum: servicingVal,
-            otherCharges: formatCurrency(otherVal),
-            otherChargesNum: otherVal,
-            totalAmount: formatCurrency(total),
-            totalAmountNum: total,
-          });
+        if (!historyRecords || historyRecords.length === 0) {
+          setRows([]);
+          setIsLoading(false);
+          return;
         }
+
+        const historyRows: HistoryRow[] = historyRecords.map(rec => {
+          const deal = dealsMap.get(rec.deal_id);
+          const txDate = rec.date_received || rec.date_due;
+          const totalNum = parseNum(rec.total_amount_received);
+          const principalNum = parseNum(rec.applied_to_principal);
+          const interestNum = parseNum(rec.applied_to_interest);
+          const lateFeePaidNum = parseNum(rec.applied_to_late_charges);
+          const servicingFeesNum = parseNum(rec.servicing_fees);
+          const otherNum = parseNum(rec.other_amount);
+          const principalBalanceNum = parseNum(rec.principal_balance);
+
+          return {
+            id: rec.id,
+            dealId: rec.deal_id,
+            transactionDate: formatDate(txDate),
+            transactionDateRaw: txDate ? String(txDate) : '',
+            accountNumber: deal?.deal_number || rec.account_number || '-',
+            address: deal?.property_address || '-',
+            borrower: deal?.borrower_name || '-',
+            status: rec.payment_code || deal?.status || '-',
+            total: formatCurrency(totalNum),
+            totalNum,
+            principal: formatCurrency(principalNum),
+            principalNum,
+            interest: formatCurrency(interestNum),
+            interestNum,
+            lateFeePaid: formatCurrency(lateFeePaidNum),
+            lateFeePaidNum,
+            servicingFees: formatCurrency(servicingFeesNum),
+            servicingFeesNum,
+            other: formatCurrency(otherNum),
+            otherNum,
+            principalBalance: formatCurrency(principalBalanceNum),
+            principalBalanceNum,
+          };
+        });
 
         setRows(historyRows);
       } catch (err) {
@@ -282,23 +239,22 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
   const filtered = useMemo(() => {
     let result = rows;
 
-    // Search by account or reference
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(r =>
-        r.account.toLowerCase().includes(q) ||
-        r.reference.toLowerCase().includes(q)
+        r.accountNumber.toLowerCase().includes(q) ||
+        r.borrower.toLowerCase().includes(q) ||
+        r.address.toLowerCase().includes(q) ||
+        r.status.toLowerCase().includes(q)
       );
     }
 
-    // Date filter
     if (dateFilter !== 'all') {
       const now = new Date();
       result = result.filter(r => {
-        if (!r.dateRaw) return false;
-        const d = new Date(r.dateRaw);
+        if (!r.transactionDateRaw) return false;
+        const d = new Date(r.transactionDateRaw);
         if (isNaN(d.getTime())) return false;
-
         switch (dateFilter) {
           case 'mtd': {
             const start = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -328,16 +284,15 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
       });
     }
 
-    // Sort
     if (sortCol && sortDir) {
+      const numCols: Record<string, string> = {
+        total: 'totalNum', principal: 'principalNum', interest: 'interestNum',
+        lateFeePaid: 'lateFeePaidNum', servicingFees: 'servicingFeesNum',
+        other: 'otherNum', principalBalance: 'principalBalanceNum',
+      };
       result = [...result].sort((a, b) => {
         let av: any, bv: any;
-        const numCols: Record<string, string> = {
-          principal: 'principalNum', interest: 'interestNum', defaultInterest: 'defaultInterestNum',
-          lateFee: 'lateFeeNum', prepayPenalty: 'prepayPenaltyNum', servicingFees: 'servicingFeesNum',
-          otherCharges: 'otherChargesNum', totalAmount: 'totalAmountNum',
-        };
-        if (sortCol === 'date') { av = a.dateRaw; bv = b.dateRaw; }
+        if (sortCol === 'transactionDate') { av = a.transactionDateRaw; bv = b.transactionDateRaw; }
         else if (numCols[sortCol]) { av = (a as any)[numCols[sortCol]]; bv = (b as any)[numCols[sortCol]]; }
         else { av = (a as any)[sortCol] || ''; bv = (b as any)[sortCol] || ''; }
 
@@ -350,6 +305,16 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
 
     return result;
   }, [rows, search, dateFilter, sortCol, sortDir]);
+
+  // Pagination
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safeCurrentPage = Math.min(page, totalPages);
+  const paginatedRows = filtered.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
+  const startItem = totalItems === 0 ? 0 : (safeCurrentPage - 1) * pageSize + 1;
+  const endItem = Math.min(safeCurrentPage * pageSize, totalItems);
+
+  useEffect(() => { setPage(1); }, [search, dateFilter, pageSize]);
 
   const toggleColumn = (colId: string) => {
     setVisibleColumns(prev => {
@@ -374,13 +339,11 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
     URL.revokeObjectURL(url);
   };
 
-  const activeFilterCount = (dateFilter !== 'all' ? 1 : 0);
-
   return (
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h4 className="text-lg font-semibold text-foreground">History</h4>
+        <h4 className="text-lg font-semibold text-foreground">Broker History</h4>
         <Popover>
           <PopoverTrigger asChild>
             <Button size="sm" variant="outline" className="gap-1 h-8 text-xs">
@@ -410,10 +373,10 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
         <div className="relative">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search Account / Reference..."
+            placeholder="Search Account / Borrower / Address..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-7 h-8 w-[220px] text-xs"
+            className="pl-7 h-8 w-[260px] text-xs"
           />
         </div>
 
@@ -440,7 +403,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
       <div className="border border-border rounded-lg overflow-x-auto">
         <Table className="min-w-[1400px]">
           <TableHeader>
-            <tr className="bg-muted/50">
+            <TableRow className="bg-primary text-primary-foreground">
               {activeColumns.map(c => (
                 <SortableTableHead
                   key={c.id}
@@ -449,36 +412,65 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
                   sortColumnId={sortCol}
                   sortDirection={sortDir}
                   onSort={handleSort}
-                  className="whitespace-nowrap text-xs"
+                  className="whitespace-nowrap text-xs text-primary-foreground"
                 />
               ))}
-            </tr>
+            </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <tr>
+              <TableRow>
                 <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
                   Loading history...
                 </TableCell>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
+              </TableRow>
+            ) : paginatedRows.length === 0 ? (
+              <TableRow>
                 <TableCell colSpan={activeColumns.length} className="text-center py-8 text-muted-foreground text-sm">
                   No history records found.
                 </TableCell>
-              </tr>
-            ) : filtered.map(r => (
-              <tr key={r.id} className="border-b transition-colors hover:bg-muted/50">
+              </TableRow>
+            ) : paginatedRows.map((r, idx) => (
+              <TableRow key={r.id} className={idx % 2 === 1 ? 'bg-muted/30' : ''}>
                 {activeColumns.map(c => (
                   <TableCell key={c.id} className="whitespace-nowrap text-xs">
                     {(r as any)[c.id] || '-'}
                   </TableCell>
                 ))}
-              </tr>
+              </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Items per page:</span>
+            <Select value={String(pageSize)} onValueChange={v => setPageSize(Number(v))}>
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">
+              {startItem} - {endItem} of {totalItems}
+            </span>
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={safeCurrentPage <= 1} onClick={() => setPage(1)}>«</Button>
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={safeCurrentPage <= 1} onClick={() => setPage(p => p - 1)}>‹</Button>
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={safeCurrentPage >= totalPages} onClick={() => setPage(p => p + 1)}>›</Button>
+            <Button size="sm" variant="outline" className="h-7 w-7 p-0 text-xs" disabled={safeCurrentPage >= totalPages} onClick={() => setPage(totalPages)}>»</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
