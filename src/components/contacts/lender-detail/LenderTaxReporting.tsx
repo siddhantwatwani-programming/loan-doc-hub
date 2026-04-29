@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -97,6 +97,62 @@ const LenderTaxReporting: React.FC<LenderTaxReportingProps> = ({ values, onValue
     onValueChange(K.manualFlag, 'true');
   };
 
+  // ===== TIN Validation =====
+  // TIN Type mapping: '1' = EIN, '2' = SSN, '0'/'' = Unknown (auto-detect)
+  const validateTin = (raw: string, type: string): string => {
+    const digits = (raw || '').replace(/\D/g, '');
+    if (digits.length === 0) return '';
+    if (!/^\d+$/.test(digits)) return 'Only numeric values are allowed';
+    if (digits.length !== 9) return 'TIN must be exactly 9 digits';
+    // Block all-same repeating digits and all zeros
+    if (/^(\d)\1{8}$/.test(digits)) return 'Invalid TIN number';
+
+    const a3 = digits.slice(0, 3);
+    const a2 = digits.slice(0, 2);
+    const mid = digits.slice(3, 5);
+    const last4 = digits.slice(5, 9);
+
+    // ITIN: starts with 9 (auto-detected regardless of type)
+    if (digits.startsWith('9')) {
+      const grp = parseInt(mid, 10);
+      const validItin =
+        (grp >= 50 && grp <= 65) ||
+        (grp >= 70 && grp <= 88) ||
+        (grp >= 90 && grp <= 92) ||
+        (grp >= 94 && grp <= 99);
+      if (!validItin) return 'Invalid TIN format based on selected TIN Type';
+      return '';
+    }
+
+    if (type === '1') {
+      // EIN
+      if (a2 === '00') return 'Invalid TIN format based on selected TIN Type';
+      return '';
+    }
+
+    if (type === '2') {
+      // SSN
+      const areaNum = parseInt(a3, 10);
+      if (a3 === '000' || a3 === '666' || areaNum >= 900) return 'Invalid TIN format based on selected TIN Type';
+      if (mid === '00') return 'Invalid TIN format based on selected TIN Type';
+      if (last4 === '0000') return 'Invalid TIN format based on selected TIN Type';
+      return '';
+    }
+
+    // Unknown / not selected — accept any 9-digit non-repeating numeric
+    return '';
+  };
+
+  const [tinTouched, setTinTouched] = useState(false);
+  const tinError = tinTouched ? validateTin(tinNumber, tinType) : '';
+
+  const handleTinChange = (raw: string) => {
+    // Strip non-digits, cap at 9
+    const digits = raw.replace(/\D/g, '').slice(0, 9);
+    onValueChange(K.tinNumber, digits);
+  };
+
+
   return (
     <div className="space-y-6 max-w-2xl">
       <h4 className="text-lg font-semibold text-foreground">Tax Reporting</h4>
@@ -141,10 +197,16 @@ const LenderTaxReporting: React.FC<LenderTaxReportingProps> = ({ values, onValue
             <Label>TIN Number</Label>
             <Input
               value={tinNumber}
-              onChange={(e) => onValueChange(K.tinNumber, e.target.value)}
+              onChange={(e) => handleTinChange(e.target.value)}
+              onBlur={() => setTinTouched(true)}
               disabled={disabled}
-              maxLength={20}
+              maxLength={9}
+              inputMode="numeric"
+              aria-invalid={!!tinError}
             />
+            {tinError && (
+              <p className="text-[11px] text-destructive mt-1">{tinError}</p>
+            )}
           </div>
           <div>
             <Label>TIN Type</Label>
