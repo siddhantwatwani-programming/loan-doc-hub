@@ -108,7 +108,7 @@ const resolveFieldByFragment = (fv: any, ...keyFragments: string[]): string => {
 
 const parseNum = (v: string) => { const n = Number(v.replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; };
 
-async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]> {
+async function fetchBrokerPortfolio(contactDbId: string, brokerId?: string): Promise<PortfolioRow[]> {
   const { data: participants, error: pErr } = await supabase
     .from('deal_participants')
     .select('deal_id, name')
@@ -116,9 +116,41 @@ async function fetchBrokerPortfolio(contactDbId: string): Promise<PortfolioRow[]
     .eq('role', 'broker');
 
   if (pErr) throw pErr;
-  if (!participants || participants.length === 0) return [];
 
-  const dealIds = [...new Set(participants.map(p => p.deal_id))];
+  let allParticipants = participants || [];
+
+  // Fallback: search deal_section_values broker section for broker_id match
+  // (mirrors BrokerHistory so saved deals populate even when no participant row exists)
+  if (allParticipants.length === 0 && brokerId) {
+    const { data: brokerSections } = await supabase
+      .from('deal_section_values')
+      .select('deal_id, field_values')
+      .eq('section', 'broker');
+
+    const matchedDealIds: string[] = [];
+    (brokerSections || []).forEach(bs => {
+      const fv = bs.field_values as Record<string, any>;
+      if (!fv) return;
+      for (const v of Object.values(fv)) {
+        if (typeof v === 'object' && v !== null && (v as any).value_text === brokerId) {
+          matchedDealIds.push(bs.deal_id);
+          break;
+        }
+        if (typeof v === 'string' && v === brokerId) {
+          matchedDealIds.push(bs.deal_id);
+          break;
+        }
+      }
+    });
+
+    if (matchedDealIds.length > 0) {
+      allParticipants = matchedDealIds.map(did => ({ deal_id: did, name: '' }));
+    }
+  }
+
+  if (allParticipants.length === 0) return [];
+
+  const dealIds = [...new Set(allParticipants.map(p => p.deal_id))];
 
   const { data: deals, error: dErr } = await supabase
     .from('deals')
