@@ -647,6 +647,7 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
   const handleCancel = () => { onOpenChange(false); };
 
   const servicingDisabled = !(formData.overrideServicing ?? false);
+  const vendorDisabled = !(formData.vendorId && String(formData.vendorId).trim() !== '');
 
   const fundingDate = formData.fundingDate ? new Date(formData.fundingDate) : undefined;
   const interestFromDate = formData.interestFrom ? new Date(formData.interestFrom) : undefined;
@@ -943,25 +944,25 @@ export const AddFundingModal: React.FC<AddFundingModalProps> = ({
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-xs min-w-[70px] shrink-0">Base Fee</Label>
-                {renderCurrencyInput('vendorBaseFee', '-', servicingDisabled)}
+                {renderCurrencyInput('vendorBaseFee', '-', vendorDisabled)}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-xs min-w-[70px] shrink-0">Additional</Label>
-                {renderCurrencyInput('vendorAdditionalServices', '-', servicingDisabled)}
+                {renderCurrencyInput('vendorAdditionalServices', '-', vendorDisabled)}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-xs min-w-[70px] shrink-0">Minimum</Label>
-                {renderCurrencyInput('vendorMinimum', '-', servicingDisabled)}
+                {renderCurrencyInput('vendorMinimum', '-', vendorDisabled)}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-xs min-w-[70px] shrink-0">Maximum</Label>
-                {renderCurrencyInput('vendorMaximum', '-', servicingDisabled)}
+                {renderCurrencyInput('vendorMaximum', '-', vendorDisabled)}
               </div>
               <div className="flex items-center gap-1">
                 <Label className="text-xs min-w-[70px] shrink-0">NR / Sit Split</Label>
                 <div className="flex items-center gap-0.5 flex-1">
-                  {renderPercentInput('vendorNrSitSplitPct', '%', servicingDisabled)}
-                  {renderCurrencyInput('vendorNrSitSplit', '-', servicingDisabled)}
+                  {renderPercentInput('vendorNrSitSplitPct', '%', vendorDisabled)}
+                  {renderCurrencyInput('vendorNrSitSplit', '-', vendorDisabled)}
                 </div>
               </div>
               <div className="flex items-center gap-1">
