@@ -34,9 +34,9 @@ const BrokerDetailLayout: React.FC<BrokerDetailLayoutProps> = ({ broker, onBack,
       case 'dashboard': return <BrokerDashboard broker={broker} onUpdate={onUpdate} />;
       case 'portfolio': return <BrokerPortfolio brokerId={broker.brokerId} contactDbId={broker.id} />;
       case 'history': return <BrokerHistory brokerId={broker.brokerId} contactDbId={broker.id} />;
-      case 'charges': return <BrokerCharges brokerId={broker.brokerId} contactDbId="" disabled={isReadOnly} />;
+      case 'charges': return <BrokerCharges brokerId={broker.brokerId} contactDbId={broker.id} disabled={isReadOnly} />;
       case 'trust-ledger': return <BrokerTrustLedger brokerId={broker.brokerId} contactDbId="" />;
-      case 'conversation-log': return <BrokerConversationLog brokerId={broker.brokerId} contactDbId="" />;
+      case 'conversation-log': return <BrokerConversationLog brokerId={broker.brokerId} contactDbId={broker.id} disabled={isReadOnly} />;
       case 'banking': return <BrokerBanking broker={broker} onUpdate={onUpdate} />;
       case '1099': return <Broker1099 values={{}} onValueChange={() => {}} onSave={async () => {}} />;
       case 'authorized-party': return <BrokerAuthorizedParty brokerId={broker.brokerId} />;
