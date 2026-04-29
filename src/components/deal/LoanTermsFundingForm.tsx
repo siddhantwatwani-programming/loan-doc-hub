@@ -260,27 +260,63 @@ export const LoanTermsFundingForm: React.FC<LoanTermsFundingFormProps> = ({
         parsed = [];
       }
     }
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+
+    // Build a lookup from current funding records to enrich any history rows
+    // that are missing fundingDate / amountFunded / lender info (e.g. legacy
+    // entries where those values were not captured at create time).
+    const recordsValue = values[FIELD_KEYS.fundingRecords];
+    let recs: any[] = [];
+    if (recordsValue) {
+      try {
+        const r = JSON.parse(recordsValue);
+        if (Array.isArray(r)) recs = r;
+      } catch {
+        recs = [];
+      }
+    }
+    const recById = new Map<string, any>();
+    const recByAccount = new Map<string, any>();
+    recs.forEach((r) => {
+      if (r?.id) recById.set(String(r.id), r);
+      if (r?.lenderAccount) recByAccount.set(String(r.lenderAccount), r);
+    });
+
+    const toAmount = (v: any): number =>
+      typeof v === 'number' ? v : parseFloat(String(v || '').replace(/[$,]/g, '')) || 0;
+
+    const enrich = (h: any) => {
+      const idStr = String(h?.id || '').replace(/^history-/, '');
+      const match = recById.get(idStr) || recByAccount.get(String(h?.lenderAccount || ''));
+      const fundingDate = h?.fundingDate || match?.fundingDate || '';
+      const lenderAccount = h?.lenderAccount || match?.lenderAccount || '';
+      const lenderName = h?.lenderName || match?.lenderName || '';
+      const storedAmount = toAmount(h?.amountFunded);
+      const amountFunded = storedAmount > 0
+        ? storedAmount
+        : toAmount(match?.originalAmount);
+      return {
+        ...h,
+        fundingDate,
+        lenderAccount,
+        lenderName,
+        amountFunded,
+      };
+    };
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.map(enrich);
+    }
 
     // Derive from funding records as a fallback (no DB writes here)
-    const recordsValue = values[FIELD_KEYS.fundingRecords];
-    if (!recordsValue) return [];
-    try {
-      const recs: any[] = JSON.parse(recordsValue);
-      if (!Array.isArray(recs)) return [];
-      return recs.map((r) => ({
-        id: `history-${r.id || r.lenderAccount || Math.random()}`,
-        fundingDate: r.fundingDate || '',
-        reference: `REF-${r.id || ''}`,
-        lenderAccount: r.lenderAccount || '',
-        lenderName: r.lenderName || '',
-        amountFunded: typeof r.originalAmount === 'number'
-          ? r.originalAmount
-          : parseFloat(String(r.originalAmount || '').replace(/[$,]/g, '')) || 0,
-      }));
-    } catch {
-      return [];
-    }
+    if (!recs.length) return [];
+    return recs.map((r) => ({
+      id: `history-${r.id || r.lenderAccount || Math.random()}`,
+      fundingDate: r.fundingDate || '',
+      reference: `REF-${r.id || ''}`,
+      lenderAccount: r.lenderAccount || '',
+      lenderName: r.lenderName || '',
+      amountFunded: toAmount(r.originalAmount),
+    }));
   }, [values]);
 
   // Parse funding adjustments from stored JSON value

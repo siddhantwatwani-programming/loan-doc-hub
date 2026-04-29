@@ -151,6 +151,15 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
+  const formatFundingDate = (val: string | undefined): string => {
+    if (!val) return '';
+    // Already MM/DD/YYYY → display as-is
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(val)) return val;
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
+  };
+
   const handlePageChange = (page: number) => setCurrentPage(page);
   const handlePageSizeChange = (size: number) => {
     setPageSize(size);
@@ -267,7 +276,7 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
                       className={cn('cursor-pointer hover:bg-primary/5')}
                       onClick={() => setSelectedRecord(record)}
                     >
-                      {isVisible('fundingDate') && <TableCell>{record.fundingDate}</TableCell>}
+                      {isVisible('fundingDate') && <TableCell>{formatFundingDate(record.fundingDate)}</TableCell>}
                       {isVisible('reference') && <TableCell>{record.reference}</TableCell>}
                       {isVisible('lenderAccount') && (
                         <TableCell className="text-primary font-medium">{record.lenderAccount}</TableCell>
