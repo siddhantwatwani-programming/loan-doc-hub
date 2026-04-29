@@ -412,7 +412,7 @@ const BrokerHistory: React.FC<Props> = ({ brokerId, contactDbId }) => {
                   sortColumnId={sortCol}
                   sortDirection={sortDir}
                   onSort={handleSort}
-                  className="whitespace-nowrap text-xs text-primary-foreground"
+                  className="whitespace-nowrap text-xs"
                 />
               ))}
             </TableRow>
