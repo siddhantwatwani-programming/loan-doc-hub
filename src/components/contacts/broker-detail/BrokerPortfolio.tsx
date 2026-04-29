@@ -293,8 +293,8 @@ const BrokerPortfolio: React.FC<BrokerPortfolioProps> = ({ brokerId, contactDbId
 
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ['broker-portfolio', contactDbId],
-    queryFn: () => fetchBrokerPortfolio(contactDbId),
+    queryKey: ['broker-portfolio', contactDbId, brokerId],
+    queryFn: () => fetchBrokerPortfolio(contactDbId, brokerId),
     enabled: !!contactDbId,
   });
 
