@@ -97,6 +97,9 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const [draftColumns, setDraftColumns] = useState<ColumnConfig[]>(columns);
 
+  // Columns modal — opens as a centered modal (same as Export) instead of a popover
+  const [columnsModalOpen, setColumnsModalOpen] = useState(false);
+
   const visibleColumns = useMemo(() => columns.filter((c) => c.visible), [columns]);
   const isVisible = (id: string) => visibleColumns.some((c) => c.id === id);
 
