@@ -196,8 +196,19 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               </div>
             </DirtyFieldWrapper>
           </div>
-          {renderInlineField('mailingStreet', 'Street')}
-          {renderInlineField('mailingCity', 'City')}
+          {/* mailing Street/City: disable when same as primary */}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingStreet}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">Street</Label>
+              <Input value={getValue('mailingStreet')} onChange={(e) => handleChange('mailingStreet', e.target.value)} disabled={disabled || isMailingSame} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingCity}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[100px] shrink-0 text-xs">City</Label>
+              <Input value={getValue('mailingCity')} onChange={(e) => handleChange('mailingCity', e.target.value)} disabled={disabled || isMailingSame} className="h-7 text-xs flex-1" />
+            </div>
+          </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.mailingState}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">State</Label>
