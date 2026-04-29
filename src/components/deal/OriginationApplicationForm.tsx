@@ -448,28 +448,22 @@ export const OriginationApplicationForm: React.FC<OriginationApplicationFormProp
           </div>
         </div>
 
-      </div>
-
-      {/* Financials (additive — extends existing Application area) */}
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Financials</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-3">
-          <div className="space-y-3">
-            {renderYNToggle('Bank Statements', FIELD_KEYS.fin_bank_statements_yn)}
-            {renderDropdownField('Status', FIELD_KEYS.fin_bank_statements_status, STATUS_OPTIONS)}
-            {renderYNToggle('Balance Sheet / P&L', FIELD_KEYS.fin_balance_sheet_pl_yn)}
-            {renderDropdownField('Assurance Level', FIELD_KEYS.fin_balance_sheet_pl_assurance, ASSURANCE_OPTIONS)}
-            {renderDropdownField('Status', FIELD_KEYS.fin_balance_sheet_pl_status, STATUS_OPTIONS)}
-            {renderFinancialsDatePicker('Balance Sheet as of Date', FIELD_KEYS.fin_balance_sheet_as_of_date)}
-          </div>
-          <div className="space-y-3">
-            {renderFinancialsDatePicker('P&L Period Begin', FIELD_KEYS.fin_pl_period_begin)}
-            {renderFinancialsDatePicker('P&L Period End', FIELD_KEYS.fin_pl_period_end)}
-            {renderDropdownField('Performed By', FIELD_KEYS.fin_performed_by, PERFORMED_BY_OPTIONS)}
-            {renderYNToggle('Rent Rolls / Leases', FIELD_KEYS.fin_rent_rolls_leases_yn)}
-            {renderDropdownField('Status', FIELD_KEYS.fin_rent_rolls_leases_status, STATUS_OPTIONS)}
-          </div>
+        {/* Column 3: Financials */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground border-b border-border pb-1">Financials</h3>
+          {renderYNToggle('Bank Statements', FIELD_KEYS.fin_bank_statements_yn)}
+          {renderDropdownField('Status', FIELD_KEYS.fin_bank_statements_status, STATUS_OPTIONS)}
+          {renderYNToggle('Balance Sheet / P&L', FIELD_KEYS.fin_balance_sheet_pl_yn)}
+          {renderDropdownField('Assurance Level', FIELD_KEYS.fin_balance_sheet_pl_assurance, ASSURANCE_OPTIONS)}
+          {renderDropdownField('Status', FIELD_KEYS.fin_balance_sheet_pl_status, STATUS_OPTIONS)}
+          {renderFinancialsDatePicker('Balance Sheet as of Date', FIELD_KEYS.fin_balance_sheet_as_of_date)}
+          {renderFinancialsDatePicker('P&L Period Begin', FIELD_KEYS.fin_pl_period_begin)}
+          {renderFinancialsDatePicker('P&L Period End', FIELD_KEYS.fin_pl_period_end)}
+          {renderDropdownField('Performed By', FIELD_KEYS.fin_performed_by, PERFORMED_BY_OPTIONS)}
+          {renderYNToggle('Rent Rolls / Leases', FIELD_KEYS.fin_rent_rolls_leases_yn)}
+          {renderDropdownField('Status', FIELD_KEYS.fin_rent_rolls_leases_status, STATUS_OPTIONS)}
         </div>
+
       </div>
     </div>
   );
