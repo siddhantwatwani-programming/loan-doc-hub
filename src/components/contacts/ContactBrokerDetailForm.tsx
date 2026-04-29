@@ -46,18 +46,29 @@ export const ContactBrokerDetailForm: React.FC<Props> = ({ broker, onSave, onCan
     }
   }, [form.sameAsPrimary, form.street, form.city, form.state, form.zip]);
 
-  useEffect(() => {
-    if (!form.sameAsPrimary) {
+  const handleSameAsPrimaryChange = (checked: boolean) => {
+    if (checked) {
       setForm((p) => ({
         ...p,
+        sameAsPrimary: true,
+        mailingStreet: p.street,
+        mailingCity: p.city,
+        mailingState: p.state,
+        mailingZip: p.zip,
+      }));
+    } else {
+      setForm((p) => ({
+        ...p,
+        sameAsPrimary: false,
         mailingStreet: '',
         mailingCity: '',
         mailingState: '',
         mailingZip: '',
       }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [form.sameAsPrimary]);
+  };
+  // expose for any future usage if needed
+  void handleSameAsPrimaryChange;
 
   const handleSaveClick = () => {
     if (!hasAtLeastOneFieldFilled(form as any, ['brokerId', 'preferredPhone', 'type'])) {
