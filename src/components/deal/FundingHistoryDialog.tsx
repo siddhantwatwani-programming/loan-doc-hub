@@ -129,6 +129,25 @@ export const FundingHistoryDialog: React.FC<FundingHistoryDialogProps> = ({
     setCurrentPage(1);
   }, [searchQuery, pageSize]);
 
+  // Warn the user before the browser/tab is closed if there are unsaved changes
+  // (pending Customize Grid draft changes). Triggers the browser's native
+  // "Leave site?" confirmation dialog.
+  React.useEffect(() => {
+    if (!open) return;
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const draftDiffers =
+        customizeOpen &&
+        JSON.stringify(draftColumns) !== JSON.stringify(columns);
+      if (draftDiffers) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [open, customizeOpen, draftColumns, columns]);
+
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 
