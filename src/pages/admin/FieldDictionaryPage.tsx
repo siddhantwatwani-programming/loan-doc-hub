@@ -664,8 +664,14 @@ export const FieldDictionaryPage: React.FC = () => {
         if (filterFormType && filterSection) {
           const formDef = (SECTION_FORMS[filterSection] || []).find(fd => fd.value === filterFormType);
           if (formDef?.dbSection) {
-            // Special form that maps to a different DB section (e.g., co_borrower, insurance)
-            matchesForm = f.section === formDef.dbSection;
+            // Form maps to a different DB section (e.g., co_borrower, insurance, liens).
+            // Also partition by the underlying form_type when the form value carries
+            // a "<section>_" prefix (e.g., "liens_general_details" → form_type "general_details").
+            const stripped = formDef.value.startsWith(`${formDef.dbSection}_`)
+              ? formDef.value.slice(formDef.dbSection.length + 1)
+              : null;
+            matchesForm = f.section === formDef.dbSection &&
+              (stripped ? f.form_type === stripped : true);
           } else {
             matchesForm = f.form_type === filterFormType;
           }
