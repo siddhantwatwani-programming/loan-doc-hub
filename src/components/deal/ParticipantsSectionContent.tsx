@@ -59,6 +59,16 @@ const ROLE_LABELS: Record<string, string> = {
   other: 'Other',
   csr: 'CSR',
   admin: 'Admin',
+  additional_guarantor: 'Additional Guarantor',
+  authorized_party: 'Authorized Party',
+};
+
+// Capacity labels used by AddParticipantModal for extended types persisted under role='borrower'.
+// When the per-deal capacity matches one of these, the Type column should reflect the extended type.
+const EXTENDED_CAPACITY_TO_TYPE: Record<string, string> = {
+  'Additional Guarantor': 'additional_guarantor',
+  'Authorized Party': 'authorized_party',
+  'Co-borrower': 'co_borrower',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -68,6 +78,8 @@ const ROLE_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
   csr: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  additional_guarantor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  authorized_party: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -185,11 +197,11 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         .map((p: any) => p.contact_id)
         .filter((id: string | null): id is string => !!id);
 
-      let contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string; capacity: string }> = {};
+      let contactMap: Record<string, { full_name: string; email: string; phone: string; contact_id: string; capacity: string; contact_type: string }> = {};
       if (contactIds.length > 0) {
         const { data: contacts } = await supabase
           .from('contacts')
-          .select('id, full_name, email, phone, contact_id, contact_data')
+          .select('id, full_name, email, phone, contact_id, contact_type, contact_data')
           .in('id', contactIds);
 
         if (contacts) {
@@ -201,6 +213,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
               phone: c.phone || '',
               contact_id: c.contact_id || '',
               capacity: cData['capacity'] || '',
+              contact_type: c.contact_type || '',
             };
           }
         }
@@ -266,19 +279,28 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       setParticipants(
         rows.map((p: any) => {
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
-          const roleLabel = ROLE_LABELS[p.role] || p.role || '';
           // Priority: deal-specific capacity > global contact capacity
           const capacityVal = (p.contact_id && dealCapacityMap[p.contact_id]) || contact?.capacity || '';
-          const mergedTypeCapacity = capacityVal && capacityVal !== roleLabel
-            ? `${roleLabel} - ${capacityVal}`
-            : roleLabel;
+          // Derive the effective role for display: prefer contact.contact_type when it is an
+          // extended type (additional_guarantor / authorized_party / co_borrower), otherwise
+          // map a known extended capacity label back to its type, otherwise fall back to p.role.
+          const ctype = contact?.contact_type || '';
+          const extendedFromType = ['additional_guarantor', 'authorized_party', 'co_borrower'].includes(ctype) ? ctype : '';
+          const extendedFromCapacity = EXTENDED_CAPACITY_TO_TYPE[capacityVal] || '';
+          const effectiveRole = extendedFromType || extendedFromCapacity || p.role || '';
+          const roleLabel = ROLE_LABELS[effectiveRole] || effectiveRole || '';
+          // For extended types, the capacity label IS the type — avoid "X - X" duplication.
+          const isExtended = !!(extendedFromType || extendedFromCapacity);
+          const mergedTypeCapacity = isExtended
+            ? roleLabel
+            : (capacityVal && capacityVal !== roleLabel ? `${roleLabel} - ${capacityVal}` : roleLabel);
           return {
             id: p.id,
             contact_id_display: contact?.contact_id || '',
             name: contact?.full_name || p.name || '',
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
-            role: p.role || '',
+            role: effectiveRole,
             capacity: capacityVal || roleLabel,
             participant_type_capacity: mergedTypeCapacity,
             status: p.status || 'invited',
@@ -364,7 +386,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           .eq('id', participant.id);
       }
 
-      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+      const route =
+        data.contact_type === 'lender' ? 'lenders'
+        : data.contact_type === 'broker' ? 'brokers'
+        : data.contact_type === 'additional_guarantor' ? 'additional-guarantors'
+        : data.contact_type === 'authorized_party' ? 'authorized-parties'
+        : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
       toast.info('No contact record found for this participant');
@@ -424,7 +451,12 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         }
       }
 
-      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
+      const route =
+        data.contact_type === 'lender' ? 'lenders'
+        : data.contact_type === 'broker' ? 'brokers'
+        : data.contact_type === 'additional_guarantor' ? 'additional-guarantors'
+        : data.contact_type === 'authorized_party' ? 'authorized-parties'
+        : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
       toast.info('Contact record not found');
