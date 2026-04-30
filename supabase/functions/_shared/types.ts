@@ -94,3 +94,13 @@ export interface MergeTagMappings {
   mergeTagMap: Record<string, string>;
   labelMap: Record<string, LabelMapping>;
 }
+
+/**
+ * Optional context passed into the DOCX processor / tag parser so template-
+ * specific safety passes (e.g. RE851A checkbox normalization) can be scoped
+ * strictly to the templates that need them. Unknown / missing context falls
+ * back to the previous generic behavior so existing templates are unaffected.
+ */
+export interface DocxProcessingContext {
+  templateName?: string;
+}
