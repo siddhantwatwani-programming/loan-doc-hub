@@ -245,7 +245,7 @@ const FORM_ABBR: Record<string, string> = {
   balance_payment: 'bp',
   recording_tracking: 'rt',
   // Liens regrouped under Property as a single unified "Liens Details" entry.
-  liens_details: 'ld',
+  liensdetails: 'ld',
 };
 
 // All form types for the create/edit dialog (union)
@@ -514,7 +514,7 @@ export const FieldDictionaryPage: React.FC = () => {
     // legacy form_type (general_details, loan_type, balance_payment,
     // recording_tracking) maps to the same UI value.
     if (uiSection === 'property' && dbSection === 'liens') {
-      return 'liens_details';
+      return 'liensdetails';
     }
     const forms = SECTION_FORMS[uiSection] || [];
     const prefixed = forms.find(
