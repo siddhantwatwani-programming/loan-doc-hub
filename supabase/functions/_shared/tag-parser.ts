@@ -236,9 +236,7 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
     // treated two normal complete tags near each other as fragmentation on
     // dense templates like RE885, forcing the 5s normalization path.
     /\{(?:\s|<[^>]+>)+\{/.test(xml) ||
-    /\}(?:\s|<[^>]+>)+\}/.test(xml) ||
-    /\u00AB(?:\s|<[^>]+>)+[A-Za-z0-9_.]+/.test(xml) ||
-    /[A-Za-z0-9_.]+(?:\s|<[^>]+>)+\u00BB/.test(xml);
+    /\}(?:\s|<[^>]+>)+\}/.test(xml);
 }
 
 /**
