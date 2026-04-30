@@ -442,14 +442,15 @@ export const FieldDictionaryPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Resolve to actual DB section
+      // Resolve to actual DB section + form_type
       const dbSection = resolveDbSection(formData.section, formData.form_type);
+      const dbFormType = resolveDbFormType(formData.section, formData.form_type);
 
       const payload: Record<string, any> = {
         field_key: formData.field_key,
         label: formData.label,
         section: dbSection as any,
-        form_type: formData.form_type,
+        form_type: dbFormType,
         data_type: formData.data_type as any,
         is_calculated: formData.is_calculated,
         is_repeatable: formData.is_repeatable,
