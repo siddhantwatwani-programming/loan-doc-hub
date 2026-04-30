@@ -342,7 +342,12 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       // Only navigate to contact detail page for NEW contacts
       if (mode === 'new' && contactId) {
-        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        const route =
+          participantType === 'lender' ? 'lenders'
+          : participantType === 'broker' ? 'brokers'
+          : participantType === 'additional_guarantor' ? 'additional-guarantors'
+          : participantType === 'authorized_party' ? 'authorized-parties'
+          : 'borrowers';
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
         }, 300);
