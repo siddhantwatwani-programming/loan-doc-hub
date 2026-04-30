@@ -289,11 +289,13 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           const extendedFromCapacity = EXTENDED_CAPACITY_TO_TYPE[capacityVal] || '';
           const effectiveRole = extendedFromType || extendedFromCapacity || p.role || '';
           const roleLabel = ROLE_LABELS[effectiveRole] || effectiveRole || '';
-          // For extended types, the capacity label IS the type — avoid "X - X" duplication.
+          // For extended types, suppress capacity duplication when capacity equals the type label.
           const isExtended = !!(extendedFromType || extendedFromCapacity);
-          const mergedTypeCapacity = isExtended
-            ? roleLabel
-            : (capacityVal && capacityVal !== roleLabel ? `${roleLabel} - ${capacityVal}` : roleLabel);
+          const capacityIsTypeLabel = capacityVal === roleLabel || !!EXTENDED_CAPACITY_TO_TYPE[capacityVal];
+          const displayCapacity = isExtended && capacityIsTypeLabel ? '' : capacityVal;
+          const mergedTypeCapacity = displayCapacity && displayCapacity !== roleLabel
+            ? `${roleLabel} - ${displayCapacity}`
+            : roleLabel;
           return {
             id: p.id,
             contact_id_display: contact?.contact_id || '',
@@ -301,7 +303,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
             role: effectiveRole,
-            capacity: capacityVal || roleLabel,
+            capacity: displayCapacity || (isExtended ? '' : roleLabel),
             participant_type_capacity: mergedTypeCapacity,
             status: p.status || 'invited',
             contact_id: p.contact_id,
