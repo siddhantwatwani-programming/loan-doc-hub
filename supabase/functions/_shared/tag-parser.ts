@@ -3521,9 +3521,25 @@ export function replaceMergeTags(
     }
   }
 
+  __mark('postReplaceCleanup');
+
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
   result = convertGlyphsToSdtCheckboxes(result);
+  __mark('convertGlyphsToSdt');
+
+  if (__perfEnabled && __phases.length > 0) {
+    const total = __phases.reduce((s, p) => s + p.ms, 0);
+    const top = __phases
+      .slice()
+      .sort((a, b) => b.ms - a.ms)
+      .slice(0, 5)
+      .map((p) => `${p.name}=${p.ms}ms`)
+      .join(', ');
+    console.log(
+      `[tag-parser] phases total=${total}ms size=${content.length}B top5: ${top}`,
+    );
+  }
 
   return result;
 }
