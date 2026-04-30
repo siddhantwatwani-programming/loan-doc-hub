@@ -124,7 +124,10 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     // recording_tracking) are merged here. Filter logic surfaces every row
     // where section = 'liens' regardless of its persisted form_type, so no
     // existing data is hidden and field keys remain unchanged.
-    { value: 'liens_details', label: 'Liens Details', dbSection: 'liens' },
+    // NOTE: value intentionally does NOT start with "liens_" so the filter
+    // logic does not strip a prefix and instead matches every row where
+    // section = 'liens', regardless of its persisted form_type.
+    { value: 'liensdetails', label: 'Liens Details', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
@@ -242,7 +245,7 @@ const FORM_ABBR: Record<string, string> = {
   balance_payment: 'bp',
   recording_tracking: 'rt',
   // Liens regrouped under Property as a single unified "Liens Details" entry.
-  liens_details: 'ld',
+  liensdetails: 'ld',
 };
 
 // All form types for the create/edit dialog (union)
@@ -511,7 +514,7 @@ export const FieldDictionaryPage: React.FC = () => {
     // legacy form_type (general_details, loan_type, balance_payment,
     // recording_tracking) maps to the same UI value.
     if (uiSection === 'property' && dbSection === 'liens') {
-      return 'liens_details';
+      return 'liensdetails';
     }
     const forms = SECTION_FORMS[uiSection] || [];
     const prefixed = forms.find(
