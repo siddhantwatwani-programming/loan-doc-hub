@@ -743,6 +743,113 @@ async function generateSingleDocument(
       }
     }
 
+    // ── RE851D Multi-Property: publish per-index aliases (_1 ... _5) ──
+    // For each property record present in CSR (property1..propertyN), publish
+    // pr_p_<short>_<N>, propertytax_annual_payment_<N>, pr_p_delinquHowMany_<N>,
+    // and computed pr_p_totalSenior_<N> / pr_p_totalSeniorPlusLoan_<N> /
+    // ln_p_loanToValueRatio_<N>. Indices not present in CSR get NO alias set,
+    // so the resolver falls through to empty string and the corresponding
+    // RE851D block stays blank. Capped at 5 per spec; extras ignored.
+    {
+      const MAX_PROPERTIES = 5;
+      // Reverse: short suffix -> pr_p_* full key (mirrors prKeyToSuffix above)
+      const suffixToPrKey: Record<string, string> = {};
+      for (const [prKey, sfx] of Object.entries(prKeyToSuffix)) {
+        suffixToPrKey[sfx] = prKey;
+      }
+
+      // Pre-compute total of all lien current_balance values per property name
+      // (lien.property carries the property identifier the lien belongs to).
+      const lienTotalsByPropertyName: Record<string, number> = {};
+      for (const [key, val] of fieldValues.entries()) {
+        const m = key.match(/^lien(\d*)\.current_balance$/);
+        if (!m || !val.rawValue) continue;
+        const lienIdx = m[1] ? parseInt(m[1], 10) : 0;
+        const propKey = lienIdx > 0 ? `lien${lienIdx}.property` : "lien.property";
+        const propName = String(fieldValues.get(propKey)?.rawValue || "").trim().toLowerCase();
+        if (!propName) continue;
+        const num = parseFloat(String(val.rawValue).replace(/[^0-9.-]/g, ""));
+        if (!isNaN(num)) {
+          lienTotalsByPropertyName[propName] = (lienTotalsByPropertyName[propName] || 0) + num;
+        }
+      }
+
+      const loanAmountForLtv = parseFloat(
+        String(
+          fieldValues.get("ln_p_loanAmount")?.rawValue ||
+          fieldValues.get("loan_terms.loan_amount")?.rawValue ||
+          ""
+        ).replace(/[^0-9.-]/g, "")
+      );
+
+      const sortedPropIndices = [...propertyIndices].sort((a, b) => a - b).slice(0, MAX_PROPERTIES);
+      for (const idx of sortedPropIndices) {
+        const prefix = `property${idx}`;
+        // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
+        for (const [sfx, prKey] of Object.entries(suffixToPrKey)) {
+          const v = fieldValues.get(`${prefix}.${sfx}`);
+          if (v && v.rawValue !== undefined && v.rawValue !== null && v.rawValue !== "") {
+            fieldValues.set(`${prKey}_${idx}`, { rawValue: v.rawValue, dataType: v.dataType });
+          }
+        }
+        // Annual property tax (UI: propertytax.annual_payment) per property
+        const taxV =
+          fieldValues.get(`${prefix}.annual_property_taxes`) ||
+          fieldValues.get(`${prefix}.annual_tax`) ||
+          fieldValues.get(`${prefix}.propertytax_annual_payment`);
+        if (taxV?.rawValue) {
+          fieldValues.set(`propertytax_annual_payment_${idx}`, { rawValue: taxV.rawValue, dataType: taxV.dataType || "currency" });
+        }
+        // Delinquent payment count
+        const delinqV =
+          fieldValues.get(`${prefix}.delinquent_how_many`) ||
+          fieldValues.get(`${prefix}.delinqHowMany`) ||
+          fieldValues.get(`${prefix}.pr_p_delinquHowMany`);
+        if (delinqV?.rawValue) {
+          fieldValues.set(`pr_p_delinquHowMany_${idx}`, { rawValue: delinqV.rawValue, dataType: delinqV.dataType || "number" });
+        }
+        // Per-property appraise value & owner (handle alternate canonical keys)
+        const appraiseV = fieldValues.get(`${prefix}.appraise_value`) || fieldValues.get(`${prefix}.appraiseValue`);
+        if (appraiseV?.rawValue && !fieldValues.has(`pr_p_appraiseValue_${idx}`)) {
+          fieldValues.set(`pr_p_appraiseValue_${idx}`, { rawValue: appraiseV.rawValue, dataType: appraiseV.dataType || "currency" });
+        }
+        const ownerV = fieldValues.get(`${prefix}.owner`) || fieldValues.get(`${prefix}.vesting`);
+        if (ownerV?.rawValue && !fieldValues.has(`pr_p_owner_${idx}`)) {
+          fieldValues.set(`pr_p_owner_${idx}`, { rawValue: ownerV.rawValue, dataType: ownerV.dataType || "text" });
+        }
+
+        // Computed: per-property total senior encumbrances.
+        // Match lien.property by either property index ("property1") or by
+        // property address (so users tagging by address still get totals).
+        const propAddrLower = String(fieldValues.get(`${prefix}.address`)?.rawValue || "").trim().toLowerCase();
+        const totalSenior =
+          (lienTotalsByPropertyName[prefix.toLowerCase()] || 0) +
+          (propAddrLower ? (lienTotalsByPropertyName[propAddrLower] || 0) : 0);
+        if (totalSenior > 0) {
+          const tsStr = totalSenior.toFixed(2);
+          fieldValues.set(`pr_p_totalSenior_${idx}`, { rawValue: tsStr, dataType: "currency" });
+          if (!isNaN(loanAmountForLtv)) {
+            const tsPlusLoan = (totalSenior + loanAmountForLtv).toFixed(2);
+            fieldValues.set(`pr_p_totalSeniorPlusLoan_${idx}`, { rawValue: tsPlusLoan, dataType: "currency" });
+          }
+        }
+
+        // Computed: per-property LTV ratio = loan_amount / property{N}.appraise_value
+        const appraiseNum = parseFloat(
+          String(
+            fieldValues.get(`pr_p_appraiseValue_${idx}`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraise_value`)?.rawValue ||
+            ""
+          ).replace(/[^0-9.-]/g, "")
+        );
+        if (!isNaN(loanAmountForLtv) && !isNaN(appraiseNum) && appraiseNum > 0) {
+          const ltv = (loanAmountForLtv / appraiseNum) * 100;
+          fieldValues.set(`ln_p_loanToValueRatio_${idx}`, { rawValue: ltv.toFixed(2), dataType: "percentage" });
+        }
+      }
+      debugLog(`[generate-document] RE851D multi-property: published indexed aliases for properties [${sortedPropIndices.join(", ")}]`);
+    }
+
     // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
     const existingPrPAddr = fieldValues.get("pr_p_address");
     if (!existingPrPAddr || !existingPrPAddr.rawValue) {
