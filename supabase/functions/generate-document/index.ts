@@ -856,6 +856,102 @@ async function generateSingleDocument(
           const ltv = (loanAmountForLtv / appraiseNum) * 100;
           fieldValues.set(`ln_p_loanToValueRatio_${idx}`, { rawValue: ltv.toFixed(2), dataType: "percentage" });
         }
+
+        // ── RE851D Part 2: per-property Property Type checkbox booleans ──
+        // Each property block in Part 2 has its own checkbox group. Publish a
+        // boolean alias per type for THIS property index only, sourced strictly
+        // from property{idx}.propertyType. Missing type => all-false (no fallback
+        // to another property — matches "If any field is missing: do NOT fallback"
+        // acceptance criterion).
+        {
+          const PROPERTY_TYPES = [
+            "singleFamily", "condominium", "multiUnit", "commercial",
+            "land", "mobileHome", "industrial", "other",
+          ];
+          // Aliases: dropdown raw value → canonical type slug.
+          const TYPE_ALIASES: Record<string, string> = {
+            "single family": "singleFamily", "single-family": "singleFamily",
+            "singlefamily": "singleFamily", "single_family": "singleFamily",
+            "sfr": "singleFamily", "1-4 family": "singleFamily",
+            "condo": "condominium", "condominium": "condominium",
+            "multi-unit": "multiUnit", "multi unit": "multiUnit",
+            "multiunit": "multiUnit", "multi_unit": "multiUnit",
+            "multifamily": "multiUnit", "multi family": "multiUnit",
+            "2-4 unit": "multiUnit", "5+ unit": "multiUnit",
+            "commercial": "commercial", "office": "commercial", "retail": "commercial",
+            "land": "land", "vacant land": "land", "lot": "land",
+            "mobile home": "mobileHome", "mobile-home": "mobileHome",
+            "mobilehome": "mobileHome", "manufactured": "mobileHome",
+            "industrial": "industrial", "warehouse": "industrial",
+            "other": "other",
+          };
+          const ptRaw = String(
+            fieldValues.get(`pr_p_propertyTyp_${idx}`)?.rawValue ||
+            fieldValues.get(`${prefix}.propertyType`)?.rawValue ||
+            ""
+          ).trim();
+          const ptKey = TYPE_ALIASES[ptRaw.toLowerCase()] ||
+            (PROPERTY_TYPES.includes(ptRaw) ? ptRaw : "");
+          for (const t of PROPERTY_TYPES) {
+            const isMatch = ptKey === t;
+            // Only publish booleans when a real selection exists. If ptKey is empty
+            // (no source value), do NOT publish — leaves SDT defaults intact and
+            // keeps absent property blocks fully blank.
+            if (ptKey) {
+              fieldValues.set(`pr_p_propertyTyp_${idx}_${t}`, {
+                rawValue: isMatch ? "true" : "false",
+                dataType: "boolean",
+              });
+              // Glyph alias for templates using static check-mark fallbacks.
+              fieldValues.set(`pr_p_propertyTyp_${idx}_${t}_glyph`, {
+                rawValue: isMatch ? "☒" : "☐",
+                dataType: "text",
+              });
+            }
+          }
+        }
+
+        // ── RE851D: per-property Owner-Occupied Yes/No checkbox booleans ──
+        // Source strictly from property{idx}.occupancyStatus. Missing => no aliases.
+        {
+          const occRaw = String(
+            fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
+            fieldValues.get(`${prefix}.occupancyStatus`)?.rawValue ||
+            ""
+          ).trim().toLowerCase();
+          const isYes = ["yes", "y", "true", "owner occupied", "owner-occupied", "ownerOccupied".toLowerCase()].includes(occRaw);
+          const isNo = ["no", "n", "false", "non-owner occupied", "non owner occupied", "nonOwnerOccupied".toLowerCase()].includes(occRaw);
+          if (isYes || isNo) {
+            fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
+            fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
+            fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
+            fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
+          }
+        }
+
+        // ── RE851D: per-property total encumbrance (remaining + expected senior) ──
+        // Computed from property{idx}.* components only. No cross-index fallback.
+        {
+          const remainingNum = parseFloat(
+            String(fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || "")
+              .replace(/[^0-9.-]/g, "")
+          );
+          const expectedNum = parseFloat(
+            String(fieldValues.get(`${prefix}.expected_senior`)?.rawValue || "")
+              .replace(/[^0-9.-]/g, "")
+          );
+          const haveRemaining = !isNaN(remainingNum);
+          const haveExpected = !isNaN(expectedNum);
+          if (haveRemaining || haveExpected) {
+            const total = (haveRemaining ? remainingNum : 0) + (haveExpected ? expectedNum : 0);
+            if (!fieldValues.has(`pr_p_totalEncumbrance_${idx}`)) {
+              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, {
+                rawValue: total.toFixed(2),
+                dataType: "currency",
+              });
+            }
+          }
+        }
       }
       debugLog(`[generate-document] RE851D multi-property: published indexed aliases for properties [${sortedPropIndices.join(", ")}]`);
     }
