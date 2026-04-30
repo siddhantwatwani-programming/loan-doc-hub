@@ -59,12 +59,14 @@ const ROLES = [
   { value: 'lender', label: 'Lender' },
 ];
 
-// The 11 deal-page top-nav sections (no Events Journal — it has no DB fields)
+// The deal-page top-nav sections (no Events Journal — it has no DB fields)
+// Note: "Liens" was previously a sibling section; it now lives under "Property"
+// as a sub-form group (see SECTION_FORMS.property below). DB section "liens"
+// is unchanged — only the admin Field Dictionary hierarchy reflects this.
 const SECTIONS = [
   { value: 'borrower', label: 'Borrower' },
   { value: 'loan_terms', label: 'Loan' },
   { value: 'property', label: 'Property' },
-  { value: 'liens', label: 'Liens' },
   { value: 'funding', label: 'Funding' },
   { value: 'broker', label: 'Broker' },
   { value: 'charges', label: 'Charges' },
@@ -78,7 +80,8 @@ const SECTIONS = [
 const SECTION_TO_DB: Record<string, string[]> = {
   borrower: ['borrower', 'co_borrower'],
   loan_terms: ['loan_terms'],
-  property: ['property', 'insurance'],
+  // Property now also surfaces liens fields (Liens grouped under Property)
+  property: ['property', 'insurance', 'liens'],
   funding: ['loan_terms'], // filtered further by form_type = 'funding'
   broker: ['broker'],
   charges: ['charges'],
@@ -86,7 +89,6 @@ const SECTION_TO_DB: Record<string, string[]> = {
   notes: ['notes'],
   lender: ['lender'],
   origination_fees: ['origination_fees'],
-  liens: ['liens'],
 };
 
 // All valid DB sections we show (everything else is scaffolding/excluded)
@@ -117,6 +119,11 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'legal_description', label: 'Legal Description' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
+    // Liens — grouped under Property (formerly its own top-level section)
+    { value: 'liens_general_details', label: 'Liens — General Details', dbSection: 'liens' },
+    { value: 'liens_loan_type', label: 'Liens — Loan Type', dbSection: 'liens' },
+    { value: 'liens_balance_payment', label: 'Liens — Balance & Payment', dbSection: 'liens' },
+    { value: 'liens_recording_tracking', label: 'Liens — Recording & Tracking', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
@@ -147,12 +154,6 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'insurance_conditions', label: 'Insurance Conditions' },
     { value: 'servicing', label: 'Servicing' },
     { value: 'origination_fees', label: 'Origination Fees' },
-  ],
-  liens: [
-    { value: 'general_details', label: 'General Details' },
-    { value: 'loan_type', label: 'Loan Type' },
-    { value: 'balance_payment', label: 'Balance & Payment' },
-    { value: 'recording_tracking', label: 'Recording & Tracking' },
   ],
 };
 
@@ -239,6 +240,11 @@ const FORM_ABBR: Record<string, string> = {
   loan_type: 'lt',
   balance_payment: 'bp',
   recording_tracking: 'rt',
+  // Liens regrouped under Property — keep the same abbreviations as before
+  liens_general_details: 'gd',
+  liens_loan_type: 'lt',
+  liens_balance_payment: 'bp',
+  liens_recording_tracking: 'rt',
 };
 
 // All form types for the create/edit dialog (union)
@@ -361,13 +367,27 @@ export const FieldDictionaryPage: React.FC = () => {
     return uiSection;
   };
 
+  // For form values that are prefixed with their dbSection (e.g.
+  // "liens_general_details" → form_type "general_details"), strip the prefix
+  // when persisting to keep the DB form_type values consistent with the
+  // historical schema. Non-prefixed forms are returned unchanged.
+  const resolveDbFormType = (uiSection: string, formType: string): string => {
+    const forms = SECTION_FORMS[uiSection] || [];
+    const formDef = forms.find(f => f.value === formType);
+    if (formDef?.dbSection && formDef.value.startsWith(`${formDef.dbSection}_`)) {
+      return formDef.value.slice(formDef.dbSection.length + 1);
+    }
+    return formType;
+  };
+
   const handleLabelChange = (label: string) => {
     setFormData((prev) => {
       const dbSection = resolveDbSection(prev.section, prev.form_type);
+      const dbFormType = resolveDbFormType(prev.section, prev.form_type);
       return {
         ...prev,
         label,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, dbFormType),
       };
     });
   };
@@ -376,11 +396,12 @@ export const FieldDictionaryPage: React.FC = () => {
     const firstForm = SECTION_FORMS[section]?.[0]?.value || 'primary';
     setFormData((prev) => {
       const dbSection = resolveDbSection(section, firstForm);
+      const dbFormType = resolveDbFormType(section, firstForm);
       return {
         ...prev,
         section,
         form_type: firstForm,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, dbFormType),
       };
     });
   };
@@ -388,10 +409,11 @@ export const FieldDictionaryPage: React.FC = () => {
   const handleFormTypeChange = (formType: string) => {
     setFormData((prev) => {
       const dbSection = resolveDbSection(prev.section, formType);
+      const dbFormType = resolveDbFormType(prev.section, formType);
       return {
         ...prev,
         form_type: formType,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, formType),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, dbFormType),
       };
     });
   };
@@ -420,14 +442,15 @@ export const FieldDictionaryPage: React.FC = () => {
 
     setSaving(true);
     try {
-      // Resolve to actual DB section
+      // Resolve to actual DB section + form_type
       const dbSection = resolveDbSection(formData.section, formData.form_type);
+      const dbFormType = resolveDbFormType(formData.section, formData.form_type);
 
       const payload: Record<string, any> = {
         field_key: formData.field_key,
         label: formData.label,
         section: dbSection as any,
-        form_type: formData.form_type,
+        form_type: dbFormType,
         data_type: formData.data_type as any,
         is_calculated: formData.is_calculated,
         is_repeatable: formData.is_repeatable,
@@ -475,19 +498,34 @@ export const FieldDictionaryPage: React.FC = () => {
   const dbSectionToUiSection = (dbSection: string): string => {
     if (dbSection === 'co_borrower') return 'borrower';
     if (dbSection === 'insurance') return 'property';
+    // Liens are now grouped under Property in the UI
+    if (dbSection === 'liens') return 'property';
     // Check direct match
     if (SECTIONS.some(s => s.value === dbSection)) return dbSection;
     return 'borrower'; // fallback
   };
 
+  // Reverse-map a DB form_type to the UI form value for the given UI section.
+  // Required for forms that live under a parent UI section but persist with
+  // an unprefixed form_type (e.g. liens grouped under Property).
+  const dbFormTypeToUiFormType = (uiSection: string, dbSection: string, dbFormType: string): string => {
+    const forms = SECTION_FORMS[uiSection] || [];
+    const prefixed = forms.find(
+      f => f.dbSection === dbSection && f.value === `${dbSection}_${dbFormType}`
+    );
+    if (prefixed) return prefixed.value;
+    return dbFormType || 'primary';
+  };
+
   const handleEdit = (field: FieldDictionary) => {
     setEditingField(field);
     const uiSection = dbSectionToUiSection(field.section);
+    const uiFormType = dbFormTypeToUiFormType(uiSection, field.section, field.form_type || 'primary');
     setFormData({
       field_key: field.field_key,
       label: field.label,
       section: uiSection,
-      form_type: field.form_type || 'primary',
+      form_type: uiFormType,
       data_type: field.data_type,
       is_calculated: field.is_calculated,
       is_repeatable: field.is_repeatable,
@@ -658,8 +696,14 @@ export const FieldDictionaryPage: React.FC = () => {
         if (filterFormType && filterSection) {
           const formDef = (SECTION_FORMS[filterSection] || []).find(fd => fd.value === filterFormType);
           if (formDef?.dbSection) {
-            // Special form that maps to a different DB section (e.g., co_borrower, insurance)
-            matchesForm = f.section === formDef.dbSection;
+            // Form maps to a different DB section (e.g., co_borrower, insurance, liens).
+            // Also partition by the underlying form_type when the form value carries
+            // a "<section>_" prefix (e.g., "liens_general_details" → form_type "general_details").
+            const stripped = formDef.value.startsWith(`${formDef.dbSection}_`)
+              ? formDef.value.slice(formDef.dbSection.length + 1)
+              : null;
+            matchesForm = f.section === formDef.dbSection &&
+              (stripped ? f.form_type === stripped : true);
           } else {
             matchesForm = f.form_type === filterFormType;
           }
