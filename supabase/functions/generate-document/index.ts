@@ -944,11 +944,19 @@ async function generateSingleDocument(
         {
           const occRaw = String(
             fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
+            fieldValues.get(`pr_p_occupanc_${idx}`)?.rawValue ||
             fieldValues.get(`${prefix}.occupancyStatus`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
             ""
           ).trim().toLowerCase();
-          const isYes = ["yes", "y", "true", "owner occupied", "owner-occupied", "ownerOccupied".toLowerCase()].includes(occRaw);
-          const isNo = ["no", "n", "false", "non-owner occupied", "non owner occupied", "nonOwnerOccupied".toLowerCase()].includes(occRaw);
+          const isYes = [
+            "yes", "y", "true", "owner occupied", "owner-occupied", "owneroccupied",
+            "owner", "primary borrower",
+          ].includes(occRaw);
+          const isNo = [
+            "no", "n", "false", "non-owner occupied", "non owner occupied", "nonowneroccupied",
+            "investor", "tenant", "vacant", "secondary borrower", "other", "unknown",
+          ].includes(occRaw);
           if (isYes || isNo) {
             fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
             fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
