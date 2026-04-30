@@ -1602,11 +1602,26 @@ export function processConditionalBlocks(
   const MAX_ITERATIONS = 100;
 
   while (iterations < MAX_ITERATIONS) {
+    // Cheap pre-checks: skip the expensive regex/sexp scans entirely when the
+    // remaining content has no opener at all. This dramatically speeds up large
+    // templates (e.g. RE885) that contain hundreds of merge tags but only a
+    // handful of conditionals — without this guard, each iteration still
+    // scanned the full XML 5+ times even after all conditionals were resolved.
+    const hasIfOpener = result.indexOf('{{#if') !== -1;
+    const hasUnlessOpener = result.indexOf('{{#unless') !== -1;
+    if (!hasIfOpener && !hasUnlessOpener) break;
+
     // Pre-pre-pass: resolve any {{#if (…)}} / {{#unless (…)}} whose head is
     // (or …), (and …), (not …), or a nested combination thereof. The simple
     // (eq …) pattern below cannot match these, and leaving them unresolved
     // would let the safety-net stripper drop the opener and leave residue.
-    const sexpBlock = findBalancedSexpBlock(result);
+    // Cheap pre-check: only walk the s-expression scanner when at least one
+    // opener uses the `(` sub-expression form. This avoids the O(N) sexp
+    // walker running every iteration on templates that have no sexpressions.
+    const hasSexpOpener =
+      (hasIfOpener && /\{\{#if\s*\(/.test(result)) ||
+      (hasUnlessOpener && /\{\{#unless\s*\(/.test(result));
+    const sexpBlock = hasSexpOpener ? findBalancedSexpBlock(result) : null;
     if (sexpBlock) {
       const evalResult = evaluateSubExpression(sexpBlock.expr, fieldValues, mergeTagMap, validFieldKeys);
       // Only rewrite when we successfully evaluated; otherwise let the (eq …)
@@ -1636,10 +1651,14 @@ export function processConditionalBlocks(
     // {{#if (eq ...)}}…{{/if}} block. We rewrite it to either the true or
     // else branch so the simple {{#if KEY}} matcher below sees clean content.
     // Same for {{#unless (eq ...)}}.
+    // Cheap pre-check: only run the (eq …) regexes when an `(eq ` literal is
+    // actually present. Avoids two full-string regex scans per iteration on
+    // large templates that have no eq sub-expressions.
+    const hasEqSexp = hasSexpOpener && result.indexOf('(eq') !== -1 && result.indexOf('(eq ') !== -1;
     const eqIfPattern = /\{\{#if\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
     const eqUnlessPattern = /\{\{#unless\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
-    const eqIfMatch = eqIfPattern.exec(result);
-    const eqUnlessMatch = eqUnlessPattern.exec(result);
+    const eqIfMatch = hasEqSexp ? eqIfPattern.exec(result) : null;
+    const eqUnlessMatch = hasEqSexp ? eqUnlessPattern.exec(result) : null;
     if (eqIfMatch || eqUnlessMatch) {
       const useUnless = !eqIfMatch || (eqUnlessMatch !== null && eqUnlessMatch.index < (eqIfMatch?.index ?? Infinity));
       const m = (useUnless ? eqUnlessMatch : eqIfMatch) as RegExpExecArray;
@@ -1664,8 +1683,8 @@ export function processConditionalBlocks(
     const ifPattern = /\{\{#if\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/if\}\}/;
     const unlessPattern = /\{\{#unless\s+([A-Za-z0-9_.]+)\}\}([\s\S]*?)\{\{\/unless\}\}/;
 
-    const ifMatch = ifPattern.exec(result);
-    const unlessMatch = unlessPattern.exec(result);
+    const ifMatch = hasIfOpener ? ifPattern.exec(result) : null;
+    const unlessMatch = hasUnlessOpener ? unlessPattern.exec(result) : null;
 
     if (!ifMatch && !unlessMatch) break;
 
