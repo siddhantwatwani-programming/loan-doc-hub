@@ -2156,7 +2156,7 @@ async function generateSingleDocument(
 
     let processedDocx: Uint8Array;
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys, { templateName: template.name });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
@@ -2183,6 +2183,7 @@ async function generateSingleDocument(
     const versionNumber = existingDocs && existingDocs.length > 0 ? existingDocs[0].version_number + 1 : 1;
 
     // 7. Upload generated document to storage
+    const tFileExportStart = performance.now();
     const timestamp = Date.now();
     const outputFileName = `${dealId}/${templateId}_v${versionNumber}_${timestamp}.docx`;
 
@@ -2197,6 +2198,9 @@ async function generateSingleDocument(
       console.error(`[generate-document] Upload error:`, uploadError);
       result.error = "Failed to save generated document";
       return result;
+    }
+    if (isTemplate885) {
+      console.log(`[885] File Export: ${Math.round(performance.now() - tFileExportStart)} ms`);
     }
 
     debugLog(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
