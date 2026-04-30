@@ -3010,7 +3010,7 @@ export function replaceMergeTags(
   //
   // Other RE851A sections, labels, formatting, and XML structure are
   // preserved unchanged.
-  {
+  if (isRe851A) {
     const readBool = (key: string): boolean | null => {
       const d = getFieldData(key, fieldValues)?.data;
       if (!d) return null;
