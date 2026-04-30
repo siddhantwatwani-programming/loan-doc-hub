@@ -143,9 +143,13 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (isReadOnly) return false;
-    // Mirror borrower.guarantor.* values to canonical top-level/contact_data
-    // keys so the Additional Guarantors grid populates after save.
-    const mirrored = mirrorPrefixedToCanonical(contactData, 'borrower.guarantor.');
+    // Bidirectional sync so AG detail values persist + display correctly:
+    //  1) Hydrate prefixed AG keys from any canonical values present
+    //     (covers the case where existing data was saved canonically only).
+    //  2) Mirror prefixed AG values back into canonical top-level/contact_data
+    //     keys so the Additional Guarantors grid populates after save.
+    const hydrated = hydratePrefixedFromCanonical(contactData, 'borrower.guarantor.');
+    const mirrored = mirrorPrefixedToCanonical(hydrated, 'borrower.guarantor.');
     return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
