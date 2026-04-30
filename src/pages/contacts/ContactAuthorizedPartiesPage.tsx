@@ -83,7 +83,7 @@ const AuthorizedPartyDetail: React.FC<AuthorizedPartyDetailProps> = ({ contact, 
       contact={contact}
       onBack={onBack}
       onSave={onSave}
-      initialSection="authorized-party"
+      initialSection="borrower"
       backLabel="Back to Authorized Parties"
       titlePrefix="Authorized Party"
     />
