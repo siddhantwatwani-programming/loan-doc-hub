@@ -7,6 +7,7 @@ import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/C
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
+import { mirrorPrefixedToCanonical } from '@/lib/contactPrefixMirror';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Borrower ID', visible: true },
@@ -127,7 +128,10 @@ const ContactCoBorrowersPage: React.FC = () => {
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (isReadOnly) return false;
-    return await crud.updateContact(id, contactData);
+    // Mirror coborrower.* values to canonical top-level/contact_data keys so
+    // the Co-borrowers grid populates after save (existing save API only).
+    const mirrored = mirrorPrefixedToCanonical(contactData, 'coborrower.');
+    return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
   const handleDeleteSelected = useCallback(async (ids: string[]) => {
