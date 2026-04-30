@@ -6,7 +6,7 @@
  */
 
 import * as fflate from "https://esm.sh/fflate@0.8.2";
-import type { FieldValueData, LabelMapping } from "./types.ts";
+import type { DocxProcessingOptions, FieldValueData, LabelMapping } from "./types.ts";
 import { replaceMergeTags } from "./tag-parser.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
@@ -113,11 +113,14 @@ export async function processDocx(
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
   labelMap: Record<string, LabelMapping>,
-  validFieldKeys?: Set<string>
+  validFieldKeys?: Set<string>,
+  options: DocxProcessingOptions = {},
 ): Promise<Uint8Array> {
   // Detailed per-stage timing — printed at end so production logs always
   // show the breakdown for the slowest templates (e.g. RE885 / HUD-1).
   const t0 = performance.now();
+  const templateName = options.templateName || "DOCX";
+  const is885 = /885/i.test(templateName);
   const partTimings: Array<{ part: string; bytes: number; replaceMs: number; w14Ms: number; sigMs: number }> = [];
 
   const decompressed = fflate.unzipSync(docxBuffer);
@@ -215,6 +218,14 @@ export async function processDocx(
       `zip=${Math.round(tAfterZip - tAfterParts)}ms` +
       (slowest ? ` slowestPart=${slowest.part} (${slowest.bytes}B, replace=${slowest.replaceMs}ms)` : "")
     );
+    if (is885) {
+      console.log(
+        `[885] DOCX Render: ${Math.round(tAfterParts - tUnzip)} ms ` +
+        `(replace=${totalReplaceMs} ms, parts=${partTimings.length}` +
+        (slowest ? `, slowest=${slowest.part}:${slowest.replaceMs} ms` : "") +
+        `)`
+      );
+    }
   } catch { /* never fail generation on logging */ }
 
 

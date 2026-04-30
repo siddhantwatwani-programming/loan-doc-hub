@@ -90,6 +90,10 @@ export interface FieldValueData {
   dataType: string;
 }
 
+export interface DocxProcessingOptions {
+  templateName?: string;
+}
+
 export interface MergeTagMappings {
   mergeTagMap: Record<string, string>;
   labelMap: Record<string, LabelMapping>;
