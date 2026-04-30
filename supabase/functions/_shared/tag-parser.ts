@@ -3228,7 +3228,7 @@ export function replaceMergeTags(
   //
   // Strictly scoped to this single A./B. row — no other paragraphs or
   // sections of the document are touched.
-  {
+  if (isRe851A) {
     const splitParaRe = /<w:p\b([^>]*)>([\s\S]*?)<\/w:p>/g;
     result = result.replace(splitParaRe, (full, pAttrs, inner) => {
       // Plain text of the paragraph — used to detect both labels are present.
