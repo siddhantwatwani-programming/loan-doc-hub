@@ -2286,18 +2286,22 @@ export function replaceMergeTags(
     /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
     (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
   );
+  __mark('controlConsolidation');
 
   if (result.includes('{{#each')) {
     result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
   }
+  __mark('eachBlocks');
 
   if (result.includes('{{#if') || result.includes('{{#unless')) {
     result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
   }
+  __mark('conditionalBlocks');
 
   if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
     result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys, labelMap);
   }
+  __mark('sdtCheckboxes');
 
   // RE851A Part 2 fallback: some authored templates use literal bracket
   // markers ("[ ]", "[x]", "[X]") instead of checkbox glyphs (☐/☑) next to
