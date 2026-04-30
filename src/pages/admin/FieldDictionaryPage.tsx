@@ -383,10 +383,11 @@ export const FieldDictionaryPage: React.FC = () => {
   const handleLabelChange = (label: string) => {
     setFormData((prev) => {
       const dbSection = resolveDbSection(prev.section, prev.form_type);
+      const dbFormType = resolveDbFormType(prev.section, prev.form_type);
       return {
         ...prev,
         label,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, prev.form_type),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(label, dbSection, dbFormType),
       };
     });
   };
@@ -395,11 +396,12 @@ export const FieldDictionaryPage: React.FC = () => {
     const firstForm = SECTION_FORMS[section]?.[0]?.value || 'primary';
     setFormData((prev) => {
       const dbSection = resolveDbSection(section, firstForm);
+      const dbFormType = resolveDbFormType(section, firstForm);
       return {
         ...prev,
         section,
         form_type: firstForm,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, firstForm),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, dbFormType),
       };
     });
   };
@@ -407,10 +409,11 @@ export const FieldDictionaryPage: React.FC = () => {
   const handleFormTypeChange = (formType: string) => {
     setFormData((prev) => {
       const dbSection = resolveDbSection(prev.section, formType);
+      const dbFormType = resolveDbFormType(prev.section, formType);
       return {
         ...prev,
         form_type: formType,
-        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, formType),
+        field_key: editingField ? prev.field_key : generateFieldKeyFromConvention(prev.label, dbSection, dbFormType),
       };
     });
   };
