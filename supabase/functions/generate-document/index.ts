@@ -892,14 +892,20 @@ async function generateSingleDocument(
           const TYPE_ALIASES: Record<string, string> = {
             "single family": "singleFamily", "single-family": "singleFamily",
             "singlefamily": "singleFamily", "single_family": "singleFamily",
-            "sfr": "singleFamily", "1-4 family": "singleFamily",
+            "sfr": "singleFamily", "sfr 1-4": "singleFamily", "1-4 family": "singleFamily",
             "condo": "condominium", "condominium": "condominium",
+            "condo / townhouse": "condominium", "condo/townhouse": "condominium",
+            "townhouse": "condominium",
             "multi-unit": "multiUnit", "multi unit": "multiUnit",
             "multiunit": "multiUnit", "multi_unit": "multiUnit",
             "multifamily": "multiUnit", "multi family": "multiUnit",
+            "multi-family": "multiUnit",
             "2-4 unit": "multiUnit", "5+ unit": "multiUnit",
             "commercial": "commercial", "office": "commercial", "retail": "commercial",
-            "land": "land", "vacant land": "land", "lot": "land",
+            "mixed-use": "commercial", "mixed use": "commercial",
+            "restaurant / bar": "commercial", "restaurant/bar": "commercial",
+            "group housing": "commercial",
+            "land": "land", "vacant land": "land", "lot": "land", "farm": "land",
             "mobile home": "mobileHome", "mobile-home": "mobileHome",
             "mobilehome": "mobileHome", "manufactured": "mobileHome",
             "industrial": "industrial", "warehouse": "industrial",
@@ -907,7 +913,9 @@ async function generateSingleDocument(
           };
           const ptRaw = String(
             fieldValues.get(`pr_p_propertyTyp_${idx}`)?.rawValue ||
+            fieldValues.get(`pr_p_propertyType_${idx}`)?.rawValue ||
             fieldValues.get(`${prefix}.propertyType`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraisal_property_type`)?.rawValue ||
             ""
           ).trim();
           const ptKey = TYPE_ALIASES[ptRaw.toLowerCase()] ||
