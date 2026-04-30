@@ -59,12 +59,14 @@ const ROLES = [
   { value: 'lender', label: 'Lender' },
 ];
 
-// The 11 deal-page top-nav sections (no Events Journal — it has no DB fields)
+// The deal-page top-nav sections (no Events Journal — it has no DB fields)
+// Note: "Liens" was previously a sibling section; it now lives under "Property"
+// as a sub-form group (see SECTION_FORMS.property below). DB section "liens"
+// is unchanged — only the admin Field Dictionary hierarchy reflects this.
 const SECTIONS = [
   { value: 'borrower', label: 'Borrower' },
   { value: 'loan_terms', label: 'Loan' },
   { value: 'property', label: 'Property' },
-  { value: 'liens', label: 'Liens' },
   { value: 'funding', label: 'Funding' },
   { value: 'broker', label: 'Broker' },
   { value: 'charges', label: 'Charges' },
@@ -78,7 +80,8 @@ const SECTIONS = [
 const SECTION_TO_DB: Record<string, string[]> = {
   borrower: ['borrower', 'co_borrower'],
   loan_terms: ['loan_terms'],
-  property: ['property', 'insurance'],
+  // Property now also surfaces liens fields (Liens grouped under Property)
+  property: ['property', 'insurance', 'liens'],
   funding: ['loan_terms'], // filtered further by form_type = 'funding'
   broker: ['broker'],
   charges: ['charges'],
@@ -86,7 +89,6 @@ const SECTION_TO_DB: Record<string, string[]> = {
   notes: ['notes'],
   lender: ['lender'],
   origination_fees: ['origination_fees'],
-  liens: ['liens'],
 };
 
 // All valid DB sections we show (everything else is scaffolding/excluded)
