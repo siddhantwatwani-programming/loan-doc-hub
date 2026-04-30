@@ -113,14 +113,23 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.capacity}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Capacity</Label>
-              <Select value={getValue('capacity') || undefined} onValueChange={(v) => handleChange('capacity', v)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Broker">Broker</SelectItem>
-                  <SelectItem value="Broker's Representative">Broker's Representative</SelectItem>
-                  <SelectItem value="Unlicensed">Unlicensed</SelectItem>
-                </SelectContent>
-              </Select>
+              {(() => {
+                const CAPACITY_OPTS = ['Broker', "Broker's Representative", 'Unlicensed'];
+                const raw = (getValue('capacity') || '').trim();
+                const safeValue = CAPACITY_OPTS.includes(raw) ? raw : undefined;
+                return (
+                  <Select value={safeValue} onValueChange={(v) => handleChange('capacity', v)} disabled={disabled}>
+                    <SelectTrigger className="h-7 text-xs flex-1">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CAPACITY_OPTS.map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                );
+              })()}
             </div>
           </DirtyFieldWrapper>
           {renderInlineField('repLicense', 'License Number')}
