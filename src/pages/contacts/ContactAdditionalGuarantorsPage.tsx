@@ -7,7 +7,20 @@ import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/C
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
-import { mirrorPrefixedToCanonical } from '@/lib/contactPrefixMirror';
+import { mirrorPrefixedToCanonical, hydratePrefixedFromCanonical } from '@/lib/contactPrefixMirror';
+
+const AG_PREFIX = 'borrower.guarantor.';
+const hydrateAG = (c: ContactRecord): ContactRecord => ({
+  ...c,
+  contact_data: hydratePrefixedFromCanonical(
+    (c.contact_data || {}) as Record<string, string>,
+    AG_PREFIX,
+    {
+      first_name: c.first_name, last_name: c.last_name, full_name: c.full_name,
+      email: c.email, phone: c.phone, city: c.city, state: c.state, company: c.company,
+    },
+  ),
+});
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Contact ID', visible: true },
@@ -96,7 +109,7 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
       const { supabase } = await import('@/integrations/supabase/client');
       const { data } = await supabase.from('contacts').select('*').eq('id', contactId).maybeSingle();
       if (data) {
-        setSelectedContact({
+        setSelectedContact(hydrateAG({
           id: data.id,
           contact_id: data.contact_id,
           contact_type: data.contact_type,
@@ -111,7 +124,7 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
           contact_data: (data.contact_data || {}) as Record<string, string>,
           created_at: data.created_at || '',
           updated_at: data.updated_at || '',
-        });
+        }));
       }
     })();
   }, [contactId]);
@@ -142,7 +155,7 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
   }, [crud, isReadOnly]);
 
   const handleRowClick = useCallback((c: ContactRecord) => {
-    setSelectedContact(c);
+    setSelectedContact(hydrateAG(c));
     navigate(`/contacts/additional-guarantors/${c.id}`);
   }, [navigate]);
 

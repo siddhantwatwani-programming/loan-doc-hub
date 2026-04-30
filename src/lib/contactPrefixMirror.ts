@@ -134,3 +134,73 @@ export function mirrorPrefixedToCanonical(
 
   return out;
 }
+
+/**
+ * Reverse of {@link mirrorPrefixedToCanonical}: copy canonical (unprefixed)
+ * `contact_data` keys + top-level columns INTO their prefixed counterparts so
+ * detail forms (Authorized Party, Additional Guarantor, Co-borrower) can
+ * display values that were previously saved only in canonical form
+ * (e.g. via the create-contact modal or a legacy save path).
+ *
+ * Existing prefixed values are preserved (never overwritten). The original
+ * canonical keys are kept unchanged.
+ *
+ * `topLevel` carries the `contacts` row's top-level columns
+ * (first_name, last_name, full_name, email, phone, city, state, company)
+ * so they too can seed the prefixed keys when contact_data is empty.
+ */
+export function hydratePrefixedFromCanonical(
+  contactData: Record<string, string>,
+  prefix: string,
+  topLevel: Record<string, string | null | undefined> = {},
+): Record<string, string> {
+  if (!prefix.endsWith('.')) {
+    throw new Error(`hydratePrefixedFromCanonical: prefix must end with '.', got "${prefix}"`);
+  }
+  const out: Record<string, string> = { ...contactData };
+  const setIfEmpty = (k: string, v: string | null | undefined) => {
+    if (v === undefined || v === null || v === '') return;
+    if (out[k] === undefined || out[k] === '') out[k] = v;
+  };
+  const readCanonical = (k: string): string | undefined => {
+    const v = contactData[k];
+    if (typeof v === 'string' && v.length > 0) return v;
+    const tl = topLevel[k];
+    if (typeof tl === 'string' && tl.length > 0) return tl;
+    return undefined;
+  };
+
+  // Direct mirrors (canonical key -> prefixed key)
+  const directMirrors: Array<[string, string]> = [
+    ['first_name', 'first_name'],
+    ['last_name', 'last_name'],
+    ['full_name', 'full_name'],
+    ['email', 'email'],
+    ['company', 'company'],
+    ['middle_initial', 'middle_initial'],
+    ['middle_name', 'middle_name'],
+  ];
+  for (const [src, dst] of directMirrors) {
+    setIfEmpty(prefix + dst, readCanonical(src));
+  }
+
+  // Address: canonical city/state may live at top-level or under address.*
+  setIfEmpty(prefix + 'address.city', readCanonical('address.city') ?? readCanonical('city'));
+  setIfEmpty(prefix + 'address.state', readCanonical('address.state') ?? readCanonical('state'));
+
+  // Mirror remaining grid-relevant suffixes back into the prefixed namespace
+  for (const suffix of GRID_CONTACT_DATA_SUFFIXES) {
+    setIfEmpty(prefix + suffix, readCanonical(suffix));
+  }
+
+  // Phone fallback: if no specific prefixed phone present, seed phone.cell from top-level phone
+  const hasAnyPrefixedPhone =
+    out[prefix + 'phone.cell'] || out[prefix + 'phone.mobile'] ||
+    out[prefix + 'phone.home'] || out[prefix + 'phone.work'];
+  if (!hasAnyPrefixedPhone) {
+    const tlPhone = readCanonical('phone');
+    if (tlPhone) out[prefix + 'phone.cell'] = tlPhone;
+  }
+
+  return out;
+}
