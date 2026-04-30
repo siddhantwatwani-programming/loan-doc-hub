@@ -808,59 +808,14 @@ async function generateSingleDocument(
         ).replace(/[^0-9.-]/g, "")
       );
 
-      // Helper: convert camelCase suffix to snake_case (e.g. squareFeet -> square_feet,
-      // yearBuilt -> year_built, appraisedDate -> appraised_date). Storage keys for
-      // property{N>=2} use snake_case while the alias map historically used camelCase.
-      const toSnake = (s: string) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
-
       const sortedPropIndices = [...propertyIndices].sort((a, b) => a - b).slice(0, MAX_PROPERTIES);
       for (const idx of sortedPropIndices) {
         const prefix = `property${idx}`;
-        // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>).
-        // Try the suffix exactly, snake_case form, and (for property1) the
-        // canonical pr_p_<key> direct key so per-index aliases are always
-        // populated when CSR data exists for that property.
+        // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
         for (const [sfx, prKey] of Object.entries(suffixToPrKey)) {
-          const candidates = [
-            `${prefix}.${sfx}`,
-            `${prefix}.${toSnake(sfx)}`,
-          ];
-          if (idx === 1) candidates.push(prKey); // property1 raw canonical fallback
-          let v: FieldValueData | undefined;
-          for (const c of candidates) {
-            const got = fieldValues.get(c);
-            if (got && got.rawValue !== undefined && got.rawValue !== null && got.rawValue !== "") {
-              v = got;
-              break;
-            }
-          }
-          if (v) {
+          const v = fieldValues.get(`${prefix}.${sfx}`);
+          if (v && v.rawValue !== undefined && v.rawValue !== null && v.rawValue !== "") {
             fieldValues.set(`${prKey}_${idx}`, { rawValue: v.rawValue, dataType: v.dataType });
-          }
-        }
-        // propertytax_annual_payment and propertytax_delinquent (UI keys with dots)
-        // → per-property aliases used by RE851D PROPERTY #N sections.
-        {
-          const taxAnnual =
-            fieldValues.get(`${prefix}.annual_property_taxes`) ||
-            fieldValues.get(`${prefix}.annual_tax`) ||
-            fieldValues.get(`${prefix}.propertytax_annual_payment`) ||
-            (idx === 1 ? fieldValues.get(`propertytax.annual_payment`) : undefined);
-          if (taxAnnual?.rawValue) {
-            fieldValues.set(`propertytax_annual_payment_${idx}`, {
-              rawValue: taxAnnual.rawValue,
-              dataType: taxAnnual.dataType || "currency",
-            });
-          }
-          const taxDelinq =
-            fieldValues.get(`${prefix}.taxes_delinquent`) ||
-            fieldValues.get(`${prefix}.propertytax_delinquent`) ||
-            (idx === 1 ? fieldValues.get(`propertytax.delinquent`) : undefined);
-          if (taxDelinq?.rawValue !== undefined && taxDelinq?.rawValue !== null && taxDelinq?.rawValue !== "") {
-            fieldValues.set(`propertytax_delinquent_${idx}`, {
-              rawValue: String(taxDelinq.rawValue),
-              dataType: taxDelinq.dataType || "boolean",
-            });
           }
         }
         // Annual property tax (UI: propertytax.annual_payment) per property
@@ -2091,26 +2046,16 @@ async function generateSingleDocument(
 
     let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
 
-    // ── RE851D: bind property placeholders to their owning PROPERTY #N section ──
-    // RE851D templates contain repeated property blocks. Each block is
-    // visually anchored by a heading like "PROPERTY #1", "PROPERTY #2", etc.
-    // Inside each block, the template may use either:
-    //   (a) generic placeholders ending in "_N" (e.g. {{pr_p_address_N}})
-    //   (b) unindexed placeholders (e.g. {{pr_p_address}}, {{pr_p_squareFeet}},
-    //       {{ propertytax.annual_payment }}, {{ propertytax.delinquent }})
-    // Without per-section binding, both shapes resolve to the canonical
-    // (Property #1) value for every section, so every block displays
-    // identical data. We rewrite each occurrence inside a "PROPERTY #K"
-    // section to its per-index alias (e.g. pr_p_address_K), which is
-    // already published by the per-property alias step above. Tags found
-    // outside any PROPERTY #K section keep the legacy per-occurrence
-    // numbering for "_N" placeholders only (Part 1 / Part 2 multi-row
-    // tables that pre-existing templates rely on).
+    // ── RE851D: expand literal "_N" placeholders into per-occurrence "_1", "_2", ... ──
+    // Some authored RE851D templates leave generic placeholders (e.g.
+    // {{pr_p_address_N}}) inside each PROPERTY block instead of the resolved
+    // indexed form. Without this preprocessing, the merge-tag resolver treats
+    // "_N" as a literal field key and prints nothing, so all PROPERTY blocks
+    // remain blank. We rewrite each occurrence by document order, capped at 5
+    // (the spec's maximum properties per RE851D). Strictly scoped to known
+    // RE851D placeholder families — no other tags are touched.
     if (/851d/i.test(template.name || "")) {
       try {
-        // Tags whose template name ends with "_N" — explicitly templated for
-        // multi-property indexing. Both inside and outside PROPERTY #K
-        // sections we rewrite these to "_<idx>".
         const RE851D_INDEXED_TAGS = [
           "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
           "pr_p_zip_N", "pr_p_county_N", "pr_p_country_N", "pr_p_apn_N",
@@ -2127,39 +2072,15 @@ async function generateSingleDocument(
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
-          "propertytax_delinquent_N",
         ];
-        // Unindexed property tags. These resolve to Property #1 by default,
-        // so we ONLY rewrite them when they appear inside a "PROPERTY #K"
-        // section (K >= 2). Outside such a section they're left alone so
-        // the canonical Property #1 lookup still works (e.g. RE851A).
-        const RE851D_UNINDEXED_TAGS = [
-          "pr_p_address", "pr_p_street", "pr_p_city", "pr_p_state", "pr_p_zip",
-          "pr_p_county", "pr_p_country", "pr_p_apn", "pr_p_owner",
-          "pr_p_marketValue", "pr_p_appraiseValue", "pr_p_appraiseDate",
-          "pr_p_appraiserStreet", "pr_p_appraiserCity", "pr_p_appraiserState",
-          "pr_p_appraiserZip", "pr_p_appraiserPhone", "pr_p_appraiserEmail",
-          "pr_p_legalDescri", "pr_p_yearBuilt", "pr_p_squareFeet", "pr_p_lotSize",
-          "pr_p_numberOfUni", "pr_p_propertyTyp", "pr_p_propertyType",
-          "pr_p_occupancySt", "pr_p_occupanc", "pr_p_remainingSenior",
-          "pr_p_expectedSenior", "pr_p_construcType", "pr_p_purchasePrice",
-          "pr_p_downPayme", "pr_p_protectiveEquity", "pr_p_descript",
-          "pr_p_ltv", "pr_p_cltv", "pr_p_zoning", "pr_p_floodZone",
-          "pr_p_pledgedEquity", "pr_p_delinquHowMany",
-          "propertytax.annual_payment", "propertytax.delinquent",
-        ];
-
         const decoder = new TextDecoder("utf-8");
         const encoder = new TextEncoder();
         const decompressed = fflate.unzipSync(templateBuffer);
         const out: fflate.Zippable = {};
-        // Counters for the legacy "_N → _<occurrence>" rewrite (only used
-        // OUTSIDE detected PROPERTY #K sections, e.g. Part 1 / Part 2 tables).
         const counters = new Map<string, number>();
         let totalRewrites = 0;
-        let totalSectionRewrites = 0;
-        const sectionAssignments: number[] = []; // for diagnostic logging
-
+        // Process content parts in a deterministic order so per-tag occurrence
+        // numbering follows document reading order (header, document, footer).
         const orderedNames = Object.keys(decompressed).sort((a, b) => {
           const rank = (n: string) =>
             n === "word/document.xml" ? 1 :
@@ -2170,56 +2091,6 @@ async function generateSingleDocument(
           const ra = rank(a), rb = rank(b);
           return ra !== rb ? ra - rb : a.localeCompare(b);
         });
-
-        // Helper: build a regex that matches the literal "PROPERTY #<digit>"
-        // text even when fragmented across Word runs. Allows any XML markup
-        // between characters but no other visible text. Captures the digit.
-        const between = "(?:<[^>]*>|\\s)*";
-        const propHeadingRe = new RegExp(
-          `P${between}R${between}O${between}P${between}E${between}R${between}T${between}Y${between}` +
-            `${between}#${between}([1-9])`,
-          "gi"
-        );
-
-        // Helper: rewrite "_N" or unindexed property tag occurrences inside a
-        // single segment of XML to "_<idx>". Operates token-by-token so the
-        // existing Word-XML structure (runs, properties) is preserved.
-        const rewriteSegment = (segment: string, idx: number): { out: string; count: number } => {
-          let s = segment;
-          let n = 0;
-          // 1) Generic _N tags → _<idx>
-          for (const tag of RE851D_INDEXED_TAGS) {
-            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
-            s = s.replace(re, () => {
-              n++;
-              return tag.replace(/_N$/, `_${idx}`);
-            });
-          }
-          // 2) Unindexed property tags → <tag>_<idx>. Only rewrite when NOT
-          //    already followed by an underscore + digit (avoid double indexing
-          //    pr_p_address_3 → pr_p_address_3_2). Boundary uses negative
-          //    lookahead on word characters (and dot, since some tag names
-          //    include dots like propertytax.annual_payment).
-          for (const tag of RE851D_UNINDEXED_TAGS) {
-            const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            // For dotted tag names (propertytax.annual_payment), the merge tag
-            // alias key is the dotted form itself; the alias we publish per
-            // index uses underscores (propertytax_annual_payment_N). Convert
-            // both to the underscore form so the per-index alias resolves.
-            const replacement = tag.includes(".")
-              ? `${tag.replace(/\./g, "_")}_${idx}`
-              : `${tag}_${idx}`;
-            // Negative lookahead: the next char must NOT be a letter, digit,
-            // underscore, or dot — so we don't rewrite an already-suffixed tag.
-            const re = new RegExp(`${escaped}(?![A-Za-z0-9_.])`, "g");
-            s = s.replace(re, () => {
-              n++;
-              return replacement;
-            });
-          }
-          return { out: s, count: n };
-        };
-
         for (const filename of orderedNames) {
           const bytes = decompressed[filename];
           const isContentPart =
@@ -2233,89 +2104,37 @@ async function generateSingleDocument(
             continue;
           }
           let xml = decoder.decode(bytes);
-
-          // Step A: section-scoped rewrite. Find every "PROPERTY #K" anchor
-          // and rewrite the segment that follows it (up to the next anchor or
-          // end of file) to use index K. Segments before the first anchor are
-          // handled separately below using the legacy occurrence counter.
-          const allAnchors: { idx: number; pos: number }[] = [];
-          propHeadingRe.lastIndex = 0;
-          let m: RegExpExecArray | null;
-          while ((m = propHeadingRe.exec(xml)) !== null) {
-            const k = parseInt(m[1], 10);
-            if (k >= 1 && k <= 9) {
-              allAnchors.push({ idx: k, pos: m.index + m[0].length });
-            }
+          if (!xml.includes("_N")) {
+            out[filename] = bytes;
+            continue;
           }
-          // RE851D explanatory text mentions "Property #1, ... Property #2, ...
-          // Property #3" inline before the actual numbered sections begin.
-          // Real section anchors form a strictly-increasing sequence (1,2,3,…).
-          // Keep only the LAST such run so inline mentions are ignored. We
-          // walk the anchor list and reset whenever the index does not
-          // strictly increase from the previous kept anchor.
-          const anchors: { idx: number; pos: number }[] = [];
-          for (const a of allAnchors) {
-            if (anchors.length > 0 && a.idx <= anchors[anchors.length - 1].idx) {
-              // Sequence broken — start a new run from this anchor.
-              anchors.length = 0;
-            }
-            anchors.push(a);
-          }
-
-          if (anchors.length > 0) {
-            const pieces: string[] = [];
-            // Pre-section: from start to first anchor. Use legacy counter for
-            // generic _N tags (Part 1 / Part 2 unnamed property table rows);
-            // do NOT touch unindexed tags here.
-            const preEnd = anchors[0].pos;
-            let pre = xml.slice(0, preEnd);
-            if (pre.includes("_N")) {
-              for (const tag of RE851D_INDEXED_TAGS) {
-                const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
-                pre = pre.replace(re, () => {
-                  const next = (counters.get(tag) || 0) + 1;
-                  counters.set(tag, next);
-                  totalRewrites++;
-                  return tag.replace(/_N$/, next > 5 ? `_overflow${next}` : `_${next}`);
-                });
-              }
-            }
-            pieces.push(pre);
-            // Per anchor: segment is from this anchor's pos to next anchor's pos.
-            for (let i = 0; i < anchors.length; i++) {
-              const start = anchors[i].pos;
-              const end = i + 1 < anchors.length ? anchors[i + 1].pos : xml.length;
-              const segment = xml.slice(start, end);
-              const idx = anchors[i].idx;
-              sectionAssignments.push(idx);
-              const r = rewriteSegment(segment, idx);
-              totalSectionRewrites += r.count;
-              pieces.push(r.out);
-            }
-            xml = pieces.join("");
-          } else if (xml.includes("_N")) {
-            // No section anchors in this part — fall back to legacy occurrence
-            // numbering for "_N" placeholders only.
-            for (const tag of RE851D_INDEXED_TAGS) {
-              const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
-              xml = xml.replace(re, () => {
-                const next = (counters.get(tag) || 0) + 1;
+          for (const tag of RE851D_INDEXED_TAGS) {
+            // Match the exact tag text — works whether or not surrounding
+            // braces have already been consolidated (the inner Word XML may
+            // hold "pr_p_address_N" between «»/{{ }} runs).
+            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+            xml = xml.replace(re, () => {
+              const next = (counters.get(tag) || 0) + 1;
+              if (next > 5) {
+                // Beyond Property #5: leave blank by mapping to a guaranteed-empty key.
+                // Keeping a unique suffix avoids collisions with valid resolved keys.
                 counters.set(tag, next);
                 totalRewrites++;
-                return tag.replace(/_N$/, next > 5 ? `_overflow${next}` : `_${next}`);
-              });
-            }
+                return tag.replace(/_N$/, `_overflow${next}`);
+              }
+              counters.set(tag, next);
+              totalRewrites++;
+              return tag.replace(/_N$/, `_${next}`);
+            });
           }
-
           out[filename] = encoder.encode(xml);
         }
-        if (totalRewrites > 0 || totalSectionRewrites > 0) {
+        if (totalRewrites > 0) {
           templateBuffer = new Uint8Array(fflate.zipSync(out, { level: 0 }));
           console.log(
-            `[generate-document] RE851D: section-scoped rewrites=${totalSectionRewrites} ` +
-            `(sections detected: [${sectionAssignments.join(", ")}]), ` +
-            `legacy "_N" rewrites=${totalRewrites} ` +
-            `(${[...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")})`
+            `[generate-document] RE851D: rewrote ${totalRewrites} literal "_N" placeholders to per-occurrence indices (${
+              [...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")
+            })`
           );
         }
       } catch (err) {
@@ -2327,17 +2146,8 @@ async function generateSingleDocument(
     }
 
     let processedDocx: Uint8Array;
-    const procStart = Date.now();
     try {
-      processedDocx = await processDocx(
-        templateBuffer,
-        fieldValues,
-        fieldTransforms,
-        mergeTagMap,
-        effectiveLabelMap,
-        validFieldKeys,
-        { templateName: template.name },
-      );
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
@@ -2350,7 +2160,7 @@ async function generateSingleDocument(
       throw err;
     }
 
-    console.log(`[generate-document] processDocx completed for "${template.name}" in ${Date.now() - procStart}ms (${processedDocx.length} bytes)`);
+    debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 
     // 6. Calculate version number
     const { data: existingDocs } = await supabase

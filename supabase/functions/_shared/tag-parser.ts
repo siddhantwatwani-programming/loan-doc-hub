@@ -5,7 +5,7 @@
  * including Word merge fields, curly brace placeholders, and label-based patterns.
  */
 
-import type { ParsedMergeTag, FieldValueData, LabelMapping, DocxProcessingContext } from "./types.ts";
+import type { ParsedMergeTag, FieldValueData, LabelMapping } from "./types.ts";
 import { applyTransform, formatByDataType, formatCheckbox } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
@@ -2140,17 +2140,8 @@ export function replaceMergeTags(
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
   labelMap: Record<string, LabelMapping>,
-  validFieldKeys?: Set<string>,
-  context?: DocxProcessingContext,
+  validFieldKeys?: Set<string>
 ): string {
-  // Template-scoped flag: RE851A-specific safety passes (subordination,
-  // amortization, payable, broker capacity A/B, servicing agent, etc.) are
-  // expensive document-wide regex sweeps that have always been authored only
-  // for RE851A. Running them for every template — including very large ones
-  // such as RE885 — was a major contributor to CPU exhaustion / generation
-  // timeouts. Restrict them to RE851A templates so other templates are not
-  // affected and their behavior is unchanged.
-  const isRe851A = /851a/i.test(context?.templateName || "");
   const contentLower = content.toLowerCase();
   const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
   const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
@@ -2512,7 +2503,7 @@ export function replaceMergeTags(
   // Supports both static glyphs (☐/☑/☒) and native Word SDT checkboxes
   // (<w:sdt>/<w14:checkbox>), with the checkbox appearing before OR after
   // the Yes/No label. No other Yes/No checkbox pairs in RE851A are touched.
-  if (isRe851A) {
+  {
     const subData =
       getFieldData("ln_p_subordinationProvision", fieldValues)?.data
       || getFieldData("loan_terms.subordination_provision", fieldValues)?.data;
@@ -3010,7 +3001,7 @@ export function replaceMergeTags(
   //
   // Other RE851A sections, labels, formatting, and XML structure are
   // preserved unchanged.
-  if (isRe851A) {
+  {
     const readBool = (key: string): boolean | null => {
       const d = getFieldData(key, fieldValues)?.data;
       if (!d) return null;
@@ -3149,7 +3140,7 @@ export function replaceMergeTags(
   // Other dropdown values (e.g. Quarterly) leave the Monthly/Annually
   // glyphs untouched. Surrounding text, formatting, and XML structure are
   // preserved unchanged — only the glyph character toggles.
-  if (isRe851A) {
+  {
     const payableRaw =
       getFieldData("loan_terms.servicing.payable_annually", fieldValues)?.data?.rawValue
       ?? getFieldData("loan_terms.servicing.payable", fieldValues)?.data?.rawValue
@@ -3228,7 +3219,7 @@ export function replaceMergeTags(
   //
   // Strictly scoped to this single A./B. row — no other paragraphs or
   // sections of the document are touched.
-  if (isRe851A) {
+  {
     const splitParaRe = /<w:p\b([^>]*)>([\s\S]*?)<\/w:p>/g;
     result = result.replace(splitParaRe, (full, pAttrs, inner) => {
       // Plain text of the paragraph — used to detect both labels are present.
@@ -3303,7 +3294,7 @@ export function replaceMergeTags(
   // or_p_isBrkBorrower. This prevents a leftover static unchecked glyph
   // (or a stale conditional remnant) from masking the user's CSR selection.
   // Surrounding text, formatting, and XML structure are preserved unchanged.
-  if (isRe851A) {
+  {
     const brkData =
       getFieldData("or_p_isBrkBorrower", fieldValues)?.data
       || getFieldData("or_p_brkCapacityPrincipal", fieldValues)?.data
@@ -3393,7 +3384,7 @@ export function replaceMergeTags(
   // <w:r>/<w:t>/SDT runs and left a static ☐ behind. Surrounding text,
   // formatting, and XML structure are preserved unchanged — only the
   // glyph character toggles.
-  if (isRe851A) {
+  {
     const agentRaw =
       getFieldData("sv_p_servicingAgent", fieldValues)?.data?.rawValue
       ?? getFieldData("oo_svc_servicingAgent", fieldValues)?.data?.rawValue
