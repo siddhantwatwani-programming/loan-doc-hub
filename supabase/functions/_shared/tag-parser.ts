@@ -229,29 +229,16 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
     return false;
   };
 
-  const hasSplitDelimiterPair = (ch: string, maxSpan: number): boolean => {
-    let start = xml.indexOf(ch);
-    while (start !== -1) {
-      const next = xml.indexOf(ch, start + 1);
-      if (next === -1) return false;
-      if (next === start + 1) {
-        start = xml.indexOf(ch, next + 1);
-        continue;
-      }
-      if (next - start <= maxSpan && xml.indexOf('<', start + 1) !== -1 && xml.indexOf('<', start + 1) < next) {
-        return true;
-      }
-      start = next;
-    }
-    return false;
-  };
-
   return hasXmlInsideDelimitedTag('{{', '}}', 800) ||
     hasXmlInsideDelimitedTag('\u00AB', '\u00BB', 500) ||
-    hasSplitDelimiterPair('{', 500) ||
-    hasSplitDelimiterPair('}', 500) ||
-    hasSplitDelimiterPair('\u00AB', 500) ||
-    hasSplitDelimiterPair('\u00BB', 500);
+    // Detect truly split delimiters only when the gap contains markup/space
+    // and no meaningful text. The prior loose delimiter-pair scan falsely
+    // treated two normal complete tags near each other as fragmentation on
+    // dense templates like RE885, forcing the 5s normalization path.
+    /\{(?:\s|<[^>]+>)+\{/.test(xml) ||
+    /\}(?:\s|<[^>]+>)+\}/.test(xml) ||
+    /\u00AB(?:\s|<[^>]+>)+[A-Za-z0-9_.]+/.test(xml) ||
+    /[A-Za-z0-9_.]+(?:\s|<[^>]+>)+\u00BB/.test(xml);
 }
 
 /**
@@ -260,7 +247,8 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
  */
 export function normalizeWordXml(xmlContent: string): string {
   const hasFieldCodeStructures = xmlContent.includes('w:fldChar') || xmlContent.includes('w:fldSimple') || xmlContent.includes('w:instrText');
-  if (!hasFieldCodeStructures && !hasFragmentedMergeTagCandidates(xmlContent)) {
+  const hasFragmentedCandidates = hasFragmentedMergeTagCandidates(xmlContent);
+  if (!hasFieldCodeStructures && !hasFragmentedCandidates) {
     if (xmlContent.length > 200_000) {
       console.log(`[tag-parser] normalizeWordXml fast-path: skipped fragmented-run normalization (${xmlContent.length}B)`);
     }
@@ -269,6 +257,16 @@ export function normalizeWordXml(xmlContent: string): string {
 
   // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
   let result = flattenMergeFieldStructures(xmlContent);
+
+  // If the template only had field-code structures (or already-intact tags),
+  // flattening is sufficient. Skip the expensive fragmented-run regex suite
+  // unless real XML-split delimiters remain after flattening.
+  if (!hasFragmentedCandidates && !hasFragmentedMergeTagCandidates(result)) {
+    if (xmlContent.length > 200_000) {
+      console.log(`[tag-parser] normalizeWordXml fast-path: flattened field codes only, skipped fragmented-run normalization (${xmlContent.length}B)`);
+    }
+    return result;
+  }
   
   // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
   // paragraphs that contain merge-tag delimiters. This preserves page layout,
