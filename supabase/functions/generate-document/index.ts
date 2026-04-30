@@ -2146,8 +2146,17 @@ async function generateSingleDocument(
     }
 
     let processedDocx: Uint8Array;
+    const procStart = Date.now();
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
+      processedDocx = await processDocx(
+        templateBuffer,
+        fieldValues,
+        fieldTransforms,
+        mergeTagMap,
+        effectiveLabelMap,
+        validFieldKeys,
+        { templateName: template.name },
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
@@ -2160,7 +2169,7 @@ async function generateSingleDocument(
       throw err;
     }
 
-    debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
+    console.log(`[generate-document] processDocx completed for "${template.name}" in ${Date.now() - procStart}ms (${processedDocx.length} bytes)`);
 
     // 6. Calculate version number
     const { data: existingDocs } = await supabase
