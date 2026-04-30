@@ -222,6 +222,11 @@ async function generateSingleDocument(
       'pr_p_occupancySt': 'occupancyStatus', 'pr_p_yearBuilt': 'yearBuilt',
       'pr_p_lotSize': 'lotSize', 'pr_p_squareFeet': 'squareFeet',
       'pr_p_numberOfUni': 'numberOfUnits', 'pr_p_country': 'country',
+      // RE851D multi-property additions:
+      'pr_p_appraiseValue': 'appraise_value',
+      'pr_p_owner': 'owner',
+      'pr_p_remainSenior': 'remaining_senior_encumbrance',
+      'pr_p_expectSenior': 'expected_senior_encumbrance',
     };
 
     const fieldValues = new Map<string, FieldValueData>();
@@ -739,6 +744,57 @@ async function generateSingleDocument(
           fieldValues.set(`${prefix}.address`, { rawValue: fullAddress, dataType: "text" });
           fieldValues.set(`Property${idx}.Address`, { rawValue: fullAddress, dataType: "text" });
           debugLog(`[generate-document] Auto-computed ${prefix}.address = "${fullAddress}"`);
+        }
+      }
+
+      // RE851D multi-property: per-index calculated values consumed by tags
+      // suffixed with _1.._5 (e.g. {{ln_p_loanToValueRatio_2}}). Mirrors the
+      // single-property auto-compute below, just per propertyN.
+      const toNum = (v: unknown): number => {
+        if (v === null || v === undefined || v === "") return NaN;
+        return parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+      };
+      const loanAmtForIdx = toNum(
+        fieldValues.get("ln_p_loanAmount")?.rawValue ??
+        fieldValues.get("loan_terms.loan_amount")?.rawValue
+      );
+      const apprForIdx = toNum(fieldValues.get(`${prefix}.appraise_value`)?.rawValue);
+
+      // propertyN.loan_to_value_ratio
+      if (!fieldValues.get(`${prefix}.loan_to_value_ratio`)?.rawValue) {
+        if (!isNaN(loanAmtForIdx) && !isNaN(apprForIdx) && apprForIdx > 0) {
+          const ltv = (loanAmtForIdx / apprForIdx) * 100;
+          fieldValues.set(`${prefix}.loan_to_value_ratio`, {
+            rawValue: ltv.toFixed(2),
+            dataType: "percentage",
+          });
+        }
+      }
+
+      // propertyN.total_senior_encumbrance = remaining + expected
+      if (!fieldValues.get(`${prefix}.total_senior_encumbrance`)?.rawValue) {
+        const remaining = toNum(fieldValues.get(`${prefix}.remaining_senior_encumbrance`)?.rawValue);
+        const expected = toNum(fieldValues.get(`${prefix}.expected_senior_encumbrance`)?.rawValue);
+        const hasAny = !isNaN(remaining) || !isNaN(expected);
+        if (hasAny) {
+          const sum = (isNaN(remaining) ? 0 : remaining) + (isNaN(expected) ? 0 : expected);
+          fieldValues.set(`${prefix}.total_senior_encumbrance`, {
+            rawValue: sum,
+            dataType: "currency",
+          });
+        }
+      }
+
+      // propertyN.total_senior_plus_loan = total_senior_encumbrance + loan amount
+      if (!fieldValues.get(`${prefix}.total_senior_plus_loan`)?.rawValue) {
+        const totalSenior = toNum(fieldValues.get(`${prefix}.total_senior_encumbrance`)?.rawValue);
+        const hasAny = !isNaN(totalSenior) || !isNaN(loanAmtForIdx);
+        if (hasAny) {
+          const sum = (isNaN(totalSenior) ? 0 : totalSenior) + (isNaN(loanAmtForIdx) ? 0 : loanAmtForIdx);
+          fieldValues.set(`${prefix}.total_senior_plus_loan`, {
+            rawValue: sum,
+            dataType: "currency",
+          });
         }
       }
     }
