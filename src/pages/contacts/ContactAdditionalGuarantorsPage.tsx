@@ -7,6 +7,7 @@ import ContactBorrowerDetailLayout from '@/components/contacts/borrower-detail/C
 import type { ColumnConfig } from '@/components/deal/ColumnConfigPopover';
 import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
+import { mirrorPrefixedToCanonical } from '@/lib/contactPrefixMirror';
 
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Contact ID', visible: true },
@@ -129,7 +130,10 @@ const ContactAdditionalGuarantorsPage: React.FC = () => {
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (isReadOnly) return false;
-    return await crud.updateContact(id, contactData);
+    // Mirror borrower.guarantor.* values to canonical top-level/contact_data
+    // keys so the Additional Guarantors grid populates after save.
+    const mirrored = mirrorPrefixedToCanonical(contactData, 'borrower.guarantor.');
+    return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
   const handleDeleteSelected = useCallback(async (ids: string[]) => {
