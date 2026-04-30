@@ -507,6 +507,12 @@ export const FieldDictionaryPage: React.FC = () => {
   // Required for forms that live under a parent UI section but persist with
   // an unprefixed form_type (e.g. liens grouped under Property).
   const dbFormTypeToUiFormType = (uiSection: string, dbSection: string, dbFormType: string): string => {
+    // Liens are merged into a single unified "Liens Details" entry — every
+    // legacy form_type (general_details, loan_type, balance_payment,
+    // recording_tracking) maps to the same UI value.
+    if (uiSection === 'property' && dbSection === 'liens') {
+      return 'liens_details';
+    }
     const forms = SECTION_FORMS[uiSection] || [];
     const prefixed = forms.find(
       f => f.dbSection === dbSection && f.value === `${dbSection}_${dbFormType}`
