@@ -2130,7 +2130,7 @@ async function generateSingleDocument(
           out[filename] = encoder.encode(xml);
         }
         if (totalRewrites > 0) {
-          templateBuffer = fflate.zipSync(out, { level: 0 });
+          templateBuffer = new Uint8Array(fflate.zipSync(out, { level: 0 }));
           console.log(
             `[generate-document] RE851D: rewrote ${totalRewrites} literal "_N" placeholders to per-occurrence indices (${
               [...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")
