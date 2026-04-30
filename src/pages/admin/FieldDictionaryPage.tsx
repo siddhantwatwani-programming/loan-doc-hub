@@ -119,11 +119,12 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'legal_description', label: 'Legal Description' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
-    // Liens — grouped under Property (formerly its own top-level section)
-    { value: 'liens_general_details', label: 'Liens — General Details', dbSection: 'liens' },
-    { value: 'liens_loan_type', label: 'Liens — Loan Type', dbSection: 'liens' },
-    { value: 'liens_balance_payment', label: 'Liens — Balance & Payment', dbSection: 'liens' },
-    { value: 'liens_recording_tracking', label: 'Liens — Recording & Tracking', dbSection: 'liens' },
+    // Liens — grouped under Property as a single unified entry. The previous
+    // four sub-forms (general_details, loan_type, balance_payment,
+    // recording_tracking) are merged here. Filter logic surfaces every row
+    // where section = 'liens' regardless of its persisted form_type, so no
+    // existing data is hidden and field keys remain unchanged.
+    { value: 'liens_details', label: 'Liens Details', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
