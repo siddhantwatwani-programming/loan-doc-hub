@@ -2054,7 +2054,7 @@ async function generateSingleDocument(
     // remain blank. We rewrite each occurrence by document order, capped at 5
     // (the spec's maximum properties per RE851D). Strictly scoped to known
     // RE851D placeholder families — no other tags are touched.
-    if (/(^|[^a-z])851d/i.test(template.name || "")) {
+    if (/851d/i.test(template.name || "")) {
       try {
         const RE851D_INDEXED_TAGS = [
           "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
