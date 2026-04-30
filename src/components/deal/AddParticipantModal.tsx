@@ -52,7 +52,6 @@ type ParticipantType =
 
 const PARTICIPANT_TYPES = [
   { value: 'borrower', label: 'Borrower', disabled: false },
-  { value: 'co_borrower', label: 'Co-borrower', disabled: false },
   { value: 'lender', label: 'Lender', disabled: false },
   { value: 'broker', label: 'Broker', disabled: false },
   { value: 'additional_guarantor', label: 'Additional Guarantor', disabled: false },
