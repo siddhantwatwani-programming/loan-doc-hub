@@ -295,6 +295,12 @@ export function normalizeWordXml(xmlContent: string): string {
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB') && !para.includes('instrText')) {
       return para;
     }
+    // Large templates can contain hundreds of intact tags. They do not need
+    // the expensive fragmented-run regex suite; only paragraphs with actual
+    // XML-split delimiters or remaining instrText do.
+    if (!para.includes('instrText') && !hasFragmentedMergeTagCandidates(para)) {
+      return para;
+    }
 
     let p = para;
 
@@ -564,8 +570,12 @@ export function normalizeWordXml(xmlContent: string): string {
   const preConsolidationChevron = (result.match(/\u00AB[A-Za-z0-9_.]+\u00BB/g) || []).length;
   debugLog(`[tag-parser] Before paragraph consolidation: ${preConsolidationCurly} curly tags, ${preConsolidationChevron} chevron tags`);
 
-  // Safety-net: paragraph-level consolidation for tags that span multiple <w:t> runs.
-  result = consolidateFragmentedTagsInParagraphs(result);
+  // Safety-net: paragraph-level consolidation for tags that span multiple
+  // <w:t> runs. Skip it when the earlier passes prove no fragmented
+  // delimiters remain; intact tags already parse correctly.
+  if (hasFragmentedMergeTagCandidates(result)) {
+    result = consolidateFragmentedTagsInParagraphs(result);
+  }
 
   return result;
 }
