@@ -2044,7 +2044,107 @@ async function generateSingleDocument(
       "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
     };
 
-    const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
+    let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
+
+    // ── RE851D: expand literal "_N" placeholders into per-occurrence "_1", "_2", ... ──
+    // Some authored RE851D templates leave generic placeholders (e.g.
+    // {{pr_p_address_N}}) inside each PROPERTY block instead of the resolved
+    // indexed form. Without this preprocessing, the merge-tag resolver treats
+    // "_N" as a literal field key and prints nothing, so all PROPERTY blocks
+    // remain blank. We rewrite each occurrence by document order, capped at 5
+    // (the spec's maximum properties per RE851D). Strictly scoped to known
+    // RE851D placeholder families — no other tags are touched.
+    if (/(^|[^a-z])851d/i.test(template.name || "")) {
+      try {
+        const RE851D_INDEXED_TAGS = [
+          "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
+          "pr_p_zip_N", "pr_p_county_N", "pr_p_country_N", "pr_p_apn_N",
+          "pr_p_owner_N", "pr_p_marketValue_N", "pr_p_appraiseValue_N",
+          "pr_p_appraiseDate_N", "pr_p_appraiserStreet_N", "pr_p_appraiserCity_N",
+          "pr_p_appraiserState_N", "pr_p_appraiserZip_N", "pr_p_appraiserPhone_N",
+          "pr_p_appraiserEmail_N", "pr_p_legalDescri_N", "pr_p_yearBuilt_N",
+          "pr_p_squareFeet_N", "pr_p_lotSize_N", "pr_p_numberOfUni_N",
+          "pr_p_propertyTyp_N", "pr_p_propertyType_N", "pr_p_occupancySt_N",
+          "pr_p_occupanc_N", "pr_p_remainingSenior_N", "pr_p_expectedSenior_N",
+          "pr_p_totalSenior_N", "pr_p_totalEncumbrance_N", "pr_p_totalSeniorPlusLoan_N",
+          "pr_p_construcType_N", "pr_p_purchasePrice_N", "pr_p_downPayme_N",
+          "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
+          "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
+          "pr_p_delinquHowMany_N",
+          "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
+        ];
+        const decoder = new TextDecoder("utf-8");
+        const encoder = new TextEncoder();
+        const decompressed = fflate.unzipSync(templateBuffer);
+        const out: fflate.Zippable = {};
+        const counters = new Map<string, number>();
+        let totalRewrites = 0;
+        // Process content parts in a deterministic order so per-tag occurrence
+        // numbering follows document reading order (header, document, footer).
+        const orderedNames = Object.keys(decompressed).sort((a, b) => {
+          const rank = (n: string) =>
+            n === "word/document.xml" ? 1 :
+            n.startsWith("word/header") ? 0 :
+            n.startsWith("word/footer") ? 2 :
+            n.startsWith("word/footnotes") ? 3 :
+            n.startsWith("word/endnotes") ? 4 : 5;
+          const ra = rank(a), rb = rank(b);
+          return ra !== rb ? ra - rb : a.localeCompare(b);
+        });
+        for (const filename of orderedNames) {
+          const bytes = decompressed[filename];
+          const isContentPart =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer") ||
+            filename.startsWith("word/footnotes") ||
+            filename.startsWith("word/endnotes");
+          if (!isContentPart) {
+            out[filename] = bytes;
+            continue;
+          }
+          let xml = decoder.decode(bytes);
+          if (!xml.includes("_N")) {
+            out[filename] = bytes;
+            continue;
+          }
+          for (const tag of RE851D_INDEXED_TAGS) {
+            // Match the exact tag text — works whether or not surrounding
+            // braces have already been consolidated (the inner Word XML may
+            // hold "pr_p_address_N" between «»/{{ }} runs).
+            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+            xml = xml.replace(re, () => {
+              const next = (counters.get(tag) || 0) + 1;
+              if (next > 5) {
+                // Beyond Property #5: leave blank by mapping to a guaranteed-empty key.
+                // Keeping a unique suffix avoids collisions with valid resolved keys.
+                counters.set(tag, next);
+                totalRewrites++;
+                return tag.replace(/_N$/, `_overflow${next}`);
+              }
+              counters.set(tag, next);
+              totalRewrites++;
+              return tag.replace(/_N$/, `_${next}`);
+            });
+          }
+          out[filename] = encoder.encode(xml);
+        }
+        if (totalRewrites > 0) {
+          templateBuffer = fflate.zipSync(out, { level: 0 });
+          console.log(
+            `[generate-document] RE851D: rewrote ${totalRewrites} literal "_N" placeholders to per-occurrence indices (${
+              [...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")
+            })`
+          );
+        }
+      } catch (err) {
+        console.error(
+          `[generate-document] RE851D _N preprocessing failed (continuing with original template):`,
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
+
     let processedDocx: Uint8Array;
     try {
       processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
