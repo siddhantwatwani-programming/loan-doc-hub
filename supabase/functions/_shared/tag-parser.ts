@@ -3393,7 +3393,7 @@ export function replaceMergeTags(
   // <w:r>/<w:t>/SDT runs and left a static ☐ behind. Surrounding text,
   // formatting, and XML structure are preserved unchanged — only the
   // glyph character toggles.
-  {
+  if (isRe851A) {
     const agentRaw =
       getFieldData("sv_p_servicingAgent", fieldValues)?.data?.rawValue
       ?? getFieldData("oo_svc_servicingAgent", fieldValues)?.data?.rawValue
