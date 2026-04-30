@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import * as fflate from "https://esm.sh/fflate@0.8.2";
 
 // Import shared modules
 import type {
@@ -227,6 +228,26 @@ async function generateSingleDocument(
       'pr_p_owner': 'owner',
       'pr_p_remainingSenior': 'remaining_senior',
       'pr_p_expectedSenior': 'expected_senior',
+      // RE851D bridging — additional CSR-saved keys (PropertyDetailsForm)
+      'pr_p_propertyType': 'appraisal_property_type',
+      'pr_p_occupanc': 'appraisal_occupancy',
+      'pr_p_appraiseDate': 'appraised_date',
+      'pr_p_ltv': 'ltv',
+      'pr_p_cltv': 'cltv',
+      'pr_p_descript': 'description',
+      'pr_p_purchasePrice': 'purchase_price',
+      'pr_p_downPayme': 'down_payment',
+      'pr_p_construcType': 'construction_type',
+      'pr_p_protectiveEquity': 'protective_equity',
+      'pr_p_appraiserStreet': 'appraiser_street',
+      'pr_p_appraiserCity': 'appraiser_city',
+      'pr_p_appraiserState': 'appraiser_state',
+      'pr_p_appraiserZip': 'appraiser_zip',
+      'pr_p_appraiserPhone': 'appraiser_phone',
+      'pr_p_appraiserEmail': 'appraiser_email',
+      'pr_p_zoning': 'zoning',
+      'pr_p_floodZone': 'flood_zone',
+      'pr_p_pledgedEquity': 'pledged_equity',
     };
 
     const fieldValues = new Map<string, FieldValueData>();
@@ -872,14 +893,20 @@ async function generateSingleDocument(
           const TYPE_ALIASES: Record<string, string> = {
             "single family": "singleFamily", "single-family": "singleFamily",
             "singlefamily": "singleFamily", "single_family": "singleFamily",
-            "sfr": "singleFamily", "1-4 family": "singleFamily",
+            "sfr": "singleFamily", "sfr 1-4": "singleFamily", "1-4 family": "singleFamily",
             "condo": "condominium", "condominium": "condominium",
+            "condo / townhouse": "condominium", "condo/townhouse": "condominium",
+            "townhouse": "condominium",
             "multi-unit": "multiUnit", "multi unit": "multiUnit",
             "multiunit": "multiUnit", "multi_unit": "multiUnit",
             "multifamily": "multiUnit", "multi family": "multiUnit",
+            "multi-family": "multiUnit",
             "2-4 unit": "multiUnit", "5+ unit": "multiUnit",
             "commercial": "commercial", "office": "commercial", "retail": "commercial",
-            "land": "land", "vacant land": "land", "lot": "land",
+            "mixed-use": "commercial", "mixed use": "commercial",
+            "restaurant / bar": "commercial", "restaurant/bar": "commercial",
+            "group housing": "commercial",
+            "land": "land", "vacant land": "land", "lot": "land", "farm": "land",
             "mobile home": "mobileHome", "mobile-home": "mobileHome",
             "mobilehome": "mobileHome", "manufactured": "mobileHome",
             "industrial": "industrial", "warehouse": "industrial",
@@ -887,7 +914,9 @@ async function generateSingleDocument(
           };
           const ptRaw = String(
             fieldValues.get(`pr_p_propertyTyp_${idx}`)?.rawValue ||
+            fieldValues.get(`pr_p_propertyType_${idx}`)?.rawValue ||
             fieldValues.get(`${prefix}.propertyType`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraisal_property_type`)?.rawValue ||
             ""
           ).trim();
           const ptKey = TYPE_ALIASES[ptRaw.toLowerCase()] ||
@@ -916,11 +945,19 @@ async function generateSingleDocument(
         {
           const occRaw = String(
             fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
+            fieldValues.get(`pr_p_occupanc_${idx}`)?.rawValue ||
             fieldValues.get(`${prefix}.occupancyStatus`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
             ""
           ).trim().toLowerCase();
-          const isYes = ["yes", "y", "true", "owner occupied", "owner-occupied", "ownerOccupied".toLowerCase()].includes(occRaw);
-          const isNo = ["no", "n", "false", "non-owner occupied", "non owner occupied", "nonOwnerOccupied".toLowerCase()].includes(occRaw);
+          const isYes = [
+            "yes", "y", "true", "owner occupied", "owner-occupied", "owneroccupied",
+            "owner", "primary borrower",
+          ].includes(occRaw);
+          const isNo = [
+            "no", "n", "false", "non-owner occupied", "non owner occupied", "nonowneroccupied",
+            "investor", "tenant", "vacant", "secondary borrower", "other", "unknown",
+          ].includes(occRaw);
           if (isYes || isNo) {
             fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
             fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
@@ -2007,7 +2044,107 @@ async function generateSingleDocument(
       "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
     };
 
-    const templateBuffer = new Uint8Array(await fileData.arrayBuffer());
+    let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
+
+    // ── RE851D: expand literal "_N" placeholders into per-occurrence "_1", "_2", ... ──
+    // Some authored RE851D templates leave generic placeholders (e.g.
+    // {{pr_p_address_N}}) inside each PROPERTY block instead of the resolved
+    // indexed form. Without this preprocessing, the merge-tag resolver treats
+    // "_N" as a literal field key and prints nothing, so all PROPERTY blocks
+    // remain blank. We rewrite each occurrence by document order, capped at 5
+    // (the spec's maximum properties per RE851D). Strictly scoped to known
+    // RE851D placeholder families — no other tags are touched.
+    if (/(^|[^a-z])851d/i.test(template.name || "")) {
+      try {
+        const RE851D_INDEXED_TAGS = [
+          "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
+          "pr_p_zip_N", "pr_p_county_N", "pr_p_country_N", "pr_p_apn_N",
+          "pr_p_owner_N", "pr_p_marketValue_N", "pr_p_appraiseValue_N",
+          "pr_p_appraiseDate_N", "pr_p_appraiserStreet_N", "pr_p_appraiserCity_N",
+          "pr_p_appraiserState_N", "pr_p_appraiserZip_N", "pr_p_appraiserPhone_N",
+          "pr_p_appraiserEmail_N", "pr_p_legalDescri_N", "pr_p_yearBuilt_N",
+          "pr_p_squareFeet_N", "pr_p_lotSize_N", "pr_p_numberOfUni_N",
+          "pr_p_propertyTyp_N", "pr_p_propertyType_N", "pr_p_occupancySt_N",
+          "pr_p_occupanc_N", "pr_p_remainingSenior_N", "pr_p_expectedSenior_N",
+          "pr_p_totalSenior_N", "pr_p_totalEncumbrance_N", "pr_p_totalSeniorPlusLoan_N",
+          "pr_p_construcType_N", "pr_p_purchasePrice_N", "pr_p_downPayme_N",
+          "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
+          "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
+          "pr_p_delinquHowMany_N",
+          "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
+        ];
+        const decoder = new TextDecoder("utf-8");
+        const encoder = new TextEncoder();
+        const decompressed = fflate.unzipSync(templateBuffer);
+        const out: fflate.Zippable = {};
+        const counters = new Map<string, number>();
+        let totalRewrites = 0;
+        // Process content parts in a deterministic order so per-tag occurrence
+        // numbering follows document reading order (header, document, footer).
+        const orderedNames = Object.keys(decompressed).sort((a, b) => {
+          const rank = (n: string) =>
+            n === "word/document.xml" ? 1 :
+            n.startsWith("word/header") ? 0 :
+            n.startsWith("word/footer") ? 2 :
+            n.startsWith("word/footnotes") ? 3 :
+            n.startsWith("word/endnotes") ? 4 : 5;
+          const ra = rank(a), rb = rank(b);
+          return ra !== rb ? ra - rb : a.localeCompare(b);
+        });
+        for (const filename of orderedNames) {
+          const bytes = decompressed[filename];
+          const isContentPart =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer") ||
+            filename.startsWith("word/footnotes") ||
+            filename.startsWith("word/endnotes");
+          if (!isContentPart) {
+            out[filename] = bytes;
+            continue;
+          }
+          let xml = decoder.decode(bytes);
+          if (!xml.includes("_N")) {
+            out[filename] = bytes;
+            continue;
+          }
+          for (const tag of RE851D_INDEXED_TAGS) {
+            // Match the exact tag text — works whether or not surrounding
+            // braces have already been consolidated (the inner Word XML may
+            // hold "pr_p_address_N" between «»/{{ }} runs).
+            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+            xml = xml.replace(re, () => {
+              const next = (counters.get(tag) || 0) + 1;
+              if (next > 5) {
+                // Beyond Property #5: leave blank by mapping to a guaranteed-empty key.
+                // Keeping a unique suffix avoids collisions with valid resolved keys.
+                counters.set(tag, next);
+                totalRewrites++;
+                return tag.replace(/_N$/, `_overflow${next}`);
+              }
+              counters.set(tag, next);
+              totalRewrites++;
+              return tag.replace(/_N$/, `_${next}`);
+            });
+          }
+          out[filename] = encoder.encode(xml);
+        }
+        if (totalRewrites > 0) {
+          templateBuffer = new Uint8Array(fflate.zipSync(out, { level: 0 }));
+          console.log(
+            `[generate-document] RE851D: rewrote ${totalRewrites} literal "_N" placeholders to per-occurrence indices (${
+              [...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")
+            })`
+          );
+        }
+      } catch (err) {
+        console.error(
+          `[generate-document] RE851D _N preprocessing failed (continuing with original template):`,
+          err instanceof Error ? err.message : String(err)
+        );
+      }
+    }
+
     let processedDocx: Uint8Array;
     try {
       processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys);
