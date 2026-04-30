@@ -287,6 +287,22 @@ async function generateSingleDocument(
                 debugLog(`[generate-document] Bridged ${key} -> ${bridgedKey} = "${rawValue}"`);
               }
             }
+            // RE851D: bridge propertytax{N}::uuid composite keys to propertytax{N}.<suffix>
+            // Dictionary keys are propertytax.<suffix>; we strip the canonical prefix
+            // and re-attach the indexed entity prefix so per-index publishers below
+            // can read propertytax{N}.annual_payment / .delinquent / .delinquent_amount /
+            // .source_of_information directly. No cross-index fallback.
+            else if (/^propertytax\d+$/i.test(entityPrefix)) {
+              const fk = fieldDict.field_key || "";
+              if (fk.startsWith("propertytax.")) {
+                const suffix = fk.substring("propertytax.".length);
+                if (suffix) {
+                  const bridgedKey = `${entityPrefix}.${suffix}`;
+                  fieldValues.set(bridgedKey, { rawValue, dataType });
+                  debugLog(`[generate-document] Bridged ${key} -> ${bridgedKey} = "${rawValue}"`);
+                }
+              }
+            }
           }
         }
       });
@@ -991,8 +1007,100 @@ async function generateSingleDocument(
             }
           }
         }
+
+        // ── RE851D: per-property tax publisher ──
+        // PropertyTax UI saves under propertytax{idx}.<field>. We publish four
+        // per-index aliases (both underscore and dotted forms so either
+        // {{propertytax.X_N}} or {{propertytax_X_N}} merge tags resolve after
+        // the _N rewrite). Strictly per-index — no cross-index fallback for
+        // idx >= 2. For idx === 1, fall back to the singular canonical
+        // propertytax.<field> so legacy single-tax-record deals continue to
+        // populate Property #1.
+        {
+          const taxFields: Array<[string, string]> = [
+            ["annual_payment", "currency"],
+            ["delinquent", "boolean"],
+            ["delinquent_amount", "currency"],
+            ["source_of_information", "text"],
+          ];
+          const taxPrefix = `propertytax${idx}`;
+          for (const [tf, dt] of taxFields) {
+            // Per-index source first (strict, no cross-index fallback)
+            let v = fieldValues.get(`${taxPrefix}.${tf}`);
+            // For idx === 1 only, fall back to canonical singular
+            if ((!v || v.rawValue === undefined || v.rawValue === null || v.rawValue === "") && idx === 1) {
+              v = fieldValues.get(`propertytax.${tf}`);
+            }
+            // Backward-compat: annual_payment also accepts the property{idx} variant
+            if ((!v || v.rawValue === undefined || v.rawValue === null || v.rawValue === "") && tf === "annual_payment") {
+              v =
+                fieldValues.get(`${prefix}.annual_property_taxes`) ||
+                fieldValues.get(`${prefix}.annual_tax`) ||
+                fieldValues.get(`${prefix}.propertytax_annual_payment`);
+            }
+            if (v && v.rawValue !== undefined && v.rawValue !== null && v.rawValue !== "") {
+              const dataType = v.dataType || dt;
+              // Underscore form
+              const underscoreKey = `propertytax_${tf}_${idx}`;
+              if (!fieldValues.has(underscoreKey)) {
+                fieldValues.set(underscoreKey, { rawValue: v.rawValue, dataType });
+              }
+              // Dotted form (matches {{propertytax.X_N}} after _N rewrite)
+              const dottedKey = `propertytax.${tf}_${idx}`;
+              if (!fieldValues.has(dottedKey)) {
+                fieldValues.set(dottedKey, { rawValue: v.rawValue, dataType });
+              }
+            }
+          }
+        }
       }
       debugLog(`[generate-document] RE851D multi-property: published indexed aliases for properties [${sortedPropIndices.join(", ")}]`);
+
+      // ── RE851D anti-fallback shield ──
+      // For every _N-family tag that the rewrite block (line 2066) will produce
+      // for indices 1..5, ensure a per-index entry exists in fieldValues. If
+      // the publishers above did not set one (because no per-index source data
+      // existed), write an empty string so the resolver's canonical_key
+      // fallback cannot collapse pr_p_address_2 → pr_p_address (which would
+      // print Property #1's data inside Property #2's block — the reported bug).
+      {
+        const SHIELD_BASES = [
+          "pr_p_address", "pr_p_street", "pr_p_city", "pr_p_state",
+          "pr_p_zip", "pr_p_county", "pr_p_country", "pr_p_apn",
+          "pr_p_owner", "pr_p_marketValue", "pr_p_appraiseValue",
+          "pr_p_appraiseDate", "pr_p_appraiserStreet", "pr_p_appraiserCity",
+          "pr_p_appraiserState", "pr_p_appraiserZip", "pr_p_appraiserPhone",
+          "pr_p_appraiserEmail", "pr_p_legalDescri", "pr_p_yearBuilt",
+          "pr_p_squareFeet", "pr_p_lotSize", "pr_p_numberOfUni",
+          "pr_p_propertyTyp", "pr_p_propertyType", "pr_p_occupancySt",
+          "pr_p_occupanc", "pr_p_remainingSenior", "pr_p_expectedSenior",
+          "pr_p_totalSenior", "pr_p_totalEncumbrance", "pr_p_totalSeniorPlusLoan",
+          "pr_p_construcType", "pr_p_purchasePrice", "pr_p_downPayme",
+          "pr_p_protectiveEquity", "pr_p_descript", "pr_p_ltv", "pr_p_cltv",
+          "pr_p_zoning", "pr_p_floodZone", "pr_p_pledgedEquity",
+          "pr_p_delinquHowMany",
+          "ln_p_loanToValueRatio",
+          "propertytax_annual_payment", "propertytax.annual_payment",
+          "propertytax_delinquent", "propertytax.delinquent",
+          "propertytax_delinquent_amount", "propertytax.delinquent_amount",
+          "propertytax_source_of_information", "propertytax.source_of_information",
+        ];
+        const blanked: number[] = [];
+        for (let idx = 1; idx <= MAX_PROPERTIES; idx++) {
+          let blankedThisIdx = false;
+          for (const base of SHIELD_BASES) {
+            const key = `${base}_${idx}`;
+            if (!fieldValues.has(key)) {
+              fieldValues.set(key, { rawValue: "", dataType: "text" });
+              blankedThisIdx = true;
+            }
+          }
+          if (blankedThisIdx) blanked.push(idx);
+        }
+        if (blanked.length > 0) {
+          debugLog(`[generate-document] RE851D anti-fallback shield: blanked unpublished _N tags for indices [${blanked.join(", ")}]`);
+        }
+      }
     }
 
     // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
@@ -2081,6 +2189,13 @@ async function generateSingleDocument(
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
+          // RE851D propertytax dotted-form _N tags. Order is critical: longer
+          // matches FIRST so "delinquent_amount_N" wins before "delinquent_N"
+          // (regex iteration is sequential per the loop below at line ~2228).
+          "propertytax.delinquent_amount_N",
+          "propertytax.source_of_information_N",
+          "propertytax.annual_payment_N",
+          "propertytax.delinquent_N",
         ];
         const decoder = new TextDecoder("utf-8");
         const encoder = new TextEncoder();
