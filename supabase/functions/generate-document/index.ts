@@ -2315,14 +2315,14 @@ async function convertToPdf(
     const jobId = jobData.data.id;
     debugLog(`[generate-document] CloudConvert job created: ${jobId}`);
 
-    // Poll for job completion
-    let attempts = 0;
-    const maxAttempts = 30;
+    // Poll for job completion using bounded exponential backoff.
+    // Total worst-case wait ≈ 45s (vs. previous 60s flat × 30 polls), with
+    // faster early polls so quick jobs return in 1–2s instead of always 2s.
+    const pollDelaysMs = [1000, 1000, 2000, 2000, 3000, 3000, 4000, 4000, 4000, 4000, 4000, 4000, 4000, 4000]; // sum ≈ 45s
     let exportUrl: string | null = null;
 
-    while (attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      attempts++;
+    for (const delay of pollDelaysMs) {
+      await new Promise(resolve => setTimeout(resolve, delay));
 
       const statusResponse = await fetch(`https://api.cloudconvert.com/v2/jobs/${jobId}`, {
         headers: {
