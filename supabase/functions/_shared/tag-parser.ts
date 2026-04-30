@@ -215,11 +215,58 @@ function processParaByPara(xml: string, fn: (para: string) => string): string {
   return chunks.join('');
 }
 
+function hasFragmentedMergeTagCandidates(xml: string): boolean {
+  const hasXmlInsideDelimitedTag = (open: string, close: string, maxSpan: number): boolean => {
+    let start = xml.indexOf(open);
+    while (start !== -1) {
+      const end = xml.indexOf(close, start + open.length);
+      if (end === -1) return false;
+      if (end - start <= maxSpan && xml.indexOf('<', start + open.length) !== -1 && xml.indexOf('<', start + open.length) < end) {
+        return true;
+      }
+      start = xml.indexOf(open, end + close.length);
+    }
+    return false;
+  };
+
+  const hasSplitDelimiterPair = (ch: string, maxSpan: number): boolean => {
+    let start = xml.indexOf(ch);
+    while (start !== -1) {
+      const next = xml.indexOf(ch, start + 1);
+      if (next === -1) return false;
+      if (next === start + 1) {
+        start = xml.indexOf(ch, next + 1);
+        continue;
+      }
+      if (next - start <= maxSpan && xml.indexOf('<', start + 1) !== -1 && xml.indexOf('<', start + 1) < next) {
+        return true;
+      }
+      start = next;
+    }
+    return false;
+  };
+
+  return hasXmlInsideDelimitedTag('{{', '}}', 800) ||
+    hasXmlInsideDelimitedTag('\u00AB', '\u00BB', 500) ||
+    hasSplitDelimiterPair('{', 500) ||
+    hasSplitDelimiterPair('}', 500) ||
+    hasSplitDelimiterPair('\u00AB', 500) ||
+    hasSplitDelimiterPair('\u00BB', 500);
+}
+
 /**
  * Normalize Word XML by consolidating fragmented text runs.
  * Word often splits text across multiple <w:t> elements.
  */
 export function normalizeWordXml(xmlContent: string): string {
+  const hasFieldCodeStructures = xmlContent.includes('w:fldChar') || xmlContent.includes('w:fldSimple') || xmlContent.includes('w:instrText');
+  if (!hasFieldCodeStructures && !hasFragmentedMergeTagCandidates(xmlContent)) {
+    if (xmlContent.length > 200_000) {
+      console.log(`[tag-parser] normalizeWordXml fast-path: skipped fragmented-run normalization (${xmlContent.length}B)`);
+    }
+    return xmlContent;
+  }
+
   // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
   let result = flattenMergeFieldStructures(xmlContent);
   
