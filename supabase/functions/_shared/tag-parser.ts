@@ -2512,7 +2512,7 @@ export function replaceMergeTags(
   // Supports both static glyphs (☐/☑/☒) and native Word SDT checkboxes
   // (<w:sdt>/<w14:checkbox>), with the checkbox appearing before OR after
   // the Yes/No label. No other Yes/No checkbox pairs in RE851A are touched.
-  {
+  if (isRe851A) {
     const subData =
       getFieldData("ln_p_subordinationProvision", fieldValues)?.data
       || getFieldData("loan_terms.subordination_provision", fieldValues)?.data;
