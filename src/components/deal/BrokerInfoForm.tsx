@@ -132,7 +132,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               })()}
             </div>
           </DirtyFieldWrapper>
-          {renderInlineField('repLicense', 'License Number')}
+          
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Email</Label>
@@ -279,7 +279,9 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
                     className="h-7 text-xs flex-1"
                   />
                   <div className="flex justify-center">
-                    <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                    {label !== 'Fax' && (
+                      <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                    )}
                   </div>
                 </div>
               </DirtyFieldWrapper>
