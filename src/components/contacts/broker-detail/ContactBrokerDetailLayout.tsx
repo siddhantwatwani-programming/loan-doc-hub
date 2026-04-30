@@ -113,31 +113,30 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
     lastName: contact.last_name || '',
     city: contact.city || '',
     state: contact.state || '',
-    cellPhone: (contact.contact_data as any)?.['phone.cell'] || '',
-    homePhone: (contact.contact_data as any)?.['phone.home'] || '',
-    workPhone: (contact.contact_data as any)?.['phone.work'] || '',
-    fax: (contact.contact_data as any)?.['phone.fax'] || '',
+    cellPhone: cd?.['phone.cell'] || '',
+    homePhone: cd?.['phone.home'] || '',
+    workPhone: cd?.['phone.work'] || '',
+    fax: cd?.['phone.fax'] || '',
     preferredPhone: (() => {
-      const cd = contact.contact_data as any;
       if (cd?.['preferred.home'] === 'true') return 'Home';
       if (cd?.['preferred.work'] === 'true') return 'Work';
       if (cd?.['preferred.cell'] === 'true') return 'Cell';
       if (cd?.['preferred.fax'] === 'true') return 'Fax';
       return cd?.preferred_phone || '';
     })(),
-    verified: (contact.contact_data as any)?.tin_verified === 'true',
-    send1099: (contact.contact_data as any)?.send_1099 === 'true',
+    verified: cd?.tin_verified === 'true',
+    send1099: cd?.send_1099 === 'true',
     
-    street: (contact.contact_data as any)?.['address.street'] || (contact.contact_data as any)?.['primary_address.street'] || '',
-    zip: (contact.contact_data as any)?.['address.zip'] || (contact.contact_data as any)?.['primary_address.zip'] || '',
-    mailingStreet: (contact.contact_data as any)?.['mailing_address.street'] || '',
-    mailingCity: (contact.contact_data as any)?.['mailing_address.city'] || '',
-    mailingState: (contact.contact_data as any)?.['mailing_address.state'] || '',
-    mailingZip: (contact.contact_data as any)?.['mailing_address.zip'] || '',
-    sameAsPrimary: (contact.contact_data as any)?.mailing_same_as_primary === 'true',
-    company: (contact.contact_data as any)?.company || contact.company || '',
-    license: (contact.contact_data as any)?.License || (contact.contact_data as any)?.license || '',
-    brokersRepresentative: (contact.contact_data as any)?.brokers_representative || '',
+    street: cd?.['address.street'] || cd?.['primary_address.street'] || '',
+    zip: cd?.['address.zip'] || cd?.['primary_address.zip'] || '',
+    mailingStreet: cd?.['mailing.street'] || cd?.['mailing_address.street'] || '',
+    mailingCity: cd?.['mailing.city'] || cd?.['mailing_address.city'] || '',
+    mailingState: cd?.['mailing.state'] || cd?.['mailing_address.state'] || '',
+    mailingZip: cd?.['mailing.zip'] || cd?.['mailing_address.zip'] || '',
+    sameAsPrimary: cd?.mailing_same_as_primary === 'true',
+    company: cd?.company || cd?.licensee_name_if_entity || contact.company || '',
+    license: cd?.License || cd?.license || '',
+    brokersRepresentative: cd?.brokers_representative || '',
   };
 
   const emptyDirty = new Set<string>();
