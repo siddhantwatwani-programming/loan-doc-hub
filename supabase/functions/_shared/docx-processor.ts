@@ -115,7 +115,13 @@ export async function processDocx(
   labelMap: Record<string, LabelMapping>,
   validFieldKeys?: Set<string>
 ): Promise<Uint8Array> {
+  // Detailed per-stage timing — printed at end so production logs always
+  // show the breakdown for the slowest templates (e.g. RE885 / HUD-1).
+  const t0 = performance.now();
+  const partTimings: Array<{ part: string; bytes: number; replaceMs: number; w14Ms: number; sigMs: number }> = [];
+
   const decompressed = fflate.unzipSync(docxBuffer);
+  const tUnzip = performance.now();
   const processedFiles: fflate.Zippable = {};
   const decoder = new TextDecoder("utf-8");
   const encoder = new TextEncoder();
@@ -140,12 +146,15 @@ export async function processDocx(
           continue;
         }
 
+        const tPartStart = performance.now();
         let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        const tAfterReplace = performance.now();
 
         // If the post-pass injected w14:* (e.g. <w14:checkbox>) into a part
         // whose root does not declare the w14 namespace, inject the
         // declaration. Required for Google Docs / strict parsers to open.
         processedXml = ensureW14Namespace(processedXml, filename);
+        const tAfterW14 = performance.now();
 
         // Post-process: ensure Signature paragraph has a page break before it,
         // but ONLY if the original template already contains page breaks or section
@@ -163,6 +172,15 @@ export async function processDocx(
             debugLog("[docx-processor] Skipping signature page-break injection (single-page template — no existing page breaks).");
           }
         }
+        const tAfterSig = performance.now();
+
+        partTimings.push({
+          part: filename,
+          bytes: content.length,
+          replaceMs: Math.round(tAfterReplace - tPartStart),
+          w14Ms: Math.round(tAfterW14 - tAfterReplace),
+          sigMs: Math.round(tAfterSig - tAfterW14),
+        });
 
         if (processedXml === originalXml) {
           processedFiles[filename] = [content, { level: UNCHANGED_XML_COMPRESSION_LEVEL }];
@@ -178,8 +196,27 @@ export async function processDocx(
       processedFiles[filename] = [content, { level: 0 }];
     }
   }
+  const tAfterParts = performance.now();
 
   const compressed = fflate.zipSync(processedFiles);
+  const tAfterZip = performance.now();
+
+  // Per-stage timing summary. Highlights the slowest XML part so future
+  // CPU-budget regressions are immediately visible in production logs.
+  try {
+    const slowest = partTimings.length > 0
+      ? partTimings.reduce((a, b) => (a.replaceMs > b.replaceMs ? a : b))
+      : null;
+    const totalReplaceMs = partTimings.reduce((s, p) => s + p.replaceMs, 0);
+    console.log(
+      `[docx-processor] timings: unzip=${Math.round(tUnzip - t0)}ms ` +
+      `partsTotal=${Math.round(tAfterParts - tUnzip)}ms ` +
+      `(replaceMs=${totalReplaceMs} across ${partTimings.length} parts) ` +
+      `zip=${Math.round(tAfterZip - tAfterParts)}ms` +
+      (slowest ? ` slowestPart=${slowest.part} (${slowest.bytes}B, replace=${slowest.replaceMs}ms)` : "")
+    );
+  } catch { /* never fail generation on logging */ }
+
 
   // Defensive integrity check: re-open the produced ZIP and assert that
   // EVERY processed content-bearing XML part is well-formed enough for
