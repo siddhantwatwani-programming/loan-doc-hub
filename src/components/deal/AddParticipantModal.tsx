@@ -163,10 +163,13 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
   const handleSave = async () => {
     if (!participantType || !dealId) return;
 
-    // Map extended types (no native enum value) to 'other' for the role column.
-    const persistedRole: 'borrower' | 'lender' | 'broker' | 'other' = NATIVE_ROLES.has(participantType)
-      ? (participantType as 'borrower' | 'lender' | 'broker' | 'other')
-      : 'other';
+    // DB constraint `external_role_only` restricts deal_participants.role to
+    // borrower/broker/lender. Extended types (additional_guarantor, authorized_party,
+    // co_borrower) are persisted under role='borrower' and disambiguated by capacity.
+    const EXTERNAL_ROLES = new Set(['borrower', 'lender', 'broker']);
+    const persistedRole: 'borrower' | 'lender' | 'broker' = EXTERNAL_ROLES.has(participantType)
+      ? (participantType as 'borrower' | 'lender' | 'broker')
+      : 'borrower';
     // Resolve the capacity label: explicit selection > extended type label > participant type.
     const resolvedCapacity =
       capacity || EXTENDED_TYPE_LABELS[participantType] || participantType;
@@ -219,8 +222,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact - use 'borrower' as default contact_type for non-native types
-        const contactType = NATIVE_ROLES.has(participantType) && participantType !== 'other'
+        // Create new contact - preserve AG/AP/native types; fall back to borrower otherwise
+        const VALID_CONTACT_TYPES = new Set(['borrower', 'lender', 'broker', 'additional_guarantor', 'authorized_party']);
+        const contactType = VALID_CONTACT_TYPES.has(participantType)
           ? participantType
           : 'borrower';
         const { data: genId } = await supabase.rpc('generate_contact_id', {
@@ -337,7 +341,12 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       // Only navigate to contact detail page for NEW contacts
       if (mode === 'new' && contactId) {
-        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        const route =
+          participantType === 'lender' ? 'lenders'
+          : participantType === 'broker' ? 'brokers'
+          : participantType === 'additional_guarantor' ? 'additional-guarantors'
+          : participantType === 'authorized_party' ? 'authorized-parties'
+          : 'borrowers';
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
         }, 300);
