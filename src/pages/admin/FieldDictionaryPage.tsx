@@ -498,19 +498,34 @@ export const FieldDictionaryPage: React.FC = () => {
   const dbSectionToUiSection = (dbSection: string): string => {
     if (dbSection === 'co_borrower') return 'borrower';
     if (dbSection === 'insurance') return 'property';
+    // Liens are now grouped under Property in the UI
+    if (dbSection === 'liens') return 'property';
     // Check direct match
     if (SECTIONS.some(s => s.value === dbSection)) return dbSection;
     return 'borrower'; // fallback
   };
 
+  // Reverse-map a DB form_type to the UI form value for the given UI section.
+  // Required for forms that live under a parent UI section but persist with
+  // an unprefixed form_type (e.g. liens grouped under Property).
+  const dbFormTypeToUiFormType = (uiSection: string, dbSection: string, dbFormType: string): string => {
+    const forms = SECTION_FORMS[uiSection] || [];
+    const prefixed = forms.find(
+      f => f.dbSection === dbSection && f.value === `${dbSection}_${dbFormType}`
+    );
+    if (prefixed) return prefixed.value;
+    return dbFormType || 'primary';
+  };
+
   const handleEdit = (field: FieldDictionary) => {
     setEditingField(field);
     const uiSection = dbSectionToUiSection(field.section);
+    const uiFormType = dbFormTypeToUiFormType(uiSection, field.section, field.form_type || 'primary');
     setFormData({
       field_key: field.field_key,
       label: field.label,
       section: uiSection,
-      form_type: field.form_type || 'primary',
+      form_type: uiFormType,
       data_type: field.data_type,
       is_calculated: field.is_calculated,
       is_repeatable: field.is_repeatable,
