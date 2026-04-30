@@ -59,6 +59,16 @@ const ROLE_LABELS: Record<string, string> = {
   other: 'Other',
   csr: 'CSR',
   admin: 'Admin',
+  additional_guarantor: 'Additional Guarantor',
+  authorized_party: 'Authorized Party',
+};
+
+// Capacity labels used by AddParticipantModal for extended types persisted under role='borrower'.
+// When the per-deal capacity matches one of these, the Type column should reflect the extended type.
+const EXTENDED_CAPACITY_TO_TYPE: Record<string, string> = {
+  'Additional Guarantor': 'additional_guarantor',
+  'Authorized Party': 'authorized_party',
+  'Co-borrower': 'co_borrower',
 };
 
 const ROLE_COLORS: Record<string, string> = {
@@ -68,6 +78,8 @@ const ROLE_COLORS: Record<string, string> = {
   other: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300',
   csr: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
   admin: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  additional_guarantor: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+  authorized_party: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
 };
 
 const STATUS_LABELS: Record<string, string> = {
