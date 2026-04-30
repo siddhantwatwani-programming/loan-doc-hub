@@ -240,6 +240,11 @@ const FORM_ABBR: Record<string, string> = {
   loan_type: 'lt',
   balance_payment: 'bp',
   recording_tracking: 'rt',
+  // Liens regrouped under Property — keep the same abbreviations as before
+  liens_general_details: 'gd',
+  liens_loan_type: 'lt',
+  liens_balance_payment: 'bp',
+  liens_recording_tracking: 'rt',
 };
 
 // All form types for the create/edit dialog (union)
