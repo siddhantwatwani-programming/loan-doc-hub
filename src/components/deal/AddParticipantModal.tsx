@@ -219,10 +219,15 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact - use 'borrower' as default contact_type for non-native types
-        const contactType = NATIVE_ROLES.has(participantType) && participantType !== 'other'
-          ? participantType
-          : 'borrower';
+        // Create new contact - preserve extended types so they appear on the
+        // matching contacts page (Additional Guarantor / Authorized Party).
+        const EXTENDED_CONTACT_TYPES = new Set(['additional_guarantor', 'authorized_party']);
+        const contactType =
+          (NATIVE_ROLES.has(participantType) && participantType !== 'other')
+            ? participantType
+            : EXTENDED_CONTACT_TYPES.has(participantType)
+              ? participantType
+              : 'borrower';
         const { data: genId } = await supabase.rpc('generate_contact_id', {
           p_type: contactType,
         });
@@ -337,7 +342,12 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
 
       // Only navigate to contact detail page for NEW contacts
       if (mode === 'new' && contactId) {
-        const route = participantType === 'lender' ? 'lenders' : participantType === 'broker' ? 'brokers' : 'borrowers';
+        const route =
+          participantType === 'lender' ? 'lenders'
+          : participantType === 'broker' ? 'brokers'
+          : participantType === 'additional_guarantor' ? 'additional-guarantors'
+          : participantType === 'authorized_party' ? 'authorized-parties'
+          : 'borrowers';
         setTimeout(() => {
           navigate(`/contacts/${route}/${contactId}`);
         }, 300);
