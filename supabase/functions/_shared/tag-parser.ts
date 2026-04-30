@@ -717,6 +717,10 @@ function buildSdtCheckboxXml(isChecked: boolean, rPr?: string): string {
  * so every checkbox glyph — regardless of origin — becomes interactive.
  */
 function convertGlyphsToSdtCheckboxes(xml: string): string {
+  if (xml.indexOf('☐') === -1 && xml.indexOf('☑') === -1 && xml.indexOf('☒') === -1) {
+    return xml;
+  }
+
   let count = 0;
   // Match ONLY a single run whose content is exactly: optional <w:rPr>, one
   // checkbox glyph text node, then closing </w:r>. The prior pattern could
@@ -989,24 +993,27 @@ export function replaceLabelBasedFields(
   }));
 
   // Build a single concatenated needle scan: a paragraph that contains NONE
-  // of the candidate quickNeedles AND has no checkbox glyph and no underscore
-  // marker can skip the entire candidate loop. For a HUD-1 form template
-  // (RE885) this short-circuits ~95% of paragraphs and is the dominant
-  // optimization that brings generation under the CPU budget.
+  // of the candidate quickNeedles and has no checkbox glyph can skip the
+  // entire candidate loop. Underscore filler alone is intentionally NOT a
+  // reason to run every label candidate; HUD-1 / RE885 has many underscore
+  // table cells, and treating each one as label work was the DOCX render
+  // bottleneck. Labels that truly target underscores still have their own
+  // quickNeedle (for example "as of" or replaceNext text), so output stays
+  // unchanged while underscore-only rows are skipped.
   const allNeedles = enrichedCandidates
     .map((c) => c.quickNeedle)
     .filter((n): n is string => !!n && n.length > 0);
+  const hasNeedlelessCandidate = enrichedCandidates.some((c) => !c.quickNeedle);
 
   const processedContent = processParaByPara(content, (segment) => {
-    // Paragraph-level fast skip: if this paragraph has no checkbox glyphs,
-    // no underscore filler, and none of the candidate label needles appear
-    // inside it, no candidate can possibly match. This avoids the inner
-    // O(candidates) loop on the vast majority of paragraphs.
+    // Paragraph-level fast skip: if this paragraph has no checkbox glyphs and
+    // none of the candidate label needles appear inside it, no candidate can
+    // possibly match. This avoids the inner O(candidates) loop on the vast
+    // majority of paragraphs, including underscore-heavy RE885 table rows.
     const hasCheckboxGlyph =
       segment.indexOf("☐") !== -1 || segment.indexOf("☑") !== -1 || segment.indexOf("☒") !== -1;
-    const hasUnderscoreFiller = segment.indexOf("_") !== -1;
     let segmentLower: string | null = null;
-    if (!hasCheckboxGlyph && !hasUnderscoreFiller) {
+    if (!hasCheckboxGlyph && !hasNeedlelessCandidate) {
       segmentLower = segment.toLowerCase();
       let anyNeedle = false;
       for (const n of allNeedles) {
