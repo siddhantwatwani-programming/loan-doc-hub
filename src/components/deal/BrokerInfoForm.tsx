@@ -132,7 +132,7 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
               })()}
             </div>
           </DirtyFieldWrapper>
-          {renderInlineField('repLicense', 'License Number')}
+          
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.email}>
             <div className="flex items-center gap-2">
               <Label className="w-[100px] shrink-0 text-xs">Email</Label>
