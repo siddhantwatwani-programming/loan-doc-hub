@@ -279,7 +279,9 @@ export const BrokerInfoForm: React.FC<BrokerInfoFormProps> = ({
                     className="h-7 text-xs flex-1"
                   />
                   <div className="flex justify-center">
-                    <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                    {label !== 'Fax' && (
+                      <RadioGroupItem value={prefKey} disabled={disabled} aria-label={`Preferred ${label} phone`} />
+                    )}
                   </div>
                 </div>
               </DirtyFieldWrapper>
