@@ -222,6 +222,11 @@ async function generateSingleDocument(
       'pr_p_occupancySt': 'occupancyStatus', 'pr_p_yearBuilt': 'yearBuilt',
       'pr_p_lotSize': 'lotSize', 'pr_p_squareFeet': 'squareFeet',
       'pr_p_numberOfUni': 'numberOfUnits', 'pr_p_country': 'country',
+      // RE851D multi-property additions:
+      'pr_p_appraiseValue': 'appraise_value',
+      'pr_p_owner': 'owner',
+      'pr_p_remainSenior': 'remaining_senior_encumbrance',
+      'pr_p_expectSenior': 'expected_senior_encumbrance',
     };
 
     const fieldValues = new Map<string, FieldValueData>();
