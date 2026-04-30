@@ -2464,11 +2464,14 @@ export function replaceMergeTags(
     );
   }
   
+  __mark('mergeTagReplace');
+
   // Always run label-based replacement after merge tag replacement
   debugLog(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
   const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys, mergeTagMap, validFieldKeys);
   result = labelResult.content;
   debugLog(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
+  __mark('labelReplace');
 
   // Final safety net: remove only merge tags that were explicitly parsed
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
