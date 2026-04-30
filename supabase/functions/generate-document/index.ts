@@ -116,6 +116,8 @@ async function generateSingleDocument(
     }
 
     result.templateName = template.name;
+    const isTemplate885 = /885/i.test(template.name || "");
+    const tDataMappingStart = performance.now();
 
     if (!template.file_path) {
       result.error = "Template has no DOCX file";
@@ -1908,8 +1910,12 @@ async function generateSingleDocument(
 
     // Build set of all valid field keys once and reuse it across invocations.
     const validFieldKeys = await getValidFieldKeys(supabase);
+    if (isTemplate885) {
+      console.log(`[885] Data Mapping: ${Math.round(performance.now() - tDataMappingStart)} ms (fieldValues=${fieldValues.size})`);
+    }
 
     // 4. Download template DOCX from storage
+    const tTemplateLoadStart = performance.now();
     let fileData: Blob | null = null;
     
     const { data: storageData, error: fileError } = await supabase.storage
@@ -1947,6 +1953,9 @@ async function generateSingleDocument(
       console.error(`[generate-document] Failed to download template: ${template.file_path}`);
       result.error = "Failed to download template file. Please upload the template to storage.";
       return result;
+    }
+    if (isTemplate885) {
+      console.log(`[885] Template Load: ${Math.round(performance.now() - tTemplateLoadStart)} ms`);
     }
 
     // 5. Fetch merge tag mappings AND field key migration maps, then process the DOCX
