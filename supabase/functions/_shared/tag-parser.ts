@@ -980,30 +980,65 @@ export function replaceLabelBasedFields(
   // Track resolved keys that have already been replaced by labels in this pass
   const labelResolvedKeys = new Set<string>();
 
-  const processedContent = processParaByPara(content, (segment) => {
-    let result = segment;
-    let resultLower = result.toLowerCase();
+  // Pre-compute per-candidate metadata used inside the hot loop so we don't
+  // recompute per-paragraph: lower-cased fieldKey for dedup, and a flag for
+  // whether the field is boolean (drives the static-checkbox path).
+  const enrichedCandidates = candidateLabels.map((c) => ({
+    ...c,
+    fieldKeyLower: c.mapping.fieldKey.toLowerCase(),
+  }));
 
-    for (const { label, mapping, quickNeedle } of candidateLabels) {
-      if (replacedFieldKeyLowers?.has(mapping.fieldKey.toLowerCase())) {
+  // Build a single concatenated needle scan: a paragraph that contains NONE
+  // of the candidate quickNeedles AND has no checkbox glyph and no underscore
+  // marker can skip the entire candidate loop. For a HUD-1 form template
+  // (RE885) this short-circuits ~95% of paragraphs and is the dominant
+  // optimization that brings generation under the CPU budget.
+  const allNeedles = enrichedCandidates
+    .map((c) => c.quickNeedle)
+    .filter((n): n is string => !!n && n.length > 0);
+
+  const processedContent = processParaByPara(content, (segment) => {
+    // Paragraph-level fast skip: if this paragraph has no checkbox glyphs,
+    // no underscore filler, and none of the candidate label needles appear
+    // inside it, no candidate can possibly match. This avoids the inner
+    // O(candidates) loop on the vast majority of paragraphs.
+    const hasCheckboxGlyph =
+      segment.indexOf("☐") !== -1 || segment.indexOf("☑") !== -1 || segment.indexOf("☒") !== -1;
+    const hasUnderscoreFiller = segment.indexOf("_") !== -1;
+    let segmentLower: string | null = null;
+    if (!hasCheckboxGlyph && !hasUnderscoreFiller) {
+      segmentLower = segment.toLowerCase();
+      let anyNeedle = false;
+      for (const n of allNeedles) {
+        if (segmentLower.indexOf(n) !== -1) { anyNeedle = true; break; }
+      }
+      if (!anyNeedle) return segment;
+    }
+
+    let result = segment;
+    let resultLower = segmentLower ?? result.toLowerCase();
+
+    for (const { label, mapping, quickNeedle, fieldKeyLower } of enrichedCandidates) {
+      if (replacedFieldKeyLowers?.has(fieldKeyLower)) {
         continue;
       }
 
-      if (quickNeedle && !resultLower.includes(quickNeedle)) {
+      if (quickNeedle && resultLower.indexOf(quickNeedle) === -1) {
         continue;
       }
 
       const resolvedKey = mergeTagMap && validFieldKeys
         ? resolveFieldKeyWithMap(mapping.fieldKey, mergeTagMap, validFieldKeys)
         : mapping.fieldKey;
+      const resolvedKeyLower = resolvedKey.toLowerCase();
 
       // Dedup: skip if the resolved canonical key was already replaced by a merge tag
-      if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKey.toLowerCase())) {
+      if (resolvedKey !== mapping.fieldKey && replacedFieldKeyLowers?.has(resolvedKeyLower)) {
         continue;
       }
 
       // Dedup: skip if another label already replaced this same resolved key in this pass
-      if (labelResolvedKeys.has(resolvedKey.toLowerCase())) {
+      if (labelResolvedKeys.has(resolvedKeyLower)) {
         continue;
       }
 
@@ -1021,7 +1056,7 @@ export function replaceLabelBasedFields(
           result = checkboxResult.content;
           resultLower = result.toLowerCase();
           replacementCount++;
-          labelResolvedKeys.add(resolvedKey.toLowerCase());
+          labelResolvedKeys.add(resolvedKeyLower);
           debugLog(`[tag-parser] Checkbox label-replaced "${label}" -> "${formatCheckbox(fieldData.rawValue)}"`);
           continue;
         }
@@ -1031,9 +1066,11 @@ export function replaceLabelBasedFields(
         if (mapping.replaceNext) {
           const textToReplace = mapping.replaceNext;
           const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          // Build the regex once and reuse for both .test and .replace.
           const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, "gi");
           if (replaceNextPattern.test(result)) {
-            result = result.replace(new RegExp(`\\b${escapedText}\\b`, "gi"), (match, offset) => {
+            replaceNextPattern.lastIndex = 0;
+            result = result.replace(replaceNextPattern, (match, offset) => {
               const after = result.substring(offset + match.length, offset + match.length + 200);
               if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
                 return match;
@@ -1089,7 +1126,7 @@ export function replaceLabelBasedFields(
             `as of ${insertAt(result, offset + match.length)}`);
           resultLower = result.toLowerCase();
           replacementCount++;
-          labelResolvedKeys.add(resolvedKey.toLowerCase());
+          labelResolvedKeys.add(resolvedKeyLower);
           debugLog(`[tag-parser] Label-replaced "as of ___" -> "${formattedValue}"`);
         }
         continue;
@@ -1098,12 +1135,14 @@ export function replaceLabelBasedFields(
       if (mapping.replaceNext) {
         const textToReplace = mapping.replaceNext;
         const escapedText = textToReplace.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // Build once, reuse for both .test and .replace.
         const replaceNextPattern = new RegExp(`\\b${escapedText}\\b`, 'gi');
 
         if (replaceNextPattern.test(result)) {
+          replaceNextPattern.lastIndex = 0;
           let colonDetected = false;
 
-          result = result.replace(new RegExp(`\\b${escapedText}\\b`, 'gi'), (match, offset) => {
+          result = result.replace(replaceNextPattern, (match, offset) => {
             const after = result.substring(offset + match.length, offset + match.length + 200);
             if (/^\s*(?:<[^>]*>\s*)*\{\{/.test(after)) {
               return match;
@@ -1127,7 +1166,7 @@ export function replaceLabelBasedFields(
 
           resultLower = result.toLowerCase();
           replacementCount++;
-          labelResolvedKeys.add(resolvedKey.toLowerCase());
+          labelResolvedKeys.add(resolvedKeyLower);
           debugLog(`[tag-parser] Label-replaced "${textToReplace}" -> "${formattedValue}"`);
         }
         continue;
@@ -1137,11 +1176,12 @@ export function replaceLabelBasedFields(
       const labelPattern = new RegExp(`(${labelEscaped})(\\s*)`, 'gi');
 
       if (labelPattern.test(result)) {
+        labelPattern.lastIndex = 0;
         result = result.replace(labelPattern, (match, g1: string, g2: string, offset: number) =>
           `${g1}${g2}${insertAt(result, offset + match.length)} `);
         resultLower = result.toLowerCase();
         replacementCount++;
-        labelResolvedKeys.add(resolvedKey.toLowerCase());
+        labelResolvedKeys.add(resolvedKeyLower);
         debugLog(`[tag-parser] Label-replaced "${label}" -> "${formattedValue}"`);
       } else if (label.endsWith(':')) {
         const labelNoColon = label.slice(0, -1);
@@ -1149,11 +1189,12 @@ export function replaceLabelBasedFields(
         const colonTolerantPattern = new RegExp(`(${labelNoColonEscaped})(?:\\s|<[^>]+>)*:`, 'gi');
 
         if (colonTolerantPattern.test(result)) {
+          colonTolerantPattern.lastIndex = 0;
           result = result.replace(colonTolerantPattern, (match, _g1: string, offset: number) =>
             `${match}${insertAt(result, offset + match.length)} `);
           resultLower = result.toLowerCase();
           replacementCount++;
-          labelResolvedKeys.add(resolvedKey.toLowerCase());
+          labelResolvedKeys.add(resolvedKeyLower);
           debugLog(`[tag-parser] Label-replaced (colon-tolerant) "${label}" -> "${formattedValue}"`);
         }
       }
@@ -1162,7 +1203,14 @@ export function replaceLabelBasedFields(
     return result;
   });
 
-  return { content: processedContent, replacementCount };
+  // Single end-of-pass paragraph-/soft-break-scoped glyph dedup.
+  // Replaces the redundant per-label dedup that used to run inside
+  // replaceStaticCheckboxLabel (the hot path's CPU sink on RE885).
+  const finalContent = replacementCount > 0
+    ? dedupAdjacentCheckboxGlyphs(processedContent)
+    : processedContent;
+
+  return { content: finalContent, replacementCount };
 }
 
 /**
