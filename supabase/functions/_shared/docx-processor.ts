@@ -6,7 +6,7 @@
  */
 
 import * as fflate from "https://esm.sh/fflate@0.8.2";
-import type { FieldValueData, LabelMapping } from "./types.ts";
+import type { FieldValueData, LabelMapping, DocxProcessingContext } from "./types.ts";
 import { replaceMergeTags } from "./tag-parser.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
@@ -113,7 +113,8 @@ export async function processDocx(
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
   labelMap: Record<string, LabelMapping>,
-  validFieldKeys?: Set<string>
+  validFieldKeys?: Set<string>,
+  context?: DocxProcessingContext,
 ): Promise<Uint8Array> {
   const decompressed = fflate.unzipSync(docxBuffer);
   const processedFiles: fflate.Zippable = {};
@@ -140,7 +141,7 @@ export async function processDocx(
           continue;
         }
 
-        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, context);
 
         // If the post-pass injected w14:* (e.g. <w14:checkbox>) into a part
         // whose root does not declare the w14 namespace, inject the
