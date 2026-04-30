@@ -2189,6 +2189,13 @@ async function generateSingleDocument(
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
+          // RE851D propertytax dotted-form _N tags. Order is critical: longer
+          // matches FIRST so "delinquent_amount_N" wins before "delinquent_N"
+          // (regex iteration is sequential per the loop below at line ~2228).
+          "propertytax.delinquent_amount_N",
+          "propertytax.source_of_information_N",
+          "propertytax.annual_payment_N",
+          "propertytax.delinquent_N",
         ];
         const decoder = new TextDecoder("utf-8");
         const encoder = new TextEncoder();
