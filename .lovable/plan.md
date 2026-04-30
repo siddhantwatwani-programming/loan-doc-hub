@@ -1,40 +1,107 @@
-## Problem
+## RE851D Multi-Property Population
 
-In RE851A output, generated checkboxes render much smaller than the template. Cause is in `supabase/functions/_shared/tag-parser.ts` → `buildSdtCheckboxXml` (line 676) and `convertGlyphsToSdtCheckboxes` (line 692).
+### What exists today (no change needed)
+- CSR Property table records are already stored as composite JSONB keys `propertyN::{field_dictionary_id}` in `deal_section_values` (1st property → `property1::…`, 2nd → `property2::…`, etc., up to N).
+- The generate-document edge function already loads these and bridges them into `propertyN.<suffix>` field values (e.g., `property1.address`, `property2.address`, …, `property2.appraise_value`, `property2.propertyType`).
+- The merge-tag engine resolves any tag whose name matches a key in `fieldValues`, so `property2.address` would already resolve.
+- The Re851D template you uploaded uses the same single-property tags (`{{pr_p_address}}`, `{{pr_p_appraiseValue}}`, `{{ln_p_loanToValueRatio}}`) repeated identically in every PROPERTY block — so all 5 blocks currently show Property #1's data. That is the root cause.
 
-When a template has a static checkbox glyph (☐/☑/☒) in a `<w:r>`, our pipeline replaces that whole run with a freshly-built `<w:sdt>` checkbox. The new SDT's display run uses `<w:rPr>` taken from the original glyph run (when present) OR a default `<w:rPr><w:rFonts w:ascii="MS Gothic" .../></w:rPr>` (when absent).
+### What we will change
+A single, surgical addition to the merge-tag resolver: recognize an `_1`..`_5` suffix on any tag and route it to the correct property record. The template author then replaces the duplicated tags in PART 2 and in PROPERTY #1–#5 with index-suffixed tags (e.g., `{{pr_p_address_1}}` in block 1, `{{pr_p_address_2}}` in block 2, …).
 
-Two issues shrink the rendered glyph:
+#### Resolution rule (engine side)
+For a tag `<base>_<N>` where N is 1..5:
 
-1. **Default branch (no rPr on original run):** we emit only `<w:rFonts MS Gothic>` with no `<w:sz>` / `<w:szCs>`. The display run inherits the body default size (often 18 = 9pt or 20 = 10pt), so the glyph renders smaller than the template's checkbox runs which typically carry an explicit `<w:sz w:val="24"/>` (12pt) or `<w:sz w:val="28"/>` (14pt) in their rPr.
+1. If `propertyN.*` field values exist for that index:
+   - Map `pr_p_*` base keys to their bridged `propertyN.<suffix>` counterpart using the existing `prKeyToSuffix` table already in `generate-document/index.ts` (street, city, state, zip, county, address, apn, marketValue, legalDescription, propertyType, occupancyStatus, yearBuilt, lotSize, squareFeet, numberOfUnits, country) plus `appraiseValue → appraise_value`.
+   - For derived/calculated property tags also expose per-index variants computed from that same `propertyN.*` data (see "Calculated per-index values" below).
+2. If property index N does **not** exist in the CSR table:
+   - Render the tag as empty string (blank).
+   - For checkbox tags tied to that index, leave all options unchecked (no glyph state change).
+3. If CSR has more than 5 properties: indices 6+ are ignored (engine never resolves `_6`, `_7`, …).
 
-2. **Preserved-rPr branch (rPr present):** we wrap the original rPr verbatim but do NOT ensure `<w:rFonts>` is set to MS Gothic. When the surrounding paragraph's default font is a proportional font (Arial/Times), the ☐/☑ codepoint falls back to a glyph that visually appears smaller and thinner than the boxed Wingdings/MS Gothic version Word uses for native SDT checkboxes. Also, when the original rPr has no `<w:sz>`, no size is forced, so it inherits the (smaller) body default.
+#### Calculated per-index values
+The engine will compute, per index N (when `propertyN.*` exists), and expose as field values:
+- `propertyN.appraise_value` (already bridged from `pr_p_appraiseValue`)
+- `propertyN.loan_to_value_ratio` = `ln_p_loanAmount / propertyN.appraise_value * 100` (blank if appraise value missing or 0)
+- Total Senior Encumbrances per property: sum of `propertyN.remaining_senior_encumbrance` + `propertyN.expected_senior_encumbrance` (blank if both missing)
+- Total (Senior Encumbrances + Loan Amount) per property: above + `ln_p_loanAmount`
 
-The other code paths that toggle existing template SDT checkboxes (`processSdtCheckboxes` at line 1804) leave the template's `<w:rPr>` intact and only flip glyphs/state — those are NOT the source of shrinkage. The shrinkage comes only from the SDT blocks we *construct* via `buildSdtCheckboxXml`.
+These mirror the existing single-property auto-computations already in `generate-document/index.ts` lines 763–796, just per-index.
 
-## Fix
+#### Property Type checkboxes per index
+For block N, the existing label-anchored checkbox safety pass (used by RE851A) will be reused with `propertyN.propertyType` as the source. Only one of the six type options gets the ☑ glyph; the others stay ☐. If `propertyN` is missing, all stay ☐.
 
-Single, surgical change in `buildSdtCheckboxXml` (no other call sites or behaviour touched):
+The mapping from the dropdown value stored in `pr_p_propertyTyp` to the six template labels:
+- "Single-Family Residence (Owner Occupied)" → SINGLE-FAMILY RESIDENCE (owner occupied)
+- "Single-Family Residence (Not Owner Occupied)" → SINGLE-FAMILY RESIDENCE (not owner occupied)
+- "Single-Family Residentially Zoned Lot/Parcel" → SINGLE-FAMILY RESIDENCE (zoned residential lot/parcel)
+- "Commercial & Income-Producing" → COMMERCIAL & INCOME-PRODUCING
+- "Land (Zoned Commercial/Residential)" → LAND (zoned commercial/residential)
+- "Land (Income-Producing)" → LAND (income-producing)
+- anything else → OTHER
 
-- Always ensure the output `<w:rPr>` for the SDT's display run contains:
-  - `<w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic" w:eastAsia="MS Gothic" w:cs="MS Gothic" w:hint="eastAsia"/>` (override any non-MS-Gothic font from the original rPr so the boxed glyph renders at full size and weight).
-  - `<w:sz w:val="24"/>` and `<w:szCs w:val="24"/>` (12pt) **only if** the preserved rPr does not already declare an explicit `<w:sz>` — preserves any larger template-defined size and falls back to the standard checkbox size otherwise.
+The label scope is constrained to the single PROPERTY block paragraph range so block N's checkbox state never bleeds into block N+1 — same anchoring strategy already used for Servicing/Amortization/Payable.
 
-- Apply the same normalized rPr to BOTH the `<w:sdtPr>` and `<w:sdtContent><w:r>` so Word's measurement of the SDT run matches the displayed glyph.
+### Mapping dictionary — Property 1–5 tags to use in the template
 
-- Keep all existing arguments, return shape, and call sites unchanged. No template, schema, API, UI, or pipeline-stage changes.
+For each block `N ∈ {1,2,3,4,5}` the template uses these tags:
 
-## Files to edit
+```text
+PART 2 (Securing Properties) — block N
+  Property Type checkboxes  →  driven by propertyN.propertyType (no tag, label-anchored)
+  Property Owner            →  {{pr_p_owner_N}}            → propertyN.owner
+  Property Address          →  {{pr_p_address_N}}          → propertyN.address
+  Remaining Senior Encum.   →  {{pr_p_remainSenior_N}}     → propertyN.remaining_senior_encumbrance
+  Expected Senior Encum.    →  {{pr_p_expectSenior_N}}     → propertyN.expected_senior_encumbrance
+  Total Senior Encum.       →  {{pr_p_totalSenior_N}}      → computed
+  Total (Senior + Loan)     →  {{pr_p_totalSeniorPlusLoan_N}} → computed
+  Current Market Value      →  {{pr_p_appraiseValue_N}}    → propertyN.appraise_value
+  Loan To Value Ratio       →  {{ln_p_loanToValueRatio_N}} → computed per-index
 
-- `supabase/functions/_shared/tag-parser.ts` — `buildSdtCheckboxXml` only (≈8 lines). All other functions, regex passes, integrity checks, and namespace injection logic remain untouched.
+PROPERTY #N section
+  Street Address            →  {{pr_p_address_N}}
+  Owner Occupied            →  driven by propertyN.occupancyStatus (label-anchored)
+  Annual Property Taxes     →  {{propertytax_annual_payment_N}}
+  Estimated/Actual          →  driven by propertytax tracking type (label-anchored)
+  Are Taxes Delinquent?     →  driven by propertyN tax delinquent flag
+  …and the remaining single-property tags already used in PROPERTY #1, just suffixed _N
+```
 
-## Out of scope (per constraints)
+Any tag not yet present in field values resolves to blank — no schema change required.
 
-- No edits to `processSdtCheckboxes` (template-native SDTs already preserve their own rPr/size).
-- No edits to `docx-processor.ts`, no edits to other templates, no UI/API/schema changes.
-- No changes to merge-tag resolution, label-anchored safety passes, or amortization/servicing/payable logic.
+### Files to change
 
-## Validation
+- `supabase/functions/_shared/tag-parser.ts`
+  - In `replaceMergeTags` (line 2118): before the existing key resolution, detect `_1..5` trailing suffix; if present, attempt to resolve against `propertyN.<bridged-suffix>` first and only fall back to the suffix-stripped base if no `propertyN` data is found at all (so blocks for absent properties render blank, not duplicated).
+  - In the existing `replaceLabelBasedFields` and label-anchored checkbox passes that already key off label proximity (Servicing/Amortization/Payable patterns), add a per-block scope for "PROPERTY #N" anchors so checkbox safety passes operate within one block.
 
-- Existing tag-parser tests (`tag-parser.*.test.ts`) cover servicing, payable-frequency, amortization, subordination, and broker-capacity flows — they assert the SDT block structure but not internal `<w:sz>` values, so they will continue to pass.
-- After deploy, regenerate RE851A and confirm checkboxes match template size and sit correctly aligned with YES/NO labels.
+- `supabase/functions/generate-document/index.ts`
+  - Extend the existing per-index auto-compute loop (line 725 `for idx of propertyIndices`) to also publish per-index calculated values:
+    - `propertyN.loan_to_value_ratio`
+    - `propertyN.total_senior_encumbrance`
+    - `propertyN.total_senior_plus_loan`
+  - Extend `prKeyToSuffix` (line 217) with any property-table fields the template needs but isn't yet bridged (owner, remaining_senior_encumbrance, expected_senior_encumbrance, appraise_value, occupancyStatus already covered).
+
+- No changes to:
+  - Database schema, tables, RLS, field_dictionary entries, or migrations.
+  - The Property table UI, save/update APIs, or any other form/component.
+  - Other templates (RE851A/B/C, RE885, etc.) — they don't use `_1..5` suffixes so behaviour is unchanged.
+  - The packet, generation-job, or storage flow.
+
+### Template update (out of code-scope, doc author task)
+For RE851D specifically, the merge tags inside each of the 5 PART 2 blocks and each of the 5 PROPERTY #N blocks must be replaced with the index-suffixed names listed above. Once the template uses `_1`..`_5`, the engine populates correctly and unused blocks render blank.
+
+### Validation
+- 1 property in CSR → block 1 populated, blocks 2–5 blank, no checkboxes checked in 2–5.
+- 3 properties → blocks 1–3 populated with their distinct data, blocks 4–5 blank.
+- 5 properties → all blocks populated with distinct data.
+- 6+ properties → blocks 1–5 populated from records 1–5; record 6+ is ignored.
+- Existing single-property templates (RE851A) unaffected because they don't use `_N` suffixes.
+- Existing tag-parser tests continue to pass (no signatures changed).
+
+### Out of scope
+- No new tables, no schema migrations, no field_dictionary inserts.
+- No UI changes in CSR Property table.
+- No changes to other documents' generation behaviour.
+- No edits to `processSdtCheckboxes`, `processEachBlocks`, or merge-tag alias table.
