@@ -119,6 +119,11 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'legal_description', label: 'Legal Description' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
+    // Liens — grouped under Property (formerly its own top-level section)
+    { value: 'liens_general_details', label: 'Liens — General Details', dbSection: 'liens' },
+    { value: 'liens_loan_type', label: 'Liens — Loan Type', dbSection: 'liens' },
+    { value: 'liens_balance_payment', label: 'Liens — Balance & Payment', dbSection: 'liens' },
+    { value: 'liens_recording_tracking', label: 'Liens — Recording & Tracking', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
@@ -149,12 +154,6 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'insurance_conditions', label: 'Insurance Conditions' },
     { value: 'servicing', label: 'Servicing' },
     { value: 'origination_fees', label: 'Origination Fees' },
-  ],
-  liens: [
-    { value: 'general_details', label: 'General Details' },
-    { value: 'loan_type', label: 'Loan Type' },
-    { value: 'balance_payment', label: 'Balance & Payment' },
-    { value: 'recording_tracking', label: 'Recording & Tracking' },
   ],
 };
 
