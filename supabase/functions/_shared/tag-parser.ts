@@ -879,6 +879,16 @@ function replaceStaticCheckboxLabel(
   // (possibly with intervening XML tags / whitespace) by the label text,
   // then ONLY replace the glyph character inside its <w:t> element.
   // This preserves font styling (<w:rPr>) and run boundaries.
+  //
+  // PERF NOTE: Previous implementation ran an additional O(N) glyph-dedup
+  // regex over the entire content after EACH successful replacement here.
+  // That dedup is already performed once at the document level inside
+  // replaceMergeTags (see "// Dedup: after merge tag replacement..." block)
+  // and again at the document level by the caller of this function. Doing
+  // it again per-label inside this hot path was the dominant CPU cost on
+  // large form templates (e.g. RE885 HUD-1) and led to "CPU Time exceeded"
+  // failures. Removing the redundant pass changes no output bytes — the
+  // global dedup still runs once and produces the identical result.
   const glyphInWtPattern = new RegExp(
     `(<w:t[^>]*>)([^<]*?)([☐☑☒])([^<]*?</w:t>)((?:\\s|<[^>]+>)*?${labelPattern})(?![A-Za-z])`,
     'gi'
@@ -886,22 +896,9 @@ function replaceStaticCheckboxLabel(
 
   if (glyphInWtPattern.test(content)) {
     glyphInWtPattern.lastIndex = 0;
-    let result = content.replace(glyphInWtPattern, (_match, wtOpen, pre, _glyph, wtTail, labelPart) => {
+    const result = content.replace(glyphInWtPattern, (_match, wtOpen, pre, _glyph, wtTail, labelPart) => {
       return `${wtOpen}${pre}${checkboxValue}${wtTail}${labelPart}`;
     });
-    // Remove duplicate adjacent checkbox glyphs that arise when a merge tag
-    // already resolved to ☑/☐ AND the template had a static glyph.
-    // Pattern: two checkbox glyphs separated only by XML tags / whitespace,
-    // SCOPED to the same paragraph AND the same logical line within a
-    // paragraph. We exclude `</w:p>` / `<w:p>` (paragraph boundary) AND
-    // `<w:br/>` (soft line break, Shift+Enter) from the gap so we never
-    // collapse two legitimately distinct line-level glyphs into one (e.g.,
-    // the RE851A "Is Broker also a Borrower?" A./B. row where each {{#if}}
-    // block is on its own soft-break-separated line).
-    result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
-      (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
-    );
     return { content: result, replaced: true };
   }
 
@@ -914,13 +911,9 @@ function replaceStaticCheckboxLabel(
 
   if (trailingGlyphPattern.test(content)) {
     trailingGlyphPattern.lastIndex = 0;
-    let result = content.replace(trailingGlyphPattern, (_match, labelText, spacing) => {
+    const result = content.replace(trailingGlyphPattern, (_match, labelText, spacing) => {
       return `${labelText}${spacing}${checkboxValue}`;
     });
-    result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
-      (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
-    );
     return { content: result, replaced: true };
   }
 
@@ -930,17 +923,21 @@ function replaceStaticCheckboxLabel(
     return { content, replaced: false };
   }
   plainPattern.lastIndex = 0;
-  let result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
+  const result = content.replace(plainPattern, (_match, _glyph, spacing, labelText) => {
     return `${checkboxValue}${spacing}${labelText}`;
   });
-  // Same dedup for plain-text path — paragraph- AND soft-break-scoped to
-  // avoid collapsing glyphs that legitimately belong to different paragraphs
-  // OR different soft-break-separated lines within the same paragraph.
-  result = result.replace(
+  return { content: result, replaced: true };
+}
+
+// Run the paragraph-scoped, paragraph-/soft-break-respecting glyph dedup
+// ONCE at the end of label-based replacement. This consolidates duplicate
+// adjacent ☐/☑/☒ glyphs that arise when both a merge tag AND a static
+// glyph land in the same logical line.
+function dedupAdjacentCheckboxGlyphs(xml: string): string {
+  return xml.replace(
     /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)/g,
     (_m, g1, mid, _g2, trail) => `${g1}${mid}${trail}`
   );
-  return { content: result, replaced: true };
 }
 
 
