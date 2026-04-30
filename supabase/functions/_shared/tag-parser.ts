@@ -3149,7 +3149,7 @@ export function replaceMergeTags(
   // Other dropdown values (e.g. Quarterly) leave the Monthly/Annually
   // glyphs untouched. Surrounding text, formatting, and XML structure are
   // preserved unchanged — only the glyph character toggles.
-  {
+  if (isRe851A) {
     const payableRaw =
       getFieldData("loan_terms.servicing.payable_annually", fieldValues)?.data?.rawValue
       ?? getFieldData("loan_terms.servicing.payable", fieldValues)?.data?.rawValue
