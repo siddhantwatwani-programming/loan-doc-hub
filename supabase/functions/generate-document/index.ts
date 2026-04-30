@@ -808,14 +808,59 @@ async function generateSingleDocument(
         ).replace(/[^0-9.-]/g, "")
       );
 
+      // Helper: convert camelCase suffix to snake_case (e.g. squareFeet -> square_feet,
+      // yearBuilt -> year_built, appraisedDate -> appraised_date). Storage keys for
+      // property{N>=2} use snake_case while the alias map historically used camelCase.
+      const toSnake = (s: string) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+
       const sortedPropIndices = [...propertyIndices].sort((a, b) => a - b).slice(0, MAX_PROPERTIES);
       for (const idx of sortedPropIndices) {
         const prefix = `property${idx}`;
-        // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
+        // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>).
+        // Try the suffix exactly, snake_case form, and (for property1) the
+        // canonical pr_p_<key> direct key so per-index aliases are always
+        // populated when CSR data exists for that property.
         for (const [sfx, prKey] of Object.entries(suffixToPrKey)) {
-          const v = fieldValues.get(`${prefix}.${sfx}`);
-          if (v && v.rawValue !== undefined && v.rawValue !== null && v.rawValue !== "") {
+          const candidates = [
+            `${prefix}.${sfx}`,
+            `${prefix}.${toSnake(sfx)}`,
+          ];
+          if (idx === 1) candidates.push(prKey); // property1 raw canonical fallback
+          let v: FieldValueData | undefined;
+          for (const c of candidates) {
+            const got = fieldValues.get(c);
+            if (got && got.rawValue !== undefined && got.rawValue !== null && got.rawValue !== "") {
+              v = got;
+              break;
+            }
+          }
+          if (v) {
             fieldValues.set(`${prKey}_${idx}`, { rawValue: v.rawValue, dataType: v.dataType });
+          }
+        }
+        // propertytax_annual_payment and propertytax_delinquent (UI keys with dots)
+        // → per-property aliases used by RE851D PROPERTY #N sections.
+        {
+          const taxAnnual =
+            fieldValues.get(`${prefix}.annual_property_taxes`) ||
+            fieldValues.get(`${prefix}.annual_tax`) ||
+            fieldValues.get(`${prefix}.propertytax_annual_payment`) ||
+            (idx === 1 ? fieldValues.get(`propertytax.annual_payment`) : undefined);
+          if (taxAnnual?.rawValue) {
+            fieldValues.set(`propertytax_annual_payment_${idx}`, {
+              rawValue: taxAnnual.rawValue,
+              dataType: taxAnnual.dataType || "currency",
+            });
+          }
+          const taxDelinq =
+            fieldValues.get(`${prefix}.taxes_delinquent`) ||
+            fieldValues.get(`${prefix}.propertytax_delinquent`) ||
+            (idx === 1 ? fieldValues.get(`propertytax.delinquent`) : undefined);
+          if (taxDelinq?.rawValue !== undefined && taxDelinq?.rawValue !== null && taxDelinq?.rawValue !== "") {
+            fieldValues.set(`propertytax_delinquent_${idx}`, {
+              rawValue: String(taxDelinq.rawValue),
+              dataType: taxDelinq.dataType || "boolean",
+            });
           }
         }
         // Annual property tax (UI: propertytax.annual_payment) per property
