@@ -364,12 +364,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
           .eq('id', participant.id);
       }
 
-      const route =
-        data.contact_type === 'lender' ? 'lenders'
-        : data.contact_type === 'broker' ? 'brokers'
-        : data.contact_type === 'additional_guarantor' ? 'additional-guarantors'
-        : data.contact_type === 'authorized_party' ? 'authorized-parties'
-        : 'borrowers';
+      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
       toast.info('No contact record found for this participant');
@@ -429,12 +424,7 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
         }
       }
 
-      const route =
-        data.contact_type === 'lender' ? 'lenders'
-        : data.contact_type === 'broker' ? 'brokers'
-        : data.contact_type === 'additional_guarantor' ? 'additional-guarantors'
-        : data.contact_type === 'authorized_party' ? 'authorized-parties'
-        : 'borrowers';
+      const route = data.contact_type === 'lender' ? 'lenders' : data.contact_type === 'broker' ? 'brokers' : 'borrowers';
       navigate(`/contacts/${route}/${data.id}`);
     } else {
       toast.info('Contact record not found');
