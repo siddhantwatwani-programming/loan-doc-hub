@@ -124,7 +124,10 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     // recording_tracking) are merged here. Filter logic surfaces every row
     // where section = 'liens' regardless of its persisted form_type, so no
     // existing data is hidden and field keys remain unchanged.
-    { value: 'liens_details', label: 'Liens Details', dbSection: 'liens' },
+    // NOTE: value intentionally does NOT start with "liens_" so the filter
+    // logic does not strip a prefix and instead matches every row where
+    // section = 'liens', regardless of its persisted form_type.
+    { value: 'liensdetails', label: 'Liens Details', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
