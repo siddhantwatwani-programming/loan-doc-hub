@@ -279,19 +279,28 @@ export const ParticipantsSectionContent: React.FC<ParticipantsSectionContentProp
       setParticipants(
         rows.map((p: any) => {
           const contact = p.contact_id ? contactMap[p.contact_id] : null;
-          const roleLabel = ROLE_LABELS[p.role] || p.role || '';
           // Priority: deal-specific capacity > global contact capacity
           const capacityVal = (p.contact_id && dealCapacityMap[p.contact_id]) || contact?.capacity || '';
-          const mergedTypeCapacity = capacityVal && capacityVal !== roleLabel
-            ? `${roleLabel} - ${capacityVal}`
-            : roleLabel;
+          // Derive the effective role for display: prefer contact.contact_type when it is an
+          // extended type (additional_guarantor / authorized_party / co_borrower), otherwise
+          // map a known extended capacity label back to its type, otherwise fall back to p.role.
+          const ctype = contact?.contact_type || '';
+          const extendedFromType = ['additional_guarantor', 'authorized_party', 'co_borrower'].includes(ctype) ? ctype : '';
+          const extendedFromCapacity = EXTENDED_CAPACITY_TO_TYPE[capacityVal] || '';
+          const effectiveRole = extendedFromType || extendedFromCapacity || p.role || '';
+          const roleLabel = ROLE_LABELS[effectiveRole] || effectiveRole || '';
+          // For extended types, the capacity label IS the type — avoid "X - X" duplication.
+          const isExtended = !!(extendedFromType || extendedFromCapacity);
+          const mergedTypeCapacity = isExtended
+            ? roleLabel
+            : (capacityVal && capacityVal !== roleLabel ? `${roleLabel} - ${capacityVal}` : roleLabel);
           return {
             id: p.id,
             contact_id_display: contact?.contact_id || '',
             name: contact?.full_name || p.name || '',
             email: contact?.email || p.email || '',
             phone: contact?.phone || p.phone || '',
-            role: p.role || '',
+            role: effectiveRole,
             capacity: capacityVal || roleLabel,
             participant_type_capacity: mergedTypeCapacity,
             status: p.status || 'invited',
