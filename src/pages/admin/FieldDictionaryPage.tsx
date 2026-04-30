@@ -64,6 +64,7 @@ const SECTIONS = [
   { value: 'borrower', label: 'Borrower' },
   { value: 'loan_terms', label: 'Loan' },
   { value: 'property', label: 'Property' },
+  { value: 'liens', label: 'Liens' },
   { value: 'funding', label: 'Funding' },
   { value: 'broker', label: 'Broker' },
   { value: 'charges', label: 'Charges' },
@@ -71,7 +72,6 @@ const SECTIONS = [
   { value: 'notes', label: 'Conversation Log' },
   { value: 'lender', label: 'Lenders' },
   { value: 'origination_fees', label: 'Other Origination' },
-  { value: 'liens', label: 'Liens' },
 ];
 
 // Map UI section → DB section(s) used for filtering
