@@ -2339,9 +2339,9 @@ export function replaceMergeTags(
       if (fieldData.dataType === 'currency' && resolvedValue.startsWith('$')) {
         resolvedValue = resolvedValue.substring(1);
       }
-      console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
+      debugLog(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
     } else {
-      console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
+      debugLog(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
     }
     
     // XML-escape the value to prevent corruption from &, <, >, ", ' characters.

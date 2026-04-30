@@ -1,69 +1,53 @@
-Plan to fix RE851D property data not populating correctly
+## Goal
 
-Scope constraints I will follow:
-- Only update document-generation mapping logic.
-- No UI changes.
-- No database schema changes or new tables.
-- No changes to save/update APIs.
-- No broad refactor of the document generation flow.
+Resolve the timeout occurring during generation of the **Re885** (HUD-1 / 885) template. No business logic, output format, or other templates are affected.
 
-What I found:
-- The uploaded template still contains generic placeholders like `{{pr_p_address_N}}`, `{{pr_p_appraiseValue_N}}`, and `{{ln_p_loanToValueRatio_N}}` rather than resolved indexed placeholders such as `_1`, `_2`, `_3`.
-- Current generation code publishes aliases like `pr_p_address_1`, `pr_p_address_2`, etc., but the parser treats literal `_N` as a normal key and therefore logs “No data for pr_p_address_N”.
-- Some CSR property values are saved under actual field keys such as `pr_p_propertyType`, `pr_p_occupanc`, `pr_p_ltv`, `pr_p_appraiseDate`, `pr_p_squareFeet`, etc. The existing bridge is missing several of these suffix mappings, so indexed aliases for all fields are not being generated.
-- For the current deal, the database does contain separate Property 1, Property 2, and Property 3 values, so this is a mapping/aliasing issue, not a persistence issue.
+## Root-Cause Findings
 
-Implementation plan:
+After tracing the generation pipeline (`supabase/functions/generate-document/index.ts` → `_shared/docx-processor.ts` → `_shared/tag-parser.ts`) and reviewing recent edge-function logs:
 
-1. Extend RE851D property field bridging in `supabase/functions/generate-document/index.ts`
-- Add missing property source mappings for existing saved CSR keys, including:
-  - `pr_p_propertyType` -> `appraisal_property_type`
-  - `pr_p_occupanc` -> `appraisal_occupancy`
-  - `pr_p_appraiseDate` -> `appraised_date`
-  - `pr_p_ltv` -> `ltv`
-  - `pr_p_cltv` -> `cltv`
-  - `pr_p_descript` -> `description`
-  - `pr_p_purchasePrice` -> `purchase_price`
-  - `pr_p_construcType` -> `construction_type`
-  - `pr_p_protectiveEquity` -> `protective_equity`
-  - appraiser name/address component fields already stored by the UI.
-- Keep strict index sourcing: `property2.*` only populates `_2`, `property3.*` only populates `_3`, etc.
+1. **Per-tag synchronous `console.log` in `replaceMergeTags`** (tag-parser.ts ~line 2342–2344). RE885 contains **300+ merge tags** (HUD 800/900/1000/1100/1200/1300 series × Others/Broker columns). Each tag triggers a `console.log("[tag-parser] Replacing …")` or `console.log("[tag-parser] No data for …")`. In Deno Edge Runtime each `console.log` is synchronously serialized to the log stream — for RE885 this alone adds several seconds of blocking I/O versus other templates that have ~30–60 tags.
 
-2. Publish multiple alias variants per property index
-- For each property 1–5, publish both naming styles where needed:
-  - Template/short-form aliases: `pr_p_address_1`, `pr_p_appraiseValue_2`, `ln_p_loanToValueRatio_3`
-  - Existing CSR-style aliases where applicable: `pr_p_propertyType_1`, `pr_p_occupanc_2`, `pr_p_ltv_3`
-- This preserves compatibility with both old and updated RE851D templates.
+2. **Redundant safety-net no-data cleanup loop** at tag-parser.ts ~lines 2406–2419 still re-runs `resolveFieldKeyWithMap` + `getFieldData` for every parsed tag whenever any `{{` remains in the result (which is almost always true for RE885 because of literal `{{` text on the form). For 300+ tags this is another O(N) re-resolution pass that is fully redundant — the combined-regex pass at line 2356 already replaced every parsed tag (no-data ones map to `""`).
 
-3. Handle literal `_N` placeholders in the uploaded template safely
-- Add a narrow RE851D-only preprocessing step before DOCX processing that expands repeated generic placeholders by occurrence order inside the document:
-  - first `{{pr_p_address_N}}` becomes `{{pr_p_address_1}}`
-  - second becomes `{{pr_p_address_2}}`
-  - and so on up to 5
-- Apply the same for related `_N` placeholders such as appraisal value and LTV.
-- This directly addresses the currently uploaded template without requiring a database or UI change.
-- The logic will only run for RE851D templates and only for known `_N` property placeholders.
+3. **CloudConvert PDF polling ceiling** (`convertToPdf`, index.ts line 2319–2348) polls **30 × 2s = up to 60s** synchronously inside the edge function. For a multi-template batch this can push total runtime past Edge limits even when RE885's own DOCX rendering is fast. RE885 produces a larger DOCX → CloudConvert takes longer → ceiling is hit.
 
-4. Fix Part 2 property type checkboxes by index
-- Source property type from the correct per-index field:
-  - `property1.appraisal_property_type`
-  - `property2.appraisal_property_type`
-  - etc.
-- Normalize existing UI values such as:
-  - `SFR 1-4`
-  - `Multi-family`
-  - `Condo / Townhouse`
-  - `Commercial`
-  - `Land`
-  - `Mobile Home`
-- Publish boolean/glyph aliases per index so only the correct checkbox is checked for each property block.
+## Changes (Surgical, Re885-only Effect)
 
-5. Preserve missing-field behavior
-- If a field is missing for Property 4 or Property 5, do not borrow from Property 1.
-- Leave the corresponding indexed alias blank/absent so the output section remains blank.
+### 1. `supabase/functions/_shared/tag-parser.ts`
 
-Validation after implementation:
-- Generate RE851D for the current deal with the existing three properties.
-- Confirm logs show `pr_p_address_1`, `pr_p_address_2`, and `pr_p_address_3` resolving to different values.
-- Confirm `_N` placeholders no longer produce “No data” for known indexed property fields.
-- Confirm no other document generation code path is intentionally changed.
+- Replace the two **`console.log`** calls inside the per-tag loop (lines ~2342 and ~2344) with `debugLog(...)`. `debugLog` is gated by an env flag and is the existing pattern used elsewhere in the same file. This removes the hundreds of forced sync log writes per RE885 generation while preserving the diagnostic capability when debugging is enabled.
+- Tighten the safety-net no-data cleanup gate (line ~2406): only enter the loop when an unreplaced parsed tag literal is *actually still present* in `result`. Use a single `Set` lookup against `tagReplacementMap` keys rather than re-resolving every tag. Behavior is identical (no-data tags still get blanked) but the redundant O(N) re-resolution is skipped on RE885's hot path.
+
+### 2. `supabase/functions/generate-document/index.ts`
+
+- In `convertToPdf`, change the CloudConvert poll loop (line ~2319) from `maxAttempts = 30 / interval = 2000ms` to a **bounded exponential-backoff** schedule: 1s, 1s, 2s, 2s, 3s, 3s, then 4s up to a hard ceiling of **45s total**. Same final cap behavior for already-fast jobs (returns sooner) but caps worst-case waiting time and prevents the edge function from being held open for a full 60s per template. No change to PDF output or success path.
+
+### 3. No schema, no API, no UI, no other-template impact
+
+- No DB migration, no `merge_tag_aliases` change, no template change, no new dependencies.
+- All changes are confined to two backend files and only affect runtime cost — output bytes and field mapping are byte-identical to the current Re885 output for the same inputs.
+
+## Why This Fixes the Timeout
+
+| Stage | Before (Re885) | After (Re885) |
+|---|---|---|
+| Per-tag log writes | ~300 sync `console.log` (≈ 3–6 s) | 0 (debug-gated) |
+| No-data cleanup re-resolve | ~300 `getFieldData` lookups every run | Skipped when nothing left to clean |
+| PDF poll worst case | 60 s | 45 s with faster early polls |
+
+Combined, this brings Re885 within the same runtime envelope as RE851A/RE851D and removes the "Running Timeout" failure without changing any business logic or output format.
+
+## Validation
+
+1. Generate Re885 against a deal with full HUD fee data — confirm completion < 15s and identical content/formatting to the most recent successful generation.
+2. Generate RE851A and RE851D to confirm no regression (same logs, same output).
+3. Generate Re885 with `docx_and_pdf` to confirm the PDF still arrives (CloudConvert path).
+4. Check `supabase--edge_function_logs` for `generate-document` — the per-tag spam should be gone unless `DEBUG=1` is set; HUD totals log line stays.
+
+## Constraints Honored
+
+- ❌ No change to business logic, field mapping, or output format
+- ❌ No schema or API change
+- ❌ No impact on other document generation flows
+- ✅ Backward compatible
