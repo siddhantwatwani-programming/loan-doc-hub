@@ -2194,6 +2194,22 @@ export function replaceMergeTags(
   labelMap: Record<string, LabelMapping>,
   validFieldKeys?: Set<string>
 ): string {
+  // Phase timing: when DOC_PERF env flag set OR content > 200KB, emit per-phase
+  // durations so we can pinpoint the exact bottleneck for large templates
+  // (e.g. RE885 word/document.xml ~635KB). Cheap (Date.now) and bounded to one
+  // log per call.
+  const __perfEnabled =
+    content.length > 200_000 ||
+    (typeof Deno !== 'undefined' && Deno.env?.get?.('DOC_PERF') === '1');
+  const __phases: Array<{ name: string; ms: number }> = [];
+  let __tPhase = __perfEnabled ? Date.now() : 0;
+  const __mark = (name: string) => {
+    if (!__perfEnabled) return;
+    const now = Date.now();
+    __phases.push({ name, ms: now - __tPhase });
+    __tPhase = now;
+  };
+
   const contentLower = content.toLowerCase();
   const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
   const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
@@ -2201,6 +2217,7 @@ export function replaceMergeTags(
     const quickNeedle = getLabelQuickNeedle(label, mapping);
     return quickNeedle ? contentLower.includes(quickNeedle) : false;
   });
+  __mark('preCheck');
 
   if (!hasMergeMarkers && !hasCheckboxes && !hasRelevantLabel) {
     return content;
@@ -2208,6 +2225,7 @@ export function replaceMergeTags(
 
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
+  __mark('normalizeWordXml');
 
   // Document-wide consolidation for control tags whose {{ ... }} brackets get
   // split by Word across multiple <w:r> or <w:p> boundaries. The paragraph-
@@ -2268,18 +2286,22 @@ export function replaceMergeTags(
     /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
     (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
   );
+  __mark('controlConsolidation');
 
   if (result.includes('{{#each')) {
     result = processEachBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
   }
+  __mark('eachBlocks');
 
   if (result.includes('{{#if') || result.includes('{{#unless')) {
     result = processConditionalBlocks(result, fieldValues, mergeTagMap, validFieldKeys);
   }
+  __mark('conditionalBlocks');
 
   if (result.includes('<w14:checkbox') && result.includes('<w:sdt')) {
     result = processSdtCheckboxes(result, fieldValues, mergeTagMap, validFieldKeys, labelMap);
   }
+  __mark('sdtCheckboxes');
 
   // RE851A Part 2 fallback: some authored templates use literal bracket
   // markers ("[ ]", "[x]", "[X]") instead of checkbox glyphs (☐/☑) next to
@@ -2338,7 +2360,8 @@ export function replaceMergeTags(
 
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
-  
+  __mark('parseMergeFields');
+
   // Track which field keys were successfully replaced by merge tags
   // so label-based replacement can skip them (prevents label aliases from
   // damaging static document titles like "Loan No", "Current Lender", etc.)
@@ -2441,11 +2464,14 @@ export function replaceMergeTags(
     );
   }
   
+  __mark('mergeTagReplace');
+
   // Always run label-based replacement after merge tag replacement
   debugLog(`[tag-parser] Running label-based replacement (${tags.length} merge tags were processed, ${replacedFieldKeys.size} fields already resolved)`);
   const labelResult = replaceLabelBasedFields(result, fieldValues, fieldTransforms, labelMap, replacedFieldKeys, mergeTagMap, validFieldKeys);
   result = labelResult.content;
   debugLog(`[tag-parser] Label-based replacement completed: ${labelResult.replacementCount} replacements`);
+  __mark('labelReplace');
 
   // Final safety net: remove only merge tags that were explicitly parsed
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
@@ -3495,9 +3521,25 @@ export function replaceMergeTags(
     }
   }
 
+  __mark('postReplaceCleanup');
+
   // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
   result = convertGlyphsToSdtCheckboxes(result);
+  __mark('convertGlyphsToSdt');
+
+  if (__perfEnabled && __phases.length > 0) {
+    const total = __phases.reduce((s, p) => s + p.ms, 0);
+    const top = __phases
+      .slice()
+      .sort((a, b) => b.ms - a.ms)
+      .slice(0, 5)
+      .map((p) => `${p.name}=${p.ms}ms`)
+      .join(', ');
+    console.log(
+      `[tag-parser] phases total=${total}ms size=${content.length}B top5: ${top}`,
+    );
+  }
 
   return result;
 }
