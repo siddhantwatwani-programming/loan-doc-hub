@@ -91,17 +91,24 @@ const ContactBrokerDetailLayout: React.FC<ContactBrokerDetailLayoutProps> = ({
   }, [contactWs, contact.id, handleSave]);
 
   // Build a ContactBroker object from contact_data for components that need it
+  const cd: any = contact.contact_data || {};
+  const preferredPhoneValue =
+    cd['preferred.cell'] === 'true' ? (cd['phone.cell'] || '')
+    : cd['preferred.home'] === 'true' ? (cd['phone.home'] || '')
+    : cd['preferred.work'] === 'true' ? (cd['phone.work'] || '')
+    : cd['preferred.fax'] === 'true' ? (cd['phone.fax'] || '')
+    : (cd['phone.cell'] || cd['phone.work'] || cd['phone.home'] || cd['phone.fax'] || '');
   const brokerObj: ContactBroker = {
     id: contact.id,
     brokerId: contact.contact_id || '',
-    hold: (contact.contact_data as any)?.hold === 'true',
-    type: (contact.contact_data as any)?.company || (contact.contact_data as any)?.type || '',
-    ach: (contact.contact_data as any)?.ach === 'true',
-    email: contact.email || '',
-    agreement: (contact.contact_data as any)?.agreement_on_file === 'true',
-    repPhone: (contact.contact_data as any)?.rep_phone || '',
-    repEmail: (contact.contact_data as any)?.rep_email || '',
-    repLicense: (contact.contact_data as any)?.rep_license || '',
+    hold: cd?.hold === 'true',
+    type: cd?.capacity || cd?.type || '',
+    ach: cd?.ach === 'true',
+    email: contact.email || cd?.email || '',
+    agreement: cd?.agreement_on_file === 'true',
+    repPhone: cd?.rep_phone || preferredPhoneValue || '',
+    repEmail: cd?.rep_email || contact.email || cd?.email || '',
+    repLicense: cd?.rep_license || '',
     firstName: contact.first_name || '',
     lastName: contact.last_name || '',
     city: contact.city || '',
