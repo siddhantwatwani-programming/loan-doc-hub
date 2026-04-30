@@ -2194,6 +2194,22 @@ export function replaceMergeTags(
   labelMap: Record<string, LabelMapping>,
   validFieldKeys?: Set<string>
 ): string {
+  // Phase timing: when DOC_PERF env flag set OR content > 200KB, emit per-phase
+  // durations so we can pinpoint the exact bottleneck for large templates
+  // (e.g. RE885 word/document.xml ~635KB). Cheap (Date.now) and bounded to one
+  // log per call.
+  const __perfEnabled =
+    content.length > 200_000 ||
+    (typeof Deno !== 'undefined' && Deno.env?.get?.('DOC_PERF') === '1');
+  const __phases: Array<{ name: string; ms: number }> = [];
+  let __tPhase = __perfEnabled ? Date.now() : 0;
+  const __mark = (name: string) => {
+    if (!__perfEnabled) return;
+    const now = Date.now();
+    __phases.push({ name, ms: now - __tPhase });
+    __tPhase = now;
+  };
+
   const contentLower = content.toLowerCase();
   const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
   const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
@@ -2201,6 +2217,7 @@ export function replaceMergeTags(
     const quickNeedle = getLabelQuickNeedle(label, mapping);
     return quickNeedle ? contentLower.includes(quickNeedle) : false;
   });
+  __mark('preCheck');
 
   if (!hasMergeMarkers && !hasCheckboxes && !hasRelevantLabel) {
     return content;
@@ -2208,6 +2225,7 @@ export function replaceMergeTags(
 
   // First normalize the XML to handle fragmented merge fields
   let result = normalizeWordXml(content);
+  __mark('normalizeWordXml');
 
   // Document-wide consolidation for control tags whose {{ ... }} brackets get
   // split by Word across multiple <w:r> or <w:p> boundaries. The paragraph-
