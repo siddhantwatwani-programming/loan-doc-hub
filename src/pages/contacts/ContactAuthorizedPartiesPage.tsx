@@ -143,9 +143,13 @@ const ContactAuthorizedPartiesPage: React.FC = () => {
 
   const handleSave = useCallback(async (id: string, contactData: Record<string, string>) => {
     if (isReadOnly) return false;
-    // Mirror borrower.authorized_party.* values to canonical top-level/
-    // contact_data keys so the Authorized Parties grid populates after save.
-    const mirrored = mirrorPrefixedToCanonical(contactData, 'borrower.authorized_party.');
+    // Bidirectional sync so AP detail values persist + display correctly:
+    //  1) Hydrate prefixed AP keys from any canonical values present
+    //     (covers the case where existing data was saved canonically only).
+    //  2) Mirror prefixed AP values back into canonical top-level/contact_data
+    //     keys so the Authorized Parties grid populates after save.
+    const hydrated = hydratePrefixedFromCanonical(contactData, 'borrower.authorized_party.');
+    const mirrored = mirrorPrefixedToCanonical(hydrated, 'borrower.authorized_party.');
     return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
