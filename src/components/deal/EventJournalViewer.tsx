@@ -129,7 +129,6 @@ export const EventJournalViewer: React.FC<EventJournalViewerProps> = ({ dealId, 
       <GridToolbar
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onRefresh={handleRefresh}
         filterOptions={FILTER_OPTIONS}
         activeFilters={activeFilters}
         onFilterChange={setFilter}
