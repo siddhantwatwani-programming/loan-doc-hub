@@ -5,7 +5,7 @@
  * including Word merge fields, curly brace placeholders, and label-based patterns.
  */
 
-import type { ParsedMergeTag, FieldValueData, LabelMapping } from "./types.ts";
+import type { ParsedMergeTag, FieldValueData, LabelMapping, DocxProcessingContext } from "./types.ts";
 import { applyTransform, formatByDataType, formatCheckbox } from "./formatting.ts";
 import { resolveFieldKeyWithMap, getFieldData } from "./field-resolver.ts";
 
@@ -2140,8 +2140,17 @@ export function replaceMergeTags(
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
   labelMap: Record<string, LabelMapping>,
-  validFieldKeys?: Set<string>
+  validFieldKeys?: Set<string>,
+  context?: DocxProcessingContext,
 ): string {
+  // Template-scoped flag: RE851A-specific safety passes (subordination,
+  // amortization, payable, broker capacity A/B, servicing agent, etc.) are
+  // expensive document-wide regex sweeps that have always been authored only
+  // for RE851A. Running them for every template — including very large ones
+  // such as RE885 — was a major contributor to CPU exhaustion / generation
+  // timeouts. Restrict them to RE851A templates so other templates are not
+  // affected and their behavior is unchanged.
+  const isRe851A = /851a/i.test(context?.templateName || "");
   const contentLower = content.toLowerCase();
   const hasMergeMarkers = content.includes('{{') || content.includes('}}') || content.includes('«') || content.includes('»') || content.includes('MERGEFIELD') || content.includes('w:fldChar') || content.includes('w:fldSimple') || content.includes('w:instrText');
   const hasCheckboxes = content.includes('<w14:checkbox') && content.includes('<w:sdt');
