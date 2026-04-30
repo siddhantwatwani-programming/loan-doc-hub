@@ -732,10 +732,9 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               {/* Capacity */}
               <div className="flex items-center gap-2">
                 <Label className="w-[140px] shrink-0 text-xs">Capacity</Label>
-                <Select value={form['capacity'] || '__none__'} onValueChange={(v) => set('capacity', v === '__none__' ? '' : v)}>
+                <Select value={form['capacity'] || ''} onValueChange={(v) => set('capacity', v)}>
                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent className="bg-background border border-border z-[200]">
-                    <SelectItem value="__none__">Select</SelectItem>
                     <SelectItem value="Broker">Broker</SelectItem>
                     <SelectItem value="Broker's Representative">Broker's Representative</SelectItem>
                     <SelectItem value="Unlicensed">Unlicensed</SelectItem>
