@@ -2360,7 +2360,8 @@ export function replaceMergeTags(
 
   // Parse and replace merge tags
   const tags = parseWordMergeFields(result);
-  
+  __mark('parseMergeFields');
+
   // Track which field keys were successfully replaced by merge tags
   // so label-based replacement can skip them (prevents label aliases from
   // damaging static document titles like "Loan No", "Current Lender", etc.)
