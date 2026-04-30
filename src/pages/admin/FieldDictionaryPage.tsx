@@ -367,6 +367,19 @@ export const FieldDictionaryPage: React.FC = () => {
     return uiSection;
   };
 
+  // For form values that are prefixed with their dbSection (e.g.
+  // "liens_general_details" → form_type "general_details"), strip the prefix
+  // when persisting to keep the DB form_type values consistent with the
+  // historical schema. Non-prefixed forms are returned unchanged.
+  const resolveDbFormType = (uiSection: string, formType: string): string => {
+    const forms = SECTION_FORMS[uiSection] || [];
+    const formDef = forms.find(f => f.value === formType);
+    if (formDef?.dbSection && formDef.value.startsWith(`${formDef.dbSection}_`)) {
+      return formDef.value.slice(formDef.dbSection.length + 1);
+    }
+    return formType;
+  };
+
   const handleLabelChange = (label: string) => {
     setFormData((prev) => {
       const dbSection = resolveDbSection(prev.section, prev.form_type);
