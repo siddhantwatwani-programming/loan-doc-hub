@@ -2339,9 +2339,9 @@ export function replaceMergeTags(
       if (fieldData.dataType === 'currency' && resolvedValue.startsWith('$')) {
         resolvedValue = resolvedValue.substring(1);
       }
-      console.log(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
+      debugLog(`[tag-parser] Replacing ${tag.tagName} -> ${transformKey} = "${resolvedValue.substring(0, 50)}"`);
     } else {
-      console.log(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
+      debugLog(`[tag-parser] No data for ${tag.tagName} (canonical: ${canonicalKey}, ultimate: ${ultimateKey})`);
     }
     
     // XML-escape the value to prevent corruption from &, <, >, ", ' characters.
@@ -2404,13 +2404,16 @@ export function replaceMergeTags(
   // (e.g. RE885) this avoids re-resolving 100+ field keys for nothing and
   // was a major contributor to CPU exhaustion.
   if (tags.length > 0 && result.indexOf('{{') !== -1) {
+    // Reuse the replacement map built above instead of re-resolving every tag
+    // (which was O(N) over every parsed merge tag and dominated CPU on large
+    // templates such as RE885 with 300+ HUD-1 fee tags).
     const noDataPatterns: string[] = [];
-    for (const tag of tags) {
-      const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
-      const resolved = getFieldData(ck, fieldValues);
-      if (!resolved?.data) {
-        noDataPatterns.push(tag.fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-      }
+    for (const [fullMatch, replacement] of tagReplacementMap.entries()) {
+      if (replacement !== "") continue;
+      // Only emit a pattern if the literal is actually still present in `result`
+      // (the combined-regex pass above replaced it for almost every tag).
+      if (result.indexOf(fullMatch) === -1) continue;
+      noDataPatterns.push(fullMatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
     }
     if (noDataPatterns.length > 0) {
       debugLog(`[tag-parser] Cleaning ${noDataPatterns.length} no-data tags`);
