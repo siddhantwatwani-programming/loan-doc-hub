@@ -3303,7 +3303,7 @@ export function replaceMergeTags(
   // or_p_isBrkBorrower. This prevents a leftover static unchecked glyph
   // (or a stale conditional remnant) from masking the user's CSR selection.
   // Surrounding text, formatting, and XML structure are preserved unchanged.
-  {
+  if (isRe851A) {
     const brkData =
       getFieldData("or_p_isBrkBorrower", fieldValues)?.data
       || getFieldData("or_p_brkCapacityPrincipal", fieldValues)?.data
