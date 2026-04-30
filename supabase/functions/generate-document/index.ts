@@ -287,6 +287,22 @@ async function generateSingleDocument(
                 debugLog(`[generate-document] Bridged ${key} -> ${bridgedKey} = "${rawValue}"`);
               }
             }
+            // RE851D: bridge propertytax{N}::uuid composite keys to propertytax{N}.<suffix>
+            // Dictionary keys are propertytax.<suffix>; we strip the canonical prefix
+            // and re-attach the indexed entity prefix so per-index publishers below
+            // can read propertytax{N}.annual_payment / .delinquent / .delinquent_amount /
+            // .source_of_information directly. No cross-index fallback.
+            else if (/^propertytax\d+$/i.test(entityPrefix)) {
+              const fk = fieldDict.field_key || "";
+              if (fk.startsWith("propertytax.")) {
+                const suffix = fk.substring("propertytax.".length);
+                if (suffix) {
+                  const bridgedKey = `${entityPrefix}.${suffix}`;
+                  fieldValues.set(bridgedKey, { rawValue, dataType });
+                  debugLog(`[generate-document] Bridged ${key} -> ${bridgedKey} = "${rawValue}"`);
+                }
+              }
+            }
           }
         }
       });
