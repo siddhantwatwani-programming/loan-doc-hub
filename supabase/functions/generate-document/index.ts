@@ -227,6 +227,26 @@ async function generateSingleDocument(
       'pr_p_owner': 'owner',
       'pr_p_remainingSenior': 'remaining_senior',
       'pr_p_expectedSenior': 'expected_senior',
+      // RE851D bridging — additional CSR-saved keys (PropertyDetailsForm)
+      'pr_p_propertyType': 'appraisal_property_type',
+      'pr_p_occupanc': 'appraisal_occupancy',
+      'pr_p_appraiseDate': 'appraised_date',
+      'pr_p_ltv': 'ltv',
+      'pr_p_cltv': 'cltv',
+      'pr_p_descript': 'description',
+      'pr_p_purchasePrice': 'purchase_price',
+      'pr_p_downPayme': 'down_payment',
+      'pr_p_construcType': 'construction_type',
+      'pr_p_protectiveEquity': 'protective_equity',
+      'pr_p_appraiserStreet': 'appraiser_street',
+      'pr_p_appraiserCity': 'appraiser_city',
+      'pr_p_appraiserState': 'appraiser_state',
+      'pr_p_appraiserZip': 'appraiser_zip',
+      'pr_p_appraiserPhone': 'appraiser_phone',
+      'pr_p_appraiserEmail': 'appraiser_email',
+      'pr_p_zoning': 'zoning',
+      'pr_p_floodZone': 'flood_zone',
+      'pr_p_pledgedEquity': 'pledged_equity',
     };
 
     const fieldValues = new Map<string, FieldValueData>();
