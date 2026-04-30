@@ -180,7 +180,7 @@ export function useContactsCrud({ contactType, pageSize = 10 }: UseContactsCrudO
       const phoneValue = contactData.phone || contactData['phone.cell'] || contactData['phone.mobile'] || contactData['phone.home'] || contactData['phone.work'] || '';
       const { data: linkedParticipants } = await supabase
         .from('deal_participants')
-        .select('id')
+        .select('id, deal_id')
         .eq('contact_id', id);
 
       if (linkedParticipants && linkedParticipants.length > 0) {
@@ -193,6 +193,38 @@ export function useContactsCrud({ contactType, pageSize = 10 }: UseContactsCrudO
             phone: phoneValue,
           })
           .in('id', participantIds);
+
+        // Sync per-deal capacity into deal_section_values (section='participants')
+        // so the Participants grid reflects updated Capacity from the contact record.
+        const newCapacity = (contactData.capacity || '').toString().trim();
+        if (newCapacity) {
+          const dealIds = Array.from(
+            new Set(linkedParticipants.map((p: any) => p.deal_id).filter(Boolean))
+          );
+          for (const dealId of dealIds) {
+            const capacityKey = `participant_${id}_capacity`;
+            const { data: existingSection } = await supabase
+              .from('deal_section_values')
+              .select('id, field_values')
+              .eq('deal_id', dealId)
+              .eq('section', 'participants')
+              .maybeSingle();
+
+            const existingFv = (existingSection?.field_values as Record<string, any>) || {};
+            const updatedFv = { ...existingFv, [capacityKey]: newCapacity };
+
+            if (existingSection?.id) {
+              await supabase
+                .from('deal_section_values')
+                .update({ field_values: updatedFv, updated_at: new Date().toISOString() })
+                .eq('id', existingSection.id);
+            } else {
+              await supabase
+                .from('deal_section_values')
+                .insert({ deal_id: dealId, section: 'participants', field_values: updatedFv });
+            }
+          }
+        }
       }
 
       toast.success('Contact saved');
