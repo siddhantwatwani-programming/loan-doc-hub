@@ -222,8 +222,9 @@ export const AddParticipantModal: React.FC<AddParticipantModalProps> = ({
           return;
         }
 
-        // Create new contact - use 'borrower' as default contact_type for non-native types
-        const contactType = NATIVE_ROLES.has(participantType) && participantType !== 'other'
+        // Create new contact - preserve AG/AP/native types; fall back to borrower otherwise
+        const VALID_CONTACT_TYPES = new Set(['borrower', 'lender', 'broker', 'additional_guarantor', 'authorized_party']);
+        const contactType = VALID_CONTACT_TYPES.has(participantType)
           ? participantType
           : 'borrower';
         const { data: genId } = await supabase.rpc('generate_contact_id', {
