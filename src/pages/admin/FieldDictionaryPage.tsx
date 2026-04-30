@@ -119,11 +119,12 @@ const SECTION_FORMS: Record<string, { value: string; label: string; dbSection?: 
     { value: 'legal_description', label: 'Legal Description' },
     { value: 'insurance', label: 'Insurance', dbSection: 'insurance' },
     { value: 'property_tax', label: 'Property Tax' },
-    // Liens — grouped under Property (formerly its own top-level section)
-    { value: 'liens_general_details', label: 'Liens — General Details', dbSection: 'liens' },
-    { value: 'liens_loan_type', label: 'Liens — Loan Type', dbSection: 'liens' },
-    { value: 'liens_balance_payment', label: 'Liens — Balance & Payment', dbSection: 'liens' },
-    { value: 'liens_recording_tracking', label: 'Liens — Recording & Tracking', dbSection: 'liens' },
+    // Liens — grouped under Property as a single unified entry. The previous
+    // four sub-forms (general_details, loan_type, balance_payment,
+    // recording_tracking) are merged here. Filter logic surfaces every row
+    // where section = 'liens' regardless of its persisted form_type, so no
+    // existing data is hidden and field keys remain unchanged.
+    { value: 'liens_details', label: 'Liens Details', dbSection: 'liens' },
   ],
   funding: [
     { value: 'funding', label: 'Funding' },
@@ -240,11 +241,8 @@ const FORM_ABBR: Record<string, string> = {
   loan_type: 'lt',
   balance_payment: 'bp',
   recording_tracking: 'rt',
-  // Liens regrouped under Property — keep the same abbreviations as before
-  liens_general_details: 'gd',
-  liens_loan_type: 'lt',
-  liens_balance_payment: 'bp',
-  liens_recording_tracking: 'rt',
+  // Liens regrouped under Property as a single unified "Liens Details" entry.
+  liens_details: 'ld',
 };
 
 // All form types for the create/edit dialog (union)
@@ -509,6 +507,12 @@ export const FieldDictionaryPage: React.FC = () => {
   // Required for forms that live under a parent UI section but persist with
   // an unprefixed form_type (e.g. liens grouped under Property).
   const dbFormTypeToUiFormType = (uiSection: string, dbSection: string, dbFormType: string): string => {
+    // Liens are merged into a single unified "Liens Details" entry — every
+    // legacy form_type (general_details, loan_type, balance_payment,
+    // recording_tracking) maps to the same UI value.
+    if (uiSection === 'property' && dbSection === 'liens') {
+      return 'liens_details';
+    }
     const forms = SECTION_FORMS[uiSection] || [];
     const prefixed = forms.find(
       f => f.dbSection === dbSection && f.value === `${dbSection}_${dbFormType}`
