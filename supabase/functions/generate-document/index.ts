@@ -222,6 +222,11 @@ async function generateSingleDocument(
       'pr_p_occupancySt': 'occupancyStatus', 'pr_p_yearBuilt': 'yearBuilt',
       'pr_p_lotSize': 'lotSize', 'pr_p_squareFeet': 'squareFeet',
       'pr_p_numberOfUni': 'numberOfUnits', 'pr_p_country': 'country',
+      // RE851D multi-property bridging — UI form keys (PropertyDetailsForm)
+      'pr_p_appraiseValue': 'appraised_value',
+      'pr_p_owner': 'owner',
+      'pr_p_remainingSenior': 'remaining_senior',
+      'pr_p_expectedSenior': 'expected_senior',
     };
 
     const fieldValues = new Map<string, FieldValueData>();
@@ -809,7 +814,11 @@ async function generateSingleDocument(
           fieldValues.set(`pr_p_delinquHowMany_${idx}`, { rawValue: delinqV.rawValue, dataType: delinqV.dataType || "number" });
         }
         // Per-property appraise value & owner (handle alternate canonical keys)
-        const appraiseV = fieldValues.get(`${prefix}.appraise_value`) || fieldValues.get(`${prefix}.appraiseValue`);
+        // UI saves under `propertyN.appraised_value` (PropertyDetailsForm/fieldKeyMap.appraisedValue)
+        const appraiseV =
+          fieldValues.get(`${prefix}.appraised_value`) ||
+          fieldValues.get(`${prefix}.appraise_value`) ||
+          fieldValues.get(`${prefix}.appraiseValue`);
         if (appraiseV?.rawValue && !fieldValues.has(`pr_p_appraiseValue_${idx}`)) {
           fieldValues.set(`pr_p_appraiseValue_${idx}`, { rawValue: appraiseV.rawValue, dataType: appraiseV.dataType || "currency" });
         }
@@ -834,10 +843,11 @@ async function generateSingleDocument(
           }
         }
 
-        // Computed: per-property LTV ratio = loan_amount / property{N}.appraise_value
+        // Computed: per-property LTV ratio = loan_amount / property{N}.appraised_value
         const appraiseNum = parseFloat(
           String(
             fieldValues.get(`pr_p_appraiseValue_${idx}`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraised_value`)?.rawValue ||
             fieldValues.get(`${prefix}.appraise_value`)?.rawValue ||
             ""
           ).replace(/[^0-9.-]/g, "")
