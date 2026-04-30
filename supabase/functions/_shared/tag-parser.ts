@@ -2398,7 +2398,12 @@ export function replaceMergeTags(
   // Final safety net: remove only merge tags that were explicitly parsed
   // and had no data. Do NOT globally remove all {{...}} patterns — that can
   // blank tags that normalization failed to consolidate but are still valid.
-  if (tags.length > 0) {
+  // Skip the no-data cleanup pass entirely when no `{{` markers remain in the
+  // result — the combined-regex pass above already replaced every parsed tag
+  // (including no-data ones, which were mapped to ""). For large templates
+  // (e.g. RE885) this avoids re-resolving 100+ field keys for nothing and
+  // was a major contributor to CPU exhaustion.
+  if (tags.length > 0 && result.indexOf('{{') !== -1) {
     const noDataPatterns: string[] = [];
     for (const tag of tags) {
       const ck = resolveFieldKeyWithMap(tag.tagName, mergeTagMap, validFieldKeys);
