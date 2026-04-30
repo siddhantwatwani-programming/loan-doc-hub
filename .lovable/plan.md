@@ -1,29 +1,88 @@
-I confirmed RE885 is consistently failing in `generation_jobs` with `Generation timed out (CPU limit exceeded)`, while another document on the same deal completes in about 7–10 seconds. The RE885 template file itself is not huge, so the likely bottleneck is the generic DOCX parser doing unnecessary document-wide label/checkbox safety passes that were built for RE851A and are currently running for every template, including RE885.
+I confirmed this is not a missing CSR data problem. The deal currently has distinct stored values:
 
-Plan:
+```text
+property1: Doveson Street, Boston, AL, 10002 | appraised 5,000,000 | type Multi-family
+property2: MG Road, Noida, AZ, 98454       | appraised 323       | type Condo / Townhouse
+property3: MG Ringh, Noida, 98454          | appraised 343       | type Commercial
+```
 
-1. Scope RE851A-only safety passes to RE851A templates only
-   - Add an optional processing context/template name parameter through the DOCX processing path.
-   - In `replaceMergeTags`, run the existing RE851A-specific sections only when the template name matches `851a`.
-   - This preserves RE851A behavior while preventing RE885 from paying the CPU cost of RE851A-only checkbox/glyph normalization.
+The generated `Re851d_v9.docx` still repeats Property #1 values because some RE851D template placeholders are still generic or unindexed. The uploaded template includes patterns such as:
 
-2. Keep RE885 output behavior unchanged
-   - Do not alter RE885 mappings, field resolution, business logic, output format, database schema, UI, or document flow.
-   - RE885 will still run the shared merge tag replacement, conditionals, labels, DOCX integrity validation, upload, and generated document record creation.
+```text
+{{pr_p_address_N}}
+{{pr_p_appraiseValue_N}}
+{{ln_p_loanToValueRatio_N}}
+```
 
-3. Add lightweight timing logs around major generation phases
-   - Add debug/performance logs for RE885 generation phases such as field resolution, template download, mapping fetch, DOCX processing, upload, and record insertion.
-   - This is only observability; it does not change output.
-   - These logs will make it clear if any additional RE885-specific bottleneck remains after the scoped optimization.
+but also has later property sections with blank placeholders or unindexed tags like:
 
-4. Validate using recent job behavior and logs
-   - After implementation, check that new RE885 jobs no longer remain stuck/running until timeout.
-   - Confirm that generated document records are created normally and other document generation paths remain unchanged.
+```text
+{{pr_p_address}}
+{{pr_p_squareFeet}}
+{{ propertytax.annual_payment }}
+```
+
+Those unindexed tags resolve to the first/canonical property value, so repeated sections can show Property[0] over and over.
+
+Plan to fix, with minimal scope:
+
+1. Update only RE851D document generation binding logic
+   - Modify `supabase/functions/generate-document/index.ts` only.
+   - Do not change UI, database schema, field dictionary, storage model, or general document generation flow.
+
+2. Replace the fragile global `_N` occurrence counter with RE851D section-scoped index binding
+   - Detect RE851D property sections by document structure:
+     - Part 2 repeated `PROPERTY TYPE / PROPERTY OWNER / PROPERTY` blocks.
+     - Explicit `PROPERTY #1`, `PROPERTY #2`, `PROPERTY #3`, etc. sections.
+   - Assign one property index per section/block.
+   - Rewrite all property-related placeholders inside that block to the same index.
+
+3. Support both generic `_N` tags and unindexed RE851D property tags
+   - Convert within each detected property block:
+     - `pr_p_address_N` -> `pr_p_address_2` for Property #2, etc.
+     - `pr_p_appraiseValue_N` -> `pr_p_appraiseValue_2`, etc.
+     - `ln_p_loanToValueRatio_N` -> `ln_p_loanToValueRatio_2`, etc.
+   - Also convert unsafe unindexed tags inside explicit repeated RE851D property blocks:
+     - `pr_p_address` -> `pr_p_address_2`
+     - `pr_p_squareFeet` -> `pr_p_squareFeet_2`
+     - `pr_p_construcType` -> `pr_p_construcType_2`
+     - `propertytax.annual_payment` -> `propertytax_annual_payment_2`
+   - Keep non-property/global fields unchanged.
+
+4. Add missing per-index aliases already needed by the template
+   - Ensure existing per-property alias publishing covers the actual template tags used for:
+     - Address
+     - Market/appraised value
+     - Loan-to-value
+     - Property type
+     - Square feet
+     - Construction type
+     - Property tax aliases
+     - Encumbrance totals
+   - Preserve current formatting rules: US currency and percentage formatting.
+
+5. Prevent cross-index fallback
+   - If Property #2 or #3 does not have a field value, render blank for that property-specific field.
+   - Do not fall back to Property #1.
+
+6. Add targeted diagnostics
+   - Add RE851D-only logs summarizing:
+     - Detected property sections and assigned indices.
+     - Rewritten placeholder counts.
+     - Available property aliases for property1/property2/property3.
+   - This will help verify the next generated document without changing user-facing behavior.
+
+7. Validate against the uploaded failure case
+   - Use the uploaded template/output analysis and the live deal data to verify expected binding:
+     - Property #1 -> Doveson Street
+     - Property #2 -> MG Road
+     - Property #3 -> MG Ringh
+   - Ensure Part 2 table rows and detailed Property sections use their own per-index values for market value, LTV, encumbrances, and property type.
 
 Files expected to change:
-- `supabase/functions/_shared/types.ts` — add a small optional DOCX processing context type.
-- `supabase/functions/_shared/docx-processor.ts` — pass template context into the parser.
-- `supabase/functions/_shared/tag-parser.ts` — gate RE851A-only passes behind an `isRe851A` check.
-- `supabase/functions/generate-document/index.ts` — provide the template name/context and add scoped timing logs.
 
-No database schema changes, UI layout changes, or template/output formatting changes are planned.
+```text
+supabase/functions/generate-document/index.ts
+```
+
+No database changes, no UI changes, no template overwrite, and no refactor outside the RE851D-specific generation path.
