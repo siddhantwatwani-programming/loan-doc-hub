@@ -2238,14 +2238,28 @@ async function generateSingleDocument(
           // and rewrite the segment that follows it (up to the next anchor or
           // end of file) to use index K. Segments before the first anchor are
           // handled separately below using the legacy occurrence counter.
-          const anchors: { idx: number; pos: number }[] = [];
+          const allAnchors: { idx: number; pos: number }[] = [];
           propHeadingRe.lastIndex = 0;
           let m: RegExpExecArray | null;
           while ((m = propHeadingRe.exec(xml)) !== null) {
             const k = parseInt(m[1], 10);
             if (k >= 1 && k <= 9) {
-              anchors.push({ idx: k, pos: m.index + m[0].length });
+              allAnchors.push({ idx: k, pos: m.index + m[0].length });
             }
+          }
+          // RE851D explanatory text mentions "Property #1, ... Property #2, ...
+          // Property #3" inline before the actual numbered sections begin.
+          // Real section anchors form a strictly-increasing sequence (1,2,3,…).
+          // Keep only the LAST such run so inline mentions are ignored. We
+          // walk the anchor list and reset whenever the index does not
+          // strictly increase from the previous kept anchor.
+          const anchors: { idx: number; pos: number }[] = [];
+          for (const a of allAnchors) {
+            if (anchors.length > 0 && a.idx <= anchors[anchors.length - 1].idx) {
+              // Sequence broken — start a new run from this anchor.
+              anchors.length = 0;
+            }
+            anchors.push(a);
           }
 
           if (anchors.length > 0) {
