@@ -2400,7 +2400,7 @@ async function generateSingleDocument(
       return result;
     }
     if (isTemplate885) {
-      console.log(`[RE885] Template Compile: ${Math.round(performance.now() - tTemplateLoadStart)} ms (size=${(await fileData.arrayBuffer().then(()=>0).catch(()=>0)) || 'n/a'} bytes-skip)`);
+      console.log(`[RE885] Template Compile: ${Math.round(performance.now() - tTemplateLoadStart)} ms`);
     }
 
     // 5. Fetch merge tag mappings AND field key migration maps, then process the DOCX
