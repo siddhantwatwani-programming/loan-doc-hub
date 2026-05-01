@@ -2645,8 +2645,10 @@ export function replaceMergeTags(
 
   // Post-replacement cleanup: remove paragraphs that now contain only empty
   // text runs (their merge tags were replaced with "" by no-data cleanup).
-  // This prevents blank lines / extra spacing in the generated document.
-  {
+  // Cheap precheck: paragraphs are only removed when they contain an empty
+  // <w:t></w:t> run, so when the document has no such empty run we can skip
+  // walking every paragraph entirely.
+  if (/<w:t[^>]*>\s*<\/w:t>/.test(result)) {
     let emptyParaCount = 0;
     result = processParaByPara(result, (para) => {
       // Extract all text content from the paragraph
