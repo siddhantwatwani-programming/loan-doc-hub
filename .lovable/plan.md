@@ -1,132 +1,61 @@
-I’ll keep this narrowly scoped to the document generation backend only. No UI, database schema, CSR forms, template management UI, or unrelated document flows will be changed.
+## RE851D — Map Lien fields to Expected / Remaining Senior Encumbrance
 
-## Findings from the deep analysis
+### What's already in place (no work needed)
+- Lien UI fields persist correctly:
+  - `Anticipated` → dictionary key `li_lt_anticipated` (boolean)
+  - `Amount` (Anticipated Amount) → `li_lt_anticipatedAmount` (currency)
+  - `New / Remaining` → `li_gd_newRemainingBalance` (currency)
+  - `Related Property` → `pr_li_lienProper` (dropdown carrying the property identifier/address)
+- Multi-property scaffolding (`property{N}`, `_N` rewrite, anti-fallback shield) already exists in `supabase/functions/generate-document/index.ts`.
 
-The timeout is happening in the DOCX XML rendering path, not in the UI.
+### Root cause of the empty fields
+The RE851D template tags `{{ln_p_expectedEncumbrance_N}}` and `{{ln_p_remainingEncumbrance_N}}` are never published. Today the publisher only emits `pr_p_expectedSenior_N` / `pr_p_remainingSenior_N` from `property{N}.expected_senior` / `property{N}.remaining_senior`, which are static text fields on PropertyDetailsForm — not the actual Lien data the user enters in the Lien section.
 
-Recent backend logs show RE885 failing here:
+### Implementation
 
-```text
-[885] Data Mapping: 1771 ms (fieldValues=643)
-[885] Template Load: 690 ms
-[tag-parser] phases total=5348ms size=635710B top5: normalizeWordXml=5287ms
-[885] DOCX Render: 5358 ms (replace=5355 ms, parts=5, slowest=word/document.xml:5349 ms)
-CPU Time exceeded
-```
+#### 1. Add two new Field Dictionary aliases (Admin → Property → Property Details section)
+Insert via `INSERT` into `public.field_dictionary` (data only, no schema change):
 
-The exact bottleneck is `normalizeWordXml()` in `supabase/functions/_shared/tag-parser.ts`. RE885 is large and table-heavy, and the parser is entering the expensive fragmented-run normalization path across the full 635KB `word/document.xml`. That path is intended for malformed Word merge tags split across XML runs, but for RE885 most placeholders are regular `{{...}}` HUD fee fields. The engine is spending several seconds scanning and normalizing the whole XML before the actual replacements happen.
+| field_key | label | section | data_type | form_type |
+|---|---|---|---|---|
+| `ln_p_expectedEncumbrance` | Expected Senior Encumbrance | property | currency | primary |
+| `ln_p_remainingEncumbrance` | Remaining Senior Encumbrance | property | currency | primary |
 
-There is also extra overhead from RE851A-specific derived checkbox aliases and RE851A label maps being built for unrelated templates. That overhead is smaller than `normalizeWordXml`, but it is still visible in logs during RE885 generation and should be gated by template type.
+These are **publisher-output aliases** (purely for document merge resolution), not user-editable inputs — they will be visible in Admin → Field Dictionary as required by the spec, but no UI form change is needed because the source values come from the existing Lien section.
 
-## Implementation plan
+#### 2. New per-property publisher in `supabase/functions/generate-document/index.ts`
+Add a block inside the existing `if (/851d/i.test(template.name || ""))` loop (around the existing total-encumbrance block at line ~1145), strictly per-index, no cross-index fallback. For each property index `idx` in `sortedPropIndices`:
 
-### 1. Add an RE885-safe fast path in the tag parser
+1. Build a list of liens (`lien1.*`, `lien2.*`, …) whose `pr_li_lienProper` (`lien{k}.property`) matches this property — match either:
+   - the entity prefix `property{idx}` (case-insensitive), OR
+   - the normalized `property{idx}.address`.
+2. **Expected Senior Encumbrance** = sum of `lien{k}.anticipated_amount` for every matched lien where `lien{k}.anticipated` is truthy (`true`/`yes`/`1`).
+3. **Remaining Senior Encumbrance** = sum of `lien{k}.new_remaining_balance` for every matched lien (regardless of anticipated flag — separate field).
+4. Publish (only if not already set):
+   - `ln_p_expectedEncumbrance_${idx}` (currency)
+   - `ln_p_remainingEncumbrance_${idx}` (currency)
+   - Also publish the legacy `pr_p_expectedSenior_${idx}` and `pr_p_remainingSenior_${idx}` from the same computed values **only when the existing `property{N}.expected_senior` / `.remaining_senior` static fields are empty**, so existing templates keep working without regression.
 
-File: `supabase/functions/_shared/tag-parser.ts`
+**Multi-lien rule**: sum (per the spec's "If multiple liens exist per property: Either sum values OR Take latest entry"). Sum is the safer, deterministic choice and is consistent with the existing `pr_p_totalSenior_N` lien-sum publisher already in this file.
 
-- Add a lightweight template profile inside `replaceMergeTags()` using `templateName`:
-  - `is885 = /885/i.test(templateName || "")`
-  - keep existing `is851A` behavior intact.
-- Before calling `normalizeWordXml()`, determine whether the XML truly needs fragmented-run normalization:
-  - field codes present: `w:fldChar`, `w:fldSimple`, `w:instrText`
-  - real split placeholders across Word runs
-  - control blocks needing XML consolidation: `{{#if`, `{{#unless`, `{{#each`, `{{else}}`, `{{/if}}`, etc.
-- For RE885, when the XML only contains intact `{{field}}` placeholders, skip the heavy fragmented normalization and go directly to parse/replace.
-- Preserve the existing normalization path for templates that need it, especially RE851A and templates with actual fragmented tags.
+#### 3. Update existing total-encumbrance computation (line ~1145)
+Change the `remainingNum` / `expectedNum` source so it falls back to the newly published `ln_p_remainingEncumbrance_${idx}` / `ln_p_expectedEncumbrance_${idx}` when `property{N}.remaining_senior` / `property{N}.expected_senior` are empty. Keeps `pr_p_totalEncumbrance_N` accurate.
 
-Expected impact: remove the current 5.2s `normalizeWordXml` cost for RE885.
+#### 4. Register the new tag bases for `_N` rewrite & anti-fallback shield
+- Add `"ln_p_expectedEncumbrance_N"` and `"ln_p_remainingEncumbrance_N"` to `RE851D_INDEXED_TAGS` (line ~2379) so generic `_N` placeholders rewrite correctly.
+- Add `"ln_p_expectedEncumbrance"` and `"ln_p_remainingEncumbrance"` to `SHIELD_BASES` (line ~1256) so unpublished indices render blank instead of falling back to Property #1's data.
 
-### 2. Make placeholder replacement more single-pass and avoid oversized combined regexes
+#### 5. Template note
+The user-managed RE851D `.docx` template tags must be exactly `{{ln_p_expectedEncumbrance_N}}` and `{{ln_p_remainingEncumbrance_N}}` (or per-index `_1`/`_2`/…). Code changes alone won't update the binary template; if the template still uses literal `$________` placeholders for these two fields, the user will need to author the merge tags. We'll document this in the response after implementation. No code change to templates.
 
-File: `supabase/functions/_shared/tag-parser.ts`
+### Files to change
+- `supabase/functions/generate-document/index.ts` — new publisher block, updated total-encumbrance fallback, two `RE851D_INDEXED_TAGS` entries, two `SHIELD_BASES` entries.
+- Database insert (no migration): two rows in `public.field_dictionary`.
 
-- Keep the existing single-pass replacement concept, but optimize it for large documents:
-  - parse unique placeholders once,
-  - resolve each unique tag once,
-  - replace direct curly placeholders with a callback regex instead of building a huge alternation regex when many tags exist.
-- This avoids expensive regex construction and backtracking on HUD templates with many fee placeholders.
-- Maintain current behavior for transforms, currency stripping, XML escaping, and newline handling.
-
-### 3. Skip label-based replacement when a template has no relevant labels
-
-File: `supabase/functions/_shared/tag-parser.ts`
-
-- The code already filters label candidates, but RE885 should avoid label processing entirely when:
-  - all placeholders are merge tags, and
-  - no label quick needles are present.
-- Add timing around this decision so logs clearly show whether label replacement was skipped or how many labels were candidates.
-
-### 4. Gate RE851A-only mapping and label additions by template name
-
-File: `supabase/functions/generate-document/index.ts`
-
-- Introduce `isTemplate851A = /851a/i.test(template.name || "")` near the existing `isTemplate885`.
-- Wrap RE851A-only derivations so they only run for RE851A:
-  - amortization checkbox aliases,
-  - subordination provision aliases,
-  - broker-capacity aliases,
-  - servicing-agent aliases,
-  - payable-frequency aliases.
-- Build `effectiveLabelMap` conditionally:
-  - start with the database `labelMap`,
-  - add the large RE851A hardcoded label bindings only for RE851A.
-- Leave RE851D-specific `_N` preprocessing gated exactly as it is.
-
-This preserves RE851A behavior while removing irrelevant work and noisy logs from RE885.
-
-### 5. Optimize data mapping diagnostics without changing data results
-
-File: `supabase/functions/generate-document/index.ts`
-
-- Add timing logs for major data-mapping subsections, only for RE885 or large templates:
-  - field dictionary loading,
-  - deal section value expansion,
-  - participant/contact mapping,
-  - HUD totals,
-  - valid field key cache.
-- Do not change the field mapping output unless a clearly redundant loop is safe to bypass.
-
-### 6. Add fail-safe timeout diagnostics
-
-Files:
-- `supabase/functions/generate-document/index.ts`
-- `supabase/functions/_shared/docx-processor.ts`
-- `supabase/functions/_shared/tag-parser.ts`
-
-- Add a lightweight elapsed-time guard around major stages.
-- If generation approaches the CPU-risk zone, log partial diagnostics before the platform terminates the function:
-  - template name,
-  - XML part name,
-  - XML byte size,
-  - phase timings already collected,
-  - number of parsed tags,
-  - whether normalization was skipped or required.
-- Return a clearer error message when an internal guard catches the issue before the runtime kills the function.
-
-### 7. Add malformed-placeholder validation diagnostics
-
-File: `supabase/functions/_shared/tag-parser.ts`
-
-- Add a non-mutating validation pass for large templates to detect likely malformed placeholders:
-  - unmatched `{{` / `}}`,
-  - placeholders containing XML markup,
-  - tags with leading/trailing spaces like `{{ of_re_loanTermValue }}`,
-  - placeholders not matching valid field key format.
-- Log counts and a few safe examples; do not remove or rewrite placeholders unless the current engine already would.
-
-### 8. Verify behavior with existing document-specific tests
-
-Files:
-- existing `supabase/functions/_shared/tag-parser.*.test.ts`
-- add or adjust focused RE885 parser test if needed.
-
-Validation targets:
-
-- RE885 no longer spends seconds in `normalizeWordXml`.
-- RE885 placeholders like `{{br_p_fullName}}`, `{{pr_p_address}}`, `{{of_1302_pest_o}}`, and spaced tags like `{{ of_re_loanTermValue }}` still populate correctly.
-- RE851A checkbox behavior remains unchanged because its paths still run only for RE851A templates.
-- RE851D `_N` expansion remains unchanged.
-
-## Expected result
-
-After implementation, RE885 should generate successfully without CPU timeout. The primary improvement should be visible in logs as the `normalizeWordXml` phase dropping from ~5.2 seconds to near-zero or being skipped entirely for intact-placeholder RE885 templates.
+### Acceptance verification
+- For Property #1 with one lien tagged to it: Anticipated=true + Amount=$10,000 → `{{ln_p_expectedEncumbrance_1}}` renders `$10,000.00`.
+- New/Remaining=$5,000 → `{{ln_p_remainingEncumbrance_1}}` renders `$5,000.00`.
+- Two liens on Property #2 with anticipated_amount $3k and $7k → `{{ln_p_expectedEncumbrance_2}}` = `$10,000.00`.
+- Property #3 with no liens → both tags render blank (anti-fallback shield blocks Property #1 leak).
+- Admin → Field Dictionary → Property section shows the two new keys.
+- No CPU-budget regression: the publisher adds ≤ N×K simple lookups (N≤5 properties, K = lien count), no regex sweeps.
