@@ -2621,6 +2621,63 @@ async function generateSingleDocument(
             }
           }
 
+          // ── RE851D contextual bare-tag rewrite ──
+          // The uploaded RE851D template contains bare (non-_N) tags inside
+          // some PROPERTY #K detail sections, e.g.
+          //   PROPERTY #2 AGE  -> {{ pr_p_yearBuilt}}
+          //   PROPERTY #3 SQUARE FEET -> {{pr_p_squareFeet}}
+          //   {{#if propertytax.delinquent}}
+          // Without rewriting, these resolve against Property #1's data
+          // (or empty) regardless of which PROPERTY #K block they sit in.
+          // Strictly scoped to the detected PROPERTY #K ranges.
+          if (regions.props.length > 0) {
+            const BARE_TAGS = [
+              "pr_p_yearBuilt",
+              "pr_p_squareFeet",
+              "pr_p_appraiseValue",
+              "pr_p_appraiseDate",
+              "pr_p_construcType",
+              "pr_p_descript",
+              "pr_p_address",
+              "pr_p_occupanc",
+              "propertytax.annual_payment",
+              "propertytax.delinquent_amount",
+              "propertytax.source_of_information",
+              "propertytax.delinquent",
+            ];
+            const isInRewriteSpan = (s: number, e: number): boolean => {
+              for (const r of rewrites) {
+                if (s < r.end && e > r.start) return true;
+              }
+              return false;
+            };
+            // Sort longest-first so dotted longer keys win over shorter prefixes.
+            const bareSorted = [...BARE_TAGS].sort((a, b) => b.length - a.length);
+            for (const p of regions.props) {
+              for (const tag of bareSorted) {
+                // Match the bare token only when it is NOT already followed by _<digit>
+                // (so we don't double-rewrite tags that already have a numeric suffix).
+                const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                const re = new RegExp(`${escaped}(?!_\\d|[A-Za-z0-9_])`, "g");
+                let m: RegExpExecArray | null;
+                while ((m = re.exec(xml)) !== null) {
+                  const start = m.index;
+                  const end = start + m[0].length;
+                  if (start < p.range[0] || end > p.range[1]) continue;
+                  if (isInRewriteSpan(start, end)) continue;
+                  rewrites.push({
+                    start,
+                    end,
+                    replacement: `${tag}_${p.k}`,
+                  });
+                  totalRewrites++;
+                  if (!regionRewriteCounts[`PROP#${p.k}`]) regionRewriteCounts[`PROP#${p.k}`] = 0;
+                  regionRewriteCounts[`PROP#${p.k}`]++;
+                }
+              }
+            }
+          }
+
           // Apply rewrites in reverse offset order so earlier offsets are stable.
           rewrites.sort((a, b) => b.start - a.start);
           for (const r of rewrites) {
