@@ -244,8 +244,17 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
  * Word often splits text across multiple <w:t> elements.
  */
 export function normalizeWordXml(xmlContent: string): string {
+  const __nwxStart = Date.now();
+  const __nwxLog = (label: string, t0: number) => {
+    if (xmlContent.length > 200_000) {
+      console.log(`[tag-parser] normalizeWordXml.${label}=${Date.now() - t0}ms (size=${xmlContent.length}B)`);
+    }
+  };
+
+  const tCheck = Date.now();
   const hasFieldCodeStructures = xmlContent.includes('w:fldChar') || xmlContent.includes('w:fldSimple') || xmlContent.includes('w:instrText');
   const hasFragmentedCandidates = hasFragmentedMergeTagCandidates(xmlContent);
+  __nwxLog('preCheck', tCheck);
   if (!hasFieldCodeStructures && !hasFragmentedCandidates) {
     if (xmlContent.length > 200_000) {
       console.log(`[tag-parser] normalizeWordXml fast-path: skipped fragmented-run normalization (${xmlContent.length}B)`);
@@ -254,7 +263,9 @@ export function normalizeWordXml(xmlContent: string): string {
   }
 
   // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
+  const tFlatten = Date.now();
   let result = flattenMergeFieldStructures(xmlContent);
+  __nwxLog('flattenMergeFieldStructures', tFlatten);
 
   // If the template only had field-code structures (or already-intact tags),
   // flattening is sufficient. Skip the expensive fragmented-run regex suite
@@ -264,6 +275,45 @@ export function normalizeWordXml(xmlContent: string): string {
       console.log(`[tag-parser] normalizeWordXml fast-path: flattened field codes only, skipped fragmented-run normalization (${xmlContent.length}B)`);
     }
     return result;
+  }
+
+  // CPU-budget guard for very large templates (e.g. RE885 HUD-1, ~635KB).
+  // The downstream paragraph-scoped fragmented-run normalization suite is
+  // gated per-paragraph by hasFragmentedMergeTagCandidates(), so when the
+  // ONLY signal that fired at the document level was the loose split-brace
+  // detector (`\{(?:\s|<[^>]+>)+\{` / `\}(?:\s|<[^>]+>)+\}`) — which can
+  // match intact-but-adjacent tags in dense templates — we can verify
+  // whether real per-paragraph fragmentation exists before paying the
+  // full document-scoped cleanup cost. If no paragraph individually
+  // qualifies, skip the heavy regex suite. Intact `{{tag}}` placeholders
+  // continue to be replaced normally downstream.
+  if (xmlContent.length > 200_000 && hasFragmentedCandidates && !hasFieldCodeStructures) {
+    const tProbe = Date.now();
+    let anyParaFragmented = false;
+    const probeResult = result;
+    let pos = 0;
+    let probeCount = 0;
+    while (pos < probeResult.length) {
+      const pStart = probeResult.indexOf('<w:p', pos);
+      if (pStart === -1) break;
+      const pEnd = probeResult.indexOf('</w:p>', pStart);
+      if (pEnd === -1) break;
+      const para = probeResult.substring(pStart, pEnd + 6);
+      pos = pEnd + 6;
+      if (!para.includes('{') && !para.includes('\u00AB')) continue;
+      probeCount++;
+      if (para.includes('instrText') || hasFragmentedMergeTagCandidates(para)) {
+        anyParaFragmented = true;
+        break;
+      }
+    }
+    __nwxLog(`paragraphProbe(scanned=${probeCount}, fragmented=${anyParaFragmented})`, tProbe);
+    if (!anyParaFragmented) {
+      console.log(
+        `[tag-parser] normalizeWordXml fast-path: large template with no per-paragraph fragmentation — skipped heavy normalization (${xmlContent.length}B, total=${Date.now() - __nwxStart}ms)`
+      );
+      return result;
+    }
   }
   
   // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
