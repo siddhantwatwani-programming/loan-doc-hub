@@ -2407,7 +2407,7 @@ export function replaceMergeTags(
   }
 
   // First normalize the XML to handle fragmented merge fields
-  let result = normalizeWordXml(content);
+  let result = normalizeWordXml(content, templateName);
   __mark('normalizeWordXml');
 
   // Document-wide consolidation for control tags whose {{ ... }} brackets get
