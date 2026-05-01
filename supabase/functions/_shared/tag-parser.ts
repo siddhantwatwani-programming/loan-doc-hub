@@ -617,6 +617,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
     return p;
   });
+  __nwxLog('fragmentedSuite', tFragSuite);
 
   // Diagnostic: count tags BEFORE paragraph-level consolidation
   const preConsolidationCurly = (result.match(/\{\{[A-Za-z0-9_.| ]+\}\}/g) || []).length;
@@ -626,10 +627,15 @@ export function normalizeWordXml(xmlContent: string): string {
   // Safety-net: paragraph-level consolidation for tags that span multiple
   // <w:t> runs. Skip it when the earlier passes prove no fragmented
   // delimiters remain; intact tags already parse correctly.
+  const tConsolidate = Date.now();
   if (hasFragmentedMergeTagCandidates(result)) {
     result = consolidateFragmentedTagsInParagraphs(result);
   }
+  __nwxLog('paraConsolidation', tConsolidate);
 
+  if (xmlContent.length > 200_000) {
+    console.log(`[tag-parser] normalizeWordXml total=${Date.now() - __nwxStart}ms (size=${xmlContent.length}B)`);
+  }
   return result;
 }
 
