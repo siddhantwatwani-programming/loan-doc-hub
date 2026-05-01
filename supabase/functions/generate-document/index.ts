@@ -117,6 +117,8 @@ async function generateSingleDocument(
 
     result.templateName = template.name;
     const isTemplate885 = /885/i.test(template.name || "");
+    const t885Total = performance.now();
+    const tDataFetchStart = performance.now();
     const tDataMappingStart = performance.now();
 
     if (!template.file_path) {
@@ -251,6 +253,11 @@ async function generateSingleDocument(
       'pr_p_floodZone': 'flood_zone',
       'pr_p_pledgedEquity': 'pledged_equity',
     };
+
+    if (isTemplate885) {
+      console.log(`[RE885] Data Fetch: ${Math.round(performance.now() - tDataFetchStart)} ms (sections=${(sectionValues || []).length}, fields=${allFieldDictEntries.length})`);
+    }
+    const tDataProcessingStart = performance.now();
 
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
@@ -2349,7 +2356,7 @@ async function generateSingleDocument(
     // Build set of all valid field keys once and reuse it across invocations.
     const validFieldKeys = await getValidFieldKeys(supabase);
     if (isTemplate885) {
-      console.log(`[885] Data Mapping: ${Math.round(performance.now() - tDataMappingStart)} ms (fieldValues=${fieldValues.size})`);
+      console.log(`[RE885] Data Processing: ${Math.round(performance.now() - tDataProcessingStart)} ms (fieldValues=${fieldValues.size})`);
     }
 
     // 4. Download template DOCX from storage
@@ -2393,7 +2400,7 @@ async function generateSingleDocument(
       return result;
     }
     if (isTemplate885) {
-      console.log(`[885] Template Load: ${Math.round(performance.now() - tTemplateLoadStart)} ms`);
+      console.log(`[RE885] Template Compile: ${Math.round(performance.now() - tTemplateLoadStart)} ms`);
     }
 
     // 5. Fetch merge tag mappings AND field key migration maps, then process the DOCX
@@ -2976,6 +2983,7 @@ async function generateSingleDocument(
     }
 
     let processedDocx: Uint8Array;
+    const tRenderStart = performance.now();
     try {
       processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, effectiveValidFieldKeys, { templateName: template.name });
     } catch (err) {
@@ -2988,6 +2996,9 @@ async function generateSingleDocument(
         return result;
       }
       throw err;
+    }
+    if (isTemplate885) {
+      console.log(`[RE885] DOCX Render: ${Math.round(performance.now() - tRenderStart)} ms (output=${processedDocx.length} bytes)`);
     }
 
     debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
@@ -3021,7 +3032,8 @@ async function generateSingleDocument(
       return result;
     }
     if (isTemplate885) {
-      console.log(`[885] File Export: ${Math.round(performance.now() - tFileExportStart)} ms`);
+      console.log(`[RE885] File Export: ${Math.round(performance.now() - tFileExportStart)} ms`);
+      console.log(`[RE885] Total CPU Time: ${Math.round(performance.now() - t885Total)} ms`);
     }
 
     debugLog(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);

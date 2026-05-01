@@ -2567,13 +2567,16 @@ export function replaceMergeTags(
     tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
   }
 
-  // Single-pass replacement: build regex from all tag patterns and replace in one go
+  // Single-pass replacement using a generic delimiter scanner instead of an
+  // alternation regex of every parsed tag literal. The previous approach built
+  // `new RegExp(escapedPatterns.join('|'), 'g')` with hundreds of branches on
+  // dense templates (RE885 ~250+ {{...}} placeholders) which forces the regex
+  // engine to attempt each alternative at every position — a major CPU sink.
+  // The replacement scanner walks the document ONCE and looks each match up in
+  // the map (O(1)). Behavior is identical: unknown matches pass through.
   if (tagReplacementMap.size > 0) {
-    const escapedPatterns = [...tagReplacementMap.keys()].map(k =>
-      k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    );
-    const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
-    result = result.replace(combinedRegex, (match, offset: number) => {
+    const tagScanRe = /\{\{[^{}\n]{1,400}?\}\}|«[^«»\n]{1,400}?»/g;
+    result = result.replace(tagScanRe, (match, offset: number) => {
       const replacement = tagReplacementMap.get(match);
       if (replacement === undefined) return match;
       if (!replacement.includes('\n')) return replacement;
@@ -2589,19 +2592,19 @@ export function replaceMergeTags(
 
     // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
     // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
-    // already present in the template (e.g., "☑☐ Label" → "☑ Label").
-    //
-    // SCOPING: Restrict the dedup so the gap between the two glyphs may NOT
-    // cross a paragraph boundary (`</w:p>` / new `<w:p>` start) OR a soft
-    // line break (`<w:br/>`). Without this guard, two glyphs that
-    // legitimately belong to *different* logical lines but live in the same
-    // paragraph (e.g., the RE851A "Is Broker also a Borrower?" A./B. row
-    // where each {{#if}} block is on its own line separated by Shift+Enter)
-    // would be collapsed, silently dropping Option B's checkbox.
-    result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])/g,
-      (_m, g1, mid, _g2) => `${g1}${mid}`
-    );
+    // already present in the template. Skip entirely when no glyphs exist
+    // anywhere in the document — the lazy regex scan is otherwise O(N) over
+    // ~635KB on RE885 even though no merge tag in that template emits a glyph.
+    if (
+      result.indexOf('\u2610') !== -1 ||
+      result.indexOf('\u2611') !== -1 ||
+      result.indexOf('\u2612') !== -1
+    ) {
+      result = result.replace(
+        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])/g,
+        (_m, g1, mid, _g2) => `${g1}${mid}`
+      );
+    }
   }
   
   __mark('mergeTagReplace');
@@ -2642,8 +2645,10 @@ export function replaceMergeTags(
 
   // Post-replacement cleanup: remove paragraphs that now contain only empty
   // text runs (their merge tags were replaced with "" by no-data cleanup).
-  // This prevents blank lines / extra spacing in the generated document.
-  {
+  // Cheap precheck: paragraphs are only removed when they contain an empty
+  // <w:t></w:t> run, so when the document has no such empty run we can skip
+  // walking every paragraph entirely.
+  if (/<w:t[^>]*>\s*<\/w:t>/.test(result)) {
     let emptyParaCount = 0;
     result = processParaByPara(result, (para) => {
       // Extract all text content from the paragraph
@@ -2669,9 +2674,9 @@ export function replaceMergeTags(
   // from the field code structure. The tag was resolved but {{ survived as text.
   // Only remove {{ that are NOT followed by }} within the same <w:t> context
   // (i.e., they are genuinely orphaned, not part of a valid {{tag}}).
-  {
+  // Cheap precheck: skip the full <w:t> sweep when no `{{` literal remains.
+  if (result.indexOf('{{') !== -1) {
     let orphanCount = 0;
-    // Match {{ in <w:t> elements that are NOT part of a valid {{...}} tag
     result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
       // If text contains {{ but NOT a complete {{...}} tag, strip the orphaned {{
       if (textContent.includes('{{') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
@@ -2695,7 +2700,7 @@ export function replaceMergeTags(
   // Clean up orphaned }} that remain as literal text after tag replacement.
   // Mirror of the orphaned {{ cleanup above — handles cases where Word splits
   // }} into a separate run from the resolved tag content.
-  {
+  if (result.indexOf('}}') !== -1) {
     let orphanCount = 0;
     result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
       if (textContent.includes('}}') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
