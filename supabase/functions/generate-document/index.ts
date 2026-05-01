@@ -900,6 +900,15 @@ async function generateSingleDocument(
 
       for (const idx of sortedPropIndices) {
         const prefix = `property${idx}`;
+        // ── RE851D: auto-numbered Property No. for Part 1 LTV table ──
+        // Set unconditionally for any index that has a property record so the
+        // {{property_number_N}} tag in the Part 1 row resolves to 1, 2, 3, ...
+        // Indices without a property record never reach this loop, so empty
+        // template rows stay blank (matches existing per-index publisher contract).
+        fieldValues.set(`property_number_${idx}`, {
+          rawValue: String(idx),
+          dataType: "number",
+        });
         // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
         for (const [sfx, prKey] of Object.entries(suffixToPrKey)) {
           const v = fieldValues.get(`${prefix}.${sfx}`);
