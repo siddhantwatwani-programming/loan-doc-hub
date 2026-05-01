@@ -2271,88 +2271,97 @@ async function generateSingleDocument(
     // explicit merge tags. Inject these label bindings at generation time so the
     // existing layout remains untouched while the checkbox state still resolves
     // from the already-derived boolean keys.
-    const effectiveLabelMap = {
-      ...labelMap,
-      "A. Agent in arranging a loan on behalf of another": {
-        fieldKey: "or_p_brkCapacityAgent",
-      },
-      "A. Agent in arranging a loan": {
-        fieldKey: "or_p_brkCapacityAgent",
-      },
-      "A. Agent": {
-        fieldKey: "or_p_brkCapacityAgent",
-      },
-      "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      // Shorter variant used in the live RE851A wording — matches both static
-      // glyph templates and tagless SDT checkboxes during label fallback.
-      "B. Principal as a borrower on funds from which broker will benefit": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      "B. Principal as a borrower on funds": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      "B. Principal as a borrower": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      // RE851A live wording prefixes "Principal" with a literal asterisk
-      // ("B. *Principal as a borrower..."). Without these label variants
-      // the broker-capacity B checkbox falls back to its static unchecked
-      // glyph even when the CSR "IS BROKER ALSO A BORROWER?" box is true.
-      "B. *Principal as a borrower on funds from which broker will directly or indirectly benefit": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      "B. *Principal as a borrower on funds from which broker will benefit": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      "B. *Principal as a borrower on funds": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      "B. *Principal as a borrower": {
-        fieldKey: "or_p_brkCapacityPrincipal",
-      },
-      // RE851A Servicing section labels → derived boolean keys.
-      // Mirrors the broker A/B pattern above so the static ☐ glyph that
-      // sits immediately before each label flips to ☑ when the matching
-      // boolean is true. No template edits required.
-      "THERE ARE NO SERVICING ARRANGEMENTS": {
-        fieldKey: "sv_p_noServicingArrangements",
-      },
-      "THERE ARE NO SERVICING ARRANGEMENTS (Does not apply to multi-lender transactions.)": {
-        fieldKey: "sv_p_noServicingArrangements",
-      },
-      "THERE ARE NO SERVICING ARRANGEMENTS  (Does not apply to multi-lender transactions.)": {
-        fieldKey: "sv_p_noServicingArrangements",
-      },
-      "BROKER IS THE SERVICING AGENT": {
-        fieldKey: "sv_p_brokerIsServicingAgent",
-      },
-      "BROKER IS THE SERVICING AGENT -See attached \"Notes\"": {
-        fieldKey: "sv_p_brokerIsServicingAgent",
-      },
-      "BROKER IS THE SERVICING AGENT  -See attached \"Notes\"": {
-        fieldKey: "sv_p_brokerIsServicingAgent",
-      },
-      "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN": {
-        fieldKey: "sv_p_anotherQualifiedParty",
-      },
-      "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER": {
-        fieldKey: "sv_p_anotherQualifiedParty",
-      },
-      // RE851A Part 3 Amortization labels (CHECK ONE) — derived booleans are
-      // already populated by the dropdown→checkbox derivation step. These
-      // label bindings let the existing static glyph-before-label fallback
-      // toggle the correct checkbox without any template edits.
-      "FULLY AMORTIZED": { fieldKey: "ln_p_amortized" },
-      "AMORTIZED": { fieldKey: "ln_p_amortized" },
-      "AMORTIZED PARTIALLY": { fieldKey: "ln_p_amortizedPartially" },
-      "PARTIALLY AMORTIZED": { fieldKey: "ln_p_amortizedPartially" },
-      "INTEREST ONLY": { fieldKey: "ln_p_interestOnly" },
-      "CONSTANT AMORTIZATION": { fieldKey: "ln_p_constantAmortization" },
-      "ADD-ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
-      "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
-    };
+    //
+    // Template-gated: only RE851A needs these label bindings. Adding ~30
+    // labels for unrelated templates (e.g. RE885 HUD-1) forces the
+    // label-based replacement candidate filter to scan every paragraph
+    // for needles that can never match, contributing to CPU pressure on
+    // large templates. Behavior for RE851A is unchanged.
+    const isTemplate851A = /851a/i.test(template.name || "");
+    const re851aLabelAdditions: Record<string, { fieldKey: string }> = isTemplate851A
+      ? {
+          "A. Agent in arranging a loan on behalf of another": {
+            fieldKey: "or_p_brkCapacityAgent",
+          },
+          "A. Agent in arranging a loan": {
+            fieldKey: "or_p_brkCapacityAgent",
+          },
+          "A. Agent": {
+            fieldKey: "or_p_brkCapacityAgent",
+          },
+          "B. Principal as a borrower on funds from which broker will directly or indirectly benefit": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          // Shorter variant used in the live RE851A wording — matches both static
+          // glyph templates and tagless SDT checkboxes during label fallback.
+          "B. Principal as a borrower on funds from which broker will benefit": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          "B. Principal as a borrower on funds": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          "B. Principal as a borrower": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          // RE851A live wording prefixes "Principal" with a literal asterisk
+          // ("B. *Principal as a borrower..."). Without these label variants
+          // the broker-capacity B checkbox falls back to its static unchecked
+          // glyph even when the CSR "IS BROKER ALSO A BORROWER?" box is true.
+          "B. *Principal as a borrower on funds from which broker will directly or indirectly benefit": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          "B. *Principal as a borrower on funds from which broker will benefit": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          "B. *Principal as a borrower on funds": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          "B. *Principal as a borrower": {
+            fieldKey: "or_p_brkCapacityPrincipal",
+          },
+          // RE851A Servicing section labels → derived boolean keys.
+          // Mirrors the broker A/B pattern above so the static ☐ glyph that
+          // sits immediately before each label flips to ☑ when the matching
+          // boolean is true. No template edits required.
+          "THERE ARE NO SERVICING ARRANGEMENTS": {
+            fieldKey: "sv_p_noServicingArrangements",
+          },
+          "THERE ARE NO SERVICING ARRANGEMENTS (Does not apply to multi-lender transactions.)": {
+            fieldKey: "sv_p_noServicingArrangements",
+          },
+          "THERE ARE NO SERVICING ARRANGEMENTS  (Does not apply to multi-lender transactions.)": {
+            fieldKey: "sv_p_noServicingArrangements",
+          },
+          "BROKER IS THE SERVICING AGENT": {
+            fieldKey: "sv_p_brokerIsServicingAgent",
+          },
+          "BROKER IS THE SERVICING AGENT -See attached \"Notes\"": {
+            fieldKey: "sv_p_brokerIsServicingAgent",
+          },
+          "BROKER IS THE SERVICING AGENT  -See attached \"Notes\"": {
+            fieldKey: "sv_p_brokerIsServicingAgent",
+          },
+          "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN": {
+            fieldKey: "sv_p_anotherQualifiedParty",
+          },
+          "ANOTHER QUALIFIED PARTY WILL SERVICE THE LOAN CHECK BOX IF ANY PARTY OTHER THAN LENDER IS SELECTED AS SERVICER": {
+            fieldKey: "sv_p_anotherQualifiedParty",
+          },
+          // RE851A Part 3 Amortization labels (CHECK ONE) — derived booleans are
+          // already populated by the dropdown→checkbox derivation step. These
+          // label bindings let the existing static glyph-before-label fallback
+          // toggle the correct checkbox without any template edits.
+          "FULLY AMORTIZED": { fieldKey: "ln_p_amortized" },
+          "AMORTIZED": { fieldKey: "ln_p_amortized" },
+          "AMORTIZED PARTIALLY": { fieldKey: "ln_p_amortizedPartially" },
+          "PARTIALLY AMORTIZED": { fieldKey: "ln_p_amortizedPartially" },
+          "INTEREST ONLY": { fieldKey: "ln_p_interestOnly" },
+          "CONSTANT AMORTIZATION": { fieldKey: "ln_p_constantAmortization" },
+          "ADD-ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
+          "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
+        }
+      : {};
+    const effectiveLabelMap = { ...labelMap, ...re851aLabelAdditions };
 
     let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
 
