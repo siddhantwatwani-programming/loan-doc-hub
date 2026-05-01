@@ -2942,6 +2942,28 @@ async function generateSingleDocument(
       }
     }
 
+    // ── RE851D: seed suffixed _N keys into validFieldKeys ──
+    // The merge resolver's priority-1 direct match uses validFieldKeys, which is
+    // built only from field_dictionary.field_key + canonical_key. Suffixed keys
+    // like ln_p_expectedEncumbrance_1..5 are never in the dictionary, so the
+    // resolver falls through to fallbacks. Seeding them here forces priority-1
+    // direct match and removes any chance of the resolver returning a different
+    // ultimate key for our publisher-set values. Template-gated.
+    let effectiveValidFieldKeys = validFieldKeys;
+    if (/851d/i.test(template.name || "")) {
+      effectiveValidFieldKeys = new Set(validFieldKeys);
+      const SUFFIXED_BASES = [
+        "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
+        "pr_p_expectedSenior", "pr_p_remainingSenior",
+        "pr_p_totalEncumbrance", "pr_p_totalSenior", "pr_p_totalSeniorPlusLoan",
+      ];
+      for (let i = 1; i <= 5; i++) {
+        for (const base of SUFFIXED_BASES) {
+          effectiveValidFieldKeys.add(`${base}_${i}`);
+        }
+      }
+    }
+
     let processedDocx: Uint8Array;
     try {
       processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys, { templateName: template.name });
