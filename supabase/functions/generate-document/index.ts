@@ -2371,11 +2371,28 @@ async function generateSingleDocument(
 
           const part1Start = findOne(/PART\s*1\b|LOAN\s+TO\s+VALUE\s+RATIO/i);
           const part2Start = findOne(/PART\s*2\b|SECURING\s+PROPERTIES/i);
-          // Strict heading match: ALL-CAPS "PROPERTY #K" immediately followed by
-          // " PROPERTY INFORMATION". Excludes inline mixed-case mentions like
-          // "Property #1" inside the PART 2 explanatory paragraph, which would
-          // otherwise be mistaken for region anchors and shift the boundaries.
-          const propMatches = findAll(/PROPERTY\s*#\s*([1-5])\s+PROPERTY\s+INFORMATION/g);
+          // Loosened heading match: detect "PROPERTY #K" headings on their own.
+          // Some templates put "PROPERTY INFORMATION" on a separate line/cell or
+          // omit it entirely, so the strict variant returned zero anchors. We
+          // accept any "PROPERTY #K" occurrence (case-insensitive) but exclude
+          // inline mentions like "secured by Property #1" by:
+          //   1) requiring the match to be at/after PART 2 start (property
+          //      detail blocks always come after PART 2), and
+          //   2) skipping anchors followed within ~80 chars by phrases that
+          //      indicate prose ("secured", "deed of trust", "trust deed").
+          const rawPropMatches = findAll(/\bPROPERTY\s*#\s*([1-5])\b/gi);
+          const part2Floor = part2Start >= 0 ? part2Start : -1;
+          const propMatches = rawPropMatches.filter(p => {
+            if (part2Floor >= 0 && p.orig < part2Floor) return false;
+            // Look ~80 chars ahead in stripped text for inline-prose markers.
+            // Map original offset back to stripped offset for the lookahead.
+            // Cheap approximation: scan original xml ahead, strip tags inline.
+            const tail = xml.slice(p.orig, p.orig + 400).replace(/<[^>]+>/g, " ");
+            if (/\b(secured|deed of trust|trust deed)\b/i.test(tail.slice(0, 80))) {
+              return false;
+            }
+            return true;
+          });
           // Deduplicate by k, keep first occurrence (the heading), sort by offset.
           const seen = new Set<number>();
           const propsOrdered = propMatches
