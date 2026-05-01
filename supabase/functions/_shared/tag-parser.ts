@@ -239,11 +239,61 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
     /\}(?:\s|<[^>]+>)+\}/.test(xml);
 }
 
+function consolidateFragmentedSimpleTagsFast(xml: string): string {
+  const consolidateDelimited = (input: string, open: string, close: string, maxSpan: number): string => {
+    let output = '';
+    let pos = 0;
+
+    while (pos < input.length) {
+      const start = input.indexOf(open, pos);
+      if (start === -1) {
+        output += input.substring(pos);
+        break;
+      }
+
+      const end = input.indexOf(close, start + open.length);
+      if (end === -1 || end - start > maxSpan) {
+        output += input.substring(pos, start + open.length);
+        pos = start + open.length;
+        continue;
+      }
+
+      const raw = input.substring(start, end + close.length);
+      if (!raw.includes('<')) {
+        output += input.substring(pos, end + close.length);
+        pos = end + close.length;
+        continue;
+      }
+
+      const inner = raw.substring(open.length, raw.length - close.length);
+      const clean = inner.replace(/<[^>]+>/g, '').replace(/\s+/g, '').trim();
+      const isSimpleField = /^[A-Za-z0-9_.]+(?:\|[A-Za-z0-9_]+)?$/.test(clean);
+      if (!isSimpleField) {
+        output += input.substring(pos, end + close.length);
+        pos = end + close.length;
+        continue;
+      }
+
+      output += input.substring(pos, start) + open + clean + close;
+      pos = end + close.length;
+    }
+
+    return output;
+  };
+
+  return processParaByPara(xml, (para) => {
+    if (!para.includes('{{') && !para.includes('\u00AB')) return para;
+    let p = consolidateDelimited(para, '{{', '}}', 800);
+    p = consolidateDelimited(p, '\u00AB', '\u00BB', 500);
+    return p;
+  });
+}
+
 /**
  * Normalize Word XML by consolidating fragmented text runs.
  * Word often splits text across multiple <w:t> elements.
  */
-export function normalizeWordXml(xmlContent: string): string {
+export function normalizeWordXml(xmlContent: string, templateName = ""): string {
   const __nwxStart = Date.now();
   const __nwxLog = (label: string, t0: number) => {
     if (xmlContent.length > 200_000) {
@@ -274,6 +324,16 @@ export function normalizeWordXml(xmlContent: string): string {
     if (xmlContent.length > 200_000) {
       console.log(`[tag-parser] normalizeWordXml fast-path: flattened field codes only, skipped fragmented-run normalization (${xmlContent.length}B)`);
     }
+    return result;
+  }
+
+  if (/885/i.test(templateName) && xmlContent.length > 200_000) {
+    const tFastSimple = Date.now();
+    result = consolidateFragmentedSimpleTagsFast(result);
+    __nwxLog('fastSimpleFragmentedTags', tFastSimple);
+    console.log(
+      `[tag-parser] normalizeWordXml RE885 fast-path: skipped heavy fragmented suite (${xmlContent.length}B, total=${Date.now() - __nwxStart}ms)`
+    );
     return result;
   }
 
