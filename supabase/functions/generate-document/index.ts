@@ -1038,19 +1038,20 @@ async function generateSingleDocument(
           }
         }
 
-        // ── RE851D: per-property Property Type → 7-checkbox mapping ──
-        // Spec mapping (CSR Property Type dropdown → RE851D checkboxes):
-        //   SFR 1-4                       → property_type_sfr_owner
-        //   Condo / Townhouse             → property_type_sfr_non_owner
-        //   Multi-family                  → property_type_commercial
-        //   Commercial                    → property_type_commercial
-        //   Commercial Income             → property_type_commercial
-        //   Mixed-use                     → property_type_commercial
+        // ── RE851D: per-property Property Type × Occupancy → 7-checkbox mapping ──
+        // Cross-reference rule (CSR Property Type + Occupancy → RE851D checkbox):
+        //   SFR 1-4 + Owner Occupied      → property_type_sfr_owner
+        //   SFR 1-4 + Vacant/NA (or unset)→ property_type_sfr_non_owner
         //   Land SFR Residential          → property_type_sfr_zoned
-        //   Land Residential              → property_type_land_zoned
+        //   Multi-family / Commercial /
+        //   Commercial Income / Mixed-use /
+        //   Condo / Townhouse             → property_type_commercial
+        //   Land Residential /
         //   Land Commercial               → property_type_land_zoned
         //   Land Income Producing         → property_type_land_income
-        //   <anything else>               → property_type_other (+ property_type_other_text = raw value)
+        //   Mobile Home / Farm /
+        //   Restaurant / Bar / Group Housing /
+        //   <anything else>               → property_type_other (+ text = raw value)
         // Publishes booleans, glyphs, and text for index N. Mirrors as bare
         // (non-_N) aliases for index 1 so single-property templates work.
         {
@@ -1063,18 +1064,9 @@ async function generateSingleDocument(
             "property_type_land_income",
             "property_type_other",
           ];
-          const SPEC_MAP: Record<string, string> = {
-            "sfr 1-4": "property_type_sfr_owner",
-            "sfr1-4": "property_type_sfr_owner",
-            "sfr": "property_type_sfr_owner",
-            "single family": "property_type_sfr_owner",
-            "single-family": "property_type_sfr_owner",
-            "singlefamily": "property_type_sfr_owner",
-            "condo / townhouse": "property_type_sfr_non_owner",
-            "condo/townhouse": "property_type_sfr_non_owner",
-            "condo": "property_type_sfr_non_owner",
-            "townhouse": "property_type_sfr_non_owner",
-            "condominium": "property_type_sfr_non_owner",
+          // Property-type-only mapping (occupancy not required to disambiguate).
+          const TYPE_ONLY_MAP: Record<string, string> = {
+            "land sfr residential": "property_type_sfr_zoned",
             "multi-family": "property_type_commercial",
             "multi family": "property_type_commercial",
             "multifamily": "property_type_commercial",
@@ -1082,11 +1074,20 @@ async function generateSingleDocument(
             "commercial income": "property_type_commercial",
             "mixed-use": "property_type_commercial",
             "mixed use": "property_type_commercial",
-            "land sfr residential": "property_type_sfr_zoned",
+            "condo / townhouse": "property_type_commercial",
+            "condo/townhouse": "property_type_commercial",
+            "condo": "property_type_commercial",
+            "townhouse": "property_type_commercial",
+            "condominium": "property_type_commercial",
             "land residential": "property_type_land_zoned",
             "land commercial": "property_type_land_zoned",
             "land income producing": "property_type_land_income",
           };
+          // SFR aliases — these need cross-reference with occupancy.
+          const SFR_ALIASES = new Set([
+            "sfr 1-4", "sfr1-4", "sfr", "single family", "single-family",
+            "singlefamily", "1-4 family",
+          ]);
           const ptRawSpec = String(
             fieldValues.get(`pr_p_propertyTyp_${idx}`)?.rawValue ||
             fieldValues.get(`pr_p_propertyType_${idx}`)?.rawValue ||
@@ -1095,7 +1096,28 @@ async function generateSingleDocument(
             ""
           ).trim();
           if (ptRawSpec) {
-            const matched = SPEC_MAP[ptRawSpec.toLowerCase()] || "";
+            const ptLower = ptRawSpec.toLowerCase();
+            // Resolve occupancy (used only for SFR disambiguation).
+            const occRawSpec = String(
+              fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
+              fieldValues.get(`pr_p_occupanc_${idx}`)?.rawValue ||
+              fieldValues.get(`${prefix}.occupancyStatus`)?.rawValue ||
+              fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
+              ""
+            ).trim().toLowerCase();
+            const isOwnerOccupied = [
+              "yes", "y", "true", "owner occupied", "owner-occupied",
+              "owneroccupied", "owner", "primary borrower",
+            ].includes(occRawSpec);
+
+            let matched = "";
+            if (SFR_ALIASES.has(ptLower)) {
+              matched = isOwnerOccupied
+                ? "property_type_sfr_owner"
+                : "property_type_sfr_non_owner";
+            } else {
+              matched = TYPE_ONLY_MAP[ptLower] || "";
+            }
             const useOther = !matched;
             const otherText = useOther ? ptRawSpec : "";
             for (const t of RE851D_TARGETS) {
