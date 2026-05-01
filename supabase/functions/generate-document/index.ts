@@ -2356,7 +2356,7 @@ async function generateSingleDocument(
     // Build set of all valid field keys once and reuse it across invocations.
     const validFieldKeys = await getValidFieldKeys(supabase);
     if (isTemplate885) {
-      console.log(`[885] Data Mapping: ${Math.round(performance.now() - tDataMappingStart)} ms (fieldValues=${fieldValues.size})`);
+      console.log(`[RE885] Data Processing: ${Math.round(performance.now() - tDataProcessingStart)} ms (fieldValues=${fieldValues.size})`);
     }
 
     // 4. Download template DOCX from storage
@@ -2400,7 +2400,7 @@ async function generateSingleDocument(
       return result;
     }
     if (isTemplate885) {
-      console.log(`[885] Template Load: ${Math.round(performance.now() - tTemplateLoadStart)} ms`);
+      console.log(`[RE885] Template Compile: ${Math.round(performance.now() - tTemplateLoadStart)} ms (size=${(await fileData.arrayBuffer().then(()=>0).catch(()=>0)) || 'n/a'} bytes-skip)`);
     }
 
     // 5. Fetch merge tag mappings AND field key migration maps, then process the DOCX
