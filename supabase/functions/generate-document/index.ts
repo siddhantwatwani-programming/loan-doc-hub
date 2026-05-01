@@ -2560,6 +2560,18 @@ async function generateSingleDocument(
           "propertytax.source_of_information_N",
           "propertytax.annual_payment_N",
           "propertytax.delinquent_N",
+          // Property Type checkboxes (per-property, mutually exclusive).
+          // Both bare boolean form and _glyph form are listed so the region
+          // rewriter handles either template variant. _glyph variants are
+          // longer and naturally sorted first by the longest-first scanner.
+          "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
+          "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
+          "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
+          "property_type_commercial_N_glyph", "property_type_commercial_N",
+          "property_type_land_zoned_N_glyph", "property_type_land_zoned_N",
+          "property_type_land_income_N_glyph", "property_type_land_income_N",
+          "property_type_other_N_glyph", "property_type_other_N",
+          "property_type_other_text_N",
         ];
         // Tags that appear in the repeating PART 1 / PART 2 row blocks.
         // PART 1 (LOAN TO VALUE RATIO table) and PART 2 (SECURING PROPERTIES
@@ -2575,6 +2587,14 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
+          "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
+          "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
+          "property_type_commercial_N_glyph", "property_type_commercial_N",
+          "property_type_land_zoned_N_glyph", "property_type_land_zoned_N",
+          "property_type_land_income_N_glyph", "property_type_land_income_N",
+          "property_type_other_N_glyph", "property_type_other_N",
+          "property_type_other_text_N",
         ];
         const PART2_TAGS = [
           "property_number_N",
@@ -2584,6 +2604,14 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
+          "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
+          "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
+          "property_type_commercial_N_glyph", "property_type_commercial_N",
+          "property_type_land_zoned_N_glyph", "property_type_land_zoned_N",
+          "property_type_land_income_N_glyph", "property_type_land_income_N",
+          "property_type_other_N_glyph", "property_type_other_N",
+          "property_type_other_text_N",
         ];
 
         const decoder = new TextDecoder("utf-8");
