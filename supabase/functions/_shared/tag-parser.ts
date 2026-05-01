@@ -2672,9 +2672,9 @@ export function replaceMergeTags(
   // from the field code structure. The tag was resolved but {{ survived as text.
   // Only remove {{ that are NOT followed by }} within the same <w:t> context
   // (i.e., they are genuinely orphaned, not part of a valid {{tag}}).
-  {
+  // Cheap precheck: skip the full <w:t> sweep when no `{{` literal remains.
+  if (result.indexOf('{{') !== -1) {
     let orphanCount = 0;
-    // Match {{ in <w:t> elements that are NOT part of a valid {{...}} tag
     result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
       // If text contains {{ but NOT a complete {{...}} tag, strip the orphaned {{
       if (textContent.includes('{{') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
@@ -2698,7 +2698,7 @@ export function replaceMergeTags(
   // Clean up orphaned }} that remain as literal text after tag replacement.
   // Mirror of the orphaned {{ cleanup above — handles cases where Word splits
   // }} into a separate run from the resolved tag content.
-  {
+  if (result.indexOf('}}') !== -1) {
     let orphanCount = 0;
     result = result.replace(/<w:t([^>]*)>([^<]*)<\/w:t>/g, (fullMatch, attrs, textContent) => {
       if (textContent.includes('}}') && !/\{\{[A-Za-z0-9_.| ]+\}\}/.test(textContent)) {
