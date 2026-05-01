@@ -2310,14 +2310,30 @@ async function generateSingleDocument(
           props: Array<{ k: number; range: [number, number] }>;
         } => {
           // Build stripped text + offset map (skip <...> tag content).
+          // CRITICAL: insert a synthetic space wherever a tag boundary is
+          // consumed so that text like "PROPERTY</w:t>...<w:t>INFORMATION"
+          // does not collapse to "PROPERTYINFORMATION" (which would defeat
+          // every anchor regex below). The synthetic space is mapped back
+          // to the original offset of the '<' so downstream offset math
+          // remains stable.
           const strippedChars: string[] = [];
           const map: number[] = []; // strippedChars[i] originated at map[i] in xml
           let i = 0;
           while (i < xml.length) {
             const ch = xml[i];
             if (ch === "<") {
+              const tagStart = i;
               const end = xml.indexOf(">", i);
               if (end === -1) break;
+              // Insert one synthetic space per tag-skip if the previous
+              // stripped char wasn't already whitespace. Mapped to the
+              // tag's '<' offset so collapsedToOriginal lands at a real
+              // boundary in the source XML.
+              const prev = strippedChars.length > 0 ? strippedChars[strippedChars.length - 1] : "";
+              if (prev !== " " && prev !== "\n" && prev !== "\t" && prev !== "\r" && prev !== "") {
+                strippedChars.push(" ");
+                map.push(tagStart);
+              }
               i = end + 1;
               continue;
             }
