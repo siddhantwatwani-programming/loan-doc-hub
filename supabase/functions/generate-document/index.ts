@@ -2587,6 +2587,14 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
+          "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
+          "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
+          "property_type_commercial_N_glyph", "property_type_commercial_N",
+          "property_type_land_zoned_N_glyph", "property_type_land_zoned_N",
+          "property_type_land_income_N_glyph", "property_type_land_income_N",
+          "property_type_other_N_glyph", "property_type_other_N",
+          "property_type_other_text_N",
         ];
         const PART2_TAGS = [
           "property_number_N",
@@ -2596,6 +2604,14 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
+          "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
+          "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
+          "property_type_commercial_N_glyph", "property_type_commercial_N",
+          "property_type_land_zoned_N_glyph", "property_type_land_zoned_N",
+          "property_type_land_income_N_glyph", "property_type_land_income_N",
+          "property_type_other_N_glyph", "property_type_other_N",
+          "property_type_other_text_N",
         ];
 
         const decoder = new TextDecoder("utf-8");
