@@ -2470,6 +2470,7 @@ async function generateSingleDocument(
           "pr_p_squareFeet_N", "pr_p_lotSize_N", "pr_p_numberOfUni_N",
           "pr_p_propertyTyp_N", "pr_p_propertyType_N", "pr_p_occupancySt_N",
           "pr_p_occupanc_N", "pr_p_remainingSenior_N", "pr_p_expectedSenior_N",
+          "ln_p_expectedEncumbrance_N", "ln_p_remainingEncumbrance_N",
           "pr_p_totalSenior_N", "pr_p_totalEncumbrance_N", "pr_p_totalSeniorPlusLoan_N",
           "pr_p_construcType_N", "pr_p_purchasePrice_N", "pr_p_downPayme_N",
           "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
