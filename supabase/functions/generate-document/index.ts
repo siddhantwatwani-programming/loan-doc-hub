@@ -2380,24 +2380,53 @@ async function generateSingleDocument(
           //      detail blocks always come after PART 2), and
           //   2) skipping anchors followed within ~80 chars by phrases that
           //      indicate prose ("secured", "deed of trust", "trust deed").
-          const rawPropMatches = findAll(/\bPROPERTY\s*#\s*([1-5])\b/gi);
-          const part2Floor = part2Start >= 0 ? part2Start : -1;
-          const propMatches = rawPropMatches.filter(p => {
-            if (part2Floor >= 0 && p.orig < part2Floor) return false;
-            // Look ~80 chars ahead in stripped text for inline-prose markers.
-            // Map original offset back to stripped offset for the lookahead.
-            // Cheap approximation: scan original xml ahead, strip tags inline.
-            const tail = xml.slice(p.orig, p.orig + 400).replace(/<[^>]+>/g, " ");
-            if (/\b(secured|deed of trust|trust deed)\b/i.test(tail.slice(0, 80))) {
-              return false;
+          // Primary property-section detector: each Property #K block in the
+          // RE851D template begins with a "PROPERTY INFORMATION" heading bar.
+          // Use those headings as the section anchors and number them 1..5 by
+          // document order. This is robust against Word splitting "PROPERTY",
+          // "#", and the digit across runs/cells (which made the strict
+          // "PROPERTY #K" regex return zero matches in some templates).
+          const findAllNoCapture = (re: RegExp): Array<{ orig: number }> => {
+            const res: Array<{ orig: number }> = [];
+            re.lastIndex = 0;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(collapsed)) !== null) {
+              res.push({ orig: collapsedToOriginal(m.index) });
+              if (m.index === re.lastIndex) re.lastIndex++;
             }
-            return true;
-          });
-          // Deduplicate by k, keep first occurrence (the heading), sort by offset.
-          const seen = new Set<number>();
-          const propsOrdered = propMatches
-            .filter(p => (seen.has(p.k) ? false : (seen.add(p.k), true)))
-            .sort((a, b) => a.orig - b.orig);
+            return res;
+          };
+          const part2Floor = part2Start >= 0 ? part2Start : -1;
+          // "PROPERTY INFORMATION" gray-bar headings — one per property block.
+          const propInfoRaw = findAllNoCapture(/\bPROPERTY\s+INFORMATION\b/gi);
+          const propInfoOrdered = propInfoRaw
+            .filter(p => part2Floor < 0 || p.orig >= part2Floor)
+            .sort((a, b) => a.orig - b.orig)
+            .slice(0, 5)
+            .map((p, i) => ({ k: i + 1, orig: p.orig }));
+
+          // Fallback: if no "PROPERTY INFORMATION" anchors were found, fall
+          // back to the previous "PROPERTY #K" detector (with inline-prose
+          // filter) so legacy templates without the gray-bar heading still
+          // resolve. Strictly capped to 1..5.
+          let propsOrdered: Array<{ k: number; orig: number }>;
+          if (propInfoOrdered.length > 0) {
+            propsOrdered = propInfoOrdered;
+          } else {
+            const rawPropMatches = findAll(/\bPROPERTY\s*#?\s*([1-5])\b/gi);
+            const propMatches = rawPropMatches.filter(p => {
+              if (part2Floor >= 0 && p.orig < part2Floor) return false;
+              const tail = xml.slice(p.orig, p.orig + 400).replace(/<[^>]+>/g, " ");
+              if (/\b(secured|deed of trust|trust deed)\b/i.test(tail.slice(0, 80))) {
+                return false;
+              }
+              return true;
+            });
+            const seen = new Set<number>();
+            propsOrdered = propMatches
+              .filter(p => (seen.has(p.k) ? false : (seen.add(p.k), true)))
+              .sort((a, b) => a.orig - b.orig);
+          }
           const xmlEnd = xml.length;
           const firstPropOffset = propsOrdered.length > 0 ? propsOrdered[0].orig : xmlEnd;
           const partA: [number, number] | null = part1Start >= 0
