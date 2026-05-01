@@ -1405,6 +1405,7 @@ async function generateSingleDocument(
           "pr_p_occupanc", "pr_p_remainingSenior", "pr_p_expectedSenior",
           "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
           "pr_p_totalSenior", "pr_p_totalEncumbrance", "pr_p_totalSeniorPlusLoan",
+          "ln_p_totalEncumbrance", "property_number",
           "pr_p_construcType", "pr_p_purchasePrice", "pr_p_downPayme",
           "pr_p_protectiveEquity", "pr_p_descript", "pr_p_ltv", "pr_p_cltv",
           "pr_p_zoning", "pr_p_floodZone", "pr_p_pledgedEquity",
