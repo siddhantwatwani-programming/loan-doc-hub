@@ -150,7 +150,7 @@ export async function processDocx(
         }
 
         const tPartStart = performance.now();
-        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+        let processedXml = replaceMergeTags(originalXml, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, options.templateName);
         const tAfterReplace = performance.now();
 
         // If the post-pass injected w14:* (e.g. <w14:checkbox>) into a part
