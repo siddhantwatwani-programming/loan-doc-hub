@@ -2545,8 +2545,25 @@ async function generateSingleDocument(
           "propertytax.delinquent_N",
         ];
         // Tags that appear in the repeating PART 1 / PART 2 row blocks.
-        const PART1_TAGS = ["pr_p_appraiseValue_N", "ln_p_loanToValueRatio_N"];
-        const PART2_TAGS = ["pr_p_address_N", "pr_p_appraiseValue_N", "ln_p_loanToValueRatio_N"];
+        // PART 1 (LOAN TO VALUE RATIO table) and PART 2 (SECURING PROPERTIES
+        // pre-property block) both contain {{ln_p_remainingEncumbrance_N}} and
+        // {{ln_p_expectedEncumbrance_N}} repeated once per property row. Without
+        // these in the allowlist they were skipped by the region-restricted
+        // rewrite and stayed as the literal "_N" form, resolving to blank in
+        // the generated document (the reported bug).
+        const PART1_TAGS = [
+          "pr_p_appraiseValue_N",
+          "ln_p_loanToValueRatio_N",
+          "ln_p_remainingEncumbrance_N",
+          "ln_p_expectedEncumbrance_N",
+        ];
+        const PART2_TAGS = [
+          "pr_p_address_N",
+          "pr_p_appraiseValue_N",
+          "ln_p_loanToValueRatio_N",
+          "ln_p_remainingEncumbrance_N",
+          "ln_p_expectedEncumbrance_N",
+        ];
 
         const decoder = new TextDecoder("utf-8");
         const encoder = new TextEncoder();

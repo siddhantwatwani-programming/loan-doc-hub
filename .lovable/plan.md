@@ -1,74 +1,50 @@
-## Findings from the current code/template
+I’ll fix this in the document generation backend with a minimal, RE851D-scoped change.
 
-- The uploaded RE885 template does not appear to be driven by `_N` placeholder expansion. It primarily contains many direct merge tags such as `{{of_801_lenderLoanOriginationFee_others}}`, `{{ln_p_loanAmount}}`, `{{pr_li_lienHolder}}`, etc.
-- The existing `_N` expansion block is already scoped to RE851D only, so it should not be running for RE885.
-- The likely CPU bottleneck is systemic DOCX processing on large templates: repeated full-document XML scans in `replaceMergeTags`, label-based replacement, checkbox/conditional passes, and integrity verification.
-- There is already partial RE885 instrumentation, but it is incomplete compared with the required log format and does not isolate every expensive stage.
+Findings from the deep analysis:
 
-## Plan
+- The lien data is present for the current deal:
+  - `lien1.anticipated = true`
+  - `lien1.anticipated_amount = 467`
+  - `lien1.new_remaining_balance = 78`
+  - `lien1.property = property1`
+- The existing rollup logic should publish:
+  - `ln_p_expectedEncumbrance_1 = 467.00`
+  - `ln_p_remainingEncumbrance_1 = 78.00`
+- The uploaded RE851D template uses repeated generic placeholders like:
+  - `{{ln_p_remainingEncumbrance_N}}`
+  - `{{ln_p_expectedEncumbrance_N}}`
+- Those placeholders appear in the Part 1 / Loan-to-Value table and Part 2 pre-property table, but the current `_N` preprocessing allowlist only rewrites a small subset of Part 1 / Part 2 tags. It currently excludes the two encumbrance tags there, so they remain literal `_N` tags and resolve blank.
+- There is a second risk: the tag parser has duplicate-placeholder suppression. In RE851D the same suffixed field can appear more than once across the form, so later occurrences may be blanked even when the value exists.
 
-1. Add complete RE885 performance logging
-   - Add exact required log markers:
-     - `[RE885] Data Fetch: X ms`
-     - `[RE885] Data Processing: X ms`
-     - `[RE885] Template Compile: X ms`
-     - `[RE885] DOCX Render: X ms`
-     - `[RE885] Total CPU Time: X ms`
-   - Keep existing lower-level `docx-processor` timings, but normalize the RE885 labels so logs are searchable and consistent.
-   - Add counts for template size, content XML part sizes, merge tag count, label candidate count, SDT checkbox count, and unresolved tag count.
+Implementation plan:
 
-2. Profile and optimize the RE885 hot path without changing layout
-   - Add a RE885-specific fast path in the DOCX processor/tag parser that skips expensive passes when the RE885 template does not contain the relevant constructs:
-     - skip `_N` preprocessing entirely for RE885
-     - skip `{{#each}}` processing when no each blocks exist
-     - skip conditional processing when no conditionals exist
-     - skip SDT checkbox processing when no native Word checkboxes exist
-     - skip label replacement if the content part has explicit merge tags and no matching label needles
-   - Keep these guards generic and safe, but make sure they are especially effective for RE885.
+1. Update RE851D `_N` preprocessing in `supabase/functions/generate-document/index.ts`
+   - Add these tags to the Part 1 rewrite allowlist:
+     - `ln_p_expectedEncumbrance_N`
+     - `ln_p_remainingEncumbrance_N`
+   - Add the same tags to the Part 2 rewrite allowlist.
+   - This will convert the template placeholders by document/region order:
+     - `{{ln_p_expectedEncumbrance_N}}` → `{{ln_p_expectedEncumbrance_1}}`, `{{ln_p_expectedEncumbrance_2}}`, etc.
+     - `{{ln_p_remainingEncumbrance_N}}` → `{{ln_p_remainingEncumbrance_1}}`, `{{ln_p_remainingEncumbrance_2}}`, etc.
 
-3. Replace repeated full-document merge replacement with a linear part-scoped pass
-   - Build the tag replacement lookup once per XML part.
-   - Avoid constructing huge combined regexes when there are many placeholders; use a callback-based scanner or chunked replacement strategy for `{{...}}` and `«...»` tags.
-   - Cache resolved tag-to-field mappings for the request so duplicate fields do not call the resolver repeatedly.
-   - Preserve existing formatting behavior including currency `$` handling and context-aware newline insertion.
+2. Make repeated RE851D placeholders populate consistently
+   - In `supabase/functions/_shared/tag-parser.ts`, adjust duplicate placeholder handling only for RE851D templates.
+   - For RE851D, repeated instances of the same resolved key will all receive the value instead of later duplicates being blanked.
+   - Keep the existing duplicate behavior for other templates to avoid unintended changes.
 
-4. Reduce unnecessary field/value work for RE885
-   - Since RE885 currently has no rows in `template_field_maps`, generation falls back to all deal fields and all dictionary-derived values.
-   - For RE885, derive the required field set directly from the parsed template tags and only perform expensive calculations/aliases needed by those tags where possible.
-   - Do not remove existing global mappings used by other documents; scope any pruning to RE885.
+3. Harden lien-derived encumbrance lookup without changing schema or UI
+   - Keep the existing per-property rollup logic.
+   - Add small fallback reads for the canonical lien field keys already present in the data model, so the rollup still works if a lien row was saved without an `indexed_key` in older data.
+   - Preserve strict per-property matching: no cross-property fallback.
 
-5. Add safe handling for structured loops only if the template actually contains loops
-   - If the active RE885 template or uploaded replacement contains `{{#items}}...{{/items}}` / `{{#each ...}}` sections, flatten the data before rendering and cap rows to the required form rows.
-   - If the template contains no loop blocks, do not rewrite the template layout just to introduce loops, because that would be a layout/design change and is not needed for this RE885 file.
+4. Add targeted diagnostics for verification
+   - Keep or improve the existing RE851D log line that reports final expected/remaining values for indices 1–5.
+   - Add a preprocessing log count for encumbrance rewrites so we can confirm the template changed from `_N` to `_1.._5` before rendering.
 
-6. Keep RE851D and other document flows unchanged
-   - Leave the RE851D `_N` placeholder logic intact and scoped to RE851D.
-   - Ensure the new RE885 fast path does not affect RE851A checkbox automation, RE851D property/lien mappings, RE882/other templates, or packet generation.
-
-7. Validate
-   - Deploy the updated `generate-document` function.
-   - Generate RE885 DOCX only and inspect logs for the required phase markers.
-   - Confirm DOCX generation completes without CPU timeout.
-   - Confirm output layout is unchanged by validating the produced DOCX and comparing visible extracted text/placeholder replacement behavior against the existing template.
-   - Confirm no regressions to RE851D encumbrance logic by keeping its preprocessing path separate.
-
-## Files to update
-
-- `supabase/functions/generate-document/index.ts`
-  - Add required RE885 phase timing.
-  - Add RE885-specific data preparation/field pruning where safe.
-
-- `supabase/functions/_shared/docx-processor.ts`
-  - Improve content-part timing and expose RE885 render duration using required log labels.
-  - Add safe short-circuiting for XML parts that do not need merge work.
-
-- `supabase/functions/_shared/tag-parser.ts`
-  - Optimize merge tag replacement and resolver caching.
-  - Add guards to skip non-applicable expensive passes for RE885.
-
-## Constraints honored
-
-- No CPU-timeout increase.
-- No document layout/design changes.
-- No broad schema changes.
-- No impact to RE851D or other document-specific mapping logic.
+5. Validate after implementation
+   - Generate/test RE851D against the current deal data.
+   - Confirm logs show:
+     - `ln_p_expectedEncumbrance_1 = 467.00`
+     - `ln_p_remainingEncumbrance_1 = 78.00`
+     - encumbrance `_N` placeholders rewritten in Part 1 / Part 2.
+   - Confirm the generated DOCX populates the Expected Senior Encumbrance and Remaining Senior Encumbrance fields without changing document layout/design or unrelated document flows.
