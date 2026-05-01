@@ -24,6 +24,7 @@ import type {
 } from "../_shared/types.ts";
 import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb, getFieldData } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
+import { normalizeWordXml } from "../_shared/tag-parser.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
 const debugLog = (...args: unknown[]) => {
@@ -2837,6 +2838,24 @@ async function generateSingleDocument(
           let xml = decoder.decode(bytes);
           if (!xml.includes("_N")) {
             out[filename] = bytes;
+            continue;
+          }
+          // Normalize fragmented Word runs BEFORE scanning for `_N` placeholders.
+          // Word frequently splits "{{property_type_sfr_owner_N}}" across multiple
+          // <w:r> runs, which prevents the plain-regex rewriter below from matching
+          // those occurrences. Running normalizeWordXml first joins the runs so
+          // every `_N` placeholder becomes a contiguous string. This is idempotent
+          // — the later processDocx() call will re-normalize as a no-op fast-path.
+          try {
+            xml = normalizeWordXml(xml, template.name || "");
+          } catch (_normErr) {
+            // If normalization fails for any reason, fall back to the raw XML
+            // (preserves previous behavior — partial rewrites are still better
+            // than failing the whole document).
+          }
+          // Re-check after normalization in case it stripped all `_N` markers.
+          if (!xml.includes("_N")) {
+            out[filename] = encoder.encode(xml);
             continue;
           }
 
