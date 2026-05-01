@@ -254,6 +254,11 @@ async function generateSingleDocument(
       'pr_p_pledgedEquity': 'pledged_equity',
     };
 
+    if (isTemplate885) {
+      console.log(`[RE885] Data Fetch: ${Math.round(performance.now() - tDataFetchStart)} ms (sections=${(sectionValues || []).length}, fields=${allFieldDictEntries.length})`);
+    }
+    const tDataProcessingStart = performance.now();
+
     const fieldValues = new Map<string, FieldValueData>();
     (sectionValues || []).forEach((sv: any) => {
       Object.entries(sv.field_values || {}).forEach(([key, data]: [string, any]) => {
