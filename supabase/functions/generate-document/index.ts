@@ -1173,6 +1173,21 @@ async function generateSingleDocument(
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
+          // Per-property normalized occupancy string for RE851D template
+          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}} Yes
+          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☐{{else}}☒{{/if}} No
+          // Owner Occupied  => "Owner Occupied" (Yes ☒)
+          // Tenant / Vacant / NA / empty => "" (else => No ☒)
+          fieldValues.set(`pr_p_occupanc_${idx}`, {
+            rawValue: isYes ? "Owner Occupied" : "",
+            dataType: "text",
+          });
+          if (idx === 1) {
+            fieldValues.set("pr_p_occupanc", {
+              rawValue: isYes ? "Owner Occupied" : "",
+              dataType: "text",
+            });
+          }
         }
 
         // ── RE851D: per-property Expected / Remaining Senior Encumbrance from Lien data ──
