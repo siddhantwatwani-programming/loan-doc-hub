@@ -1291,12 +1291,18 @@ async function generateSingleDocument(
           const haveExpected = !isNaN(expectedNum);
           if (haveRemaining || haveExpected) {
             const total = (haveRemaining ? remainingNum : 0) + (haveExpected ? expectedNum : 0);
+            const totalVal = {
+              rawValue: total.toFixed(2),
+              dataType: "currency" as const,
+            };
             if (!fieldValues.has(`pr_p_totalEncumbrance_${idx}`)) {
-              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, {
-                rawValue: total.toFixed(2),
-                dataType: "currency",
-              });
+              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, totalVal);
             }
+            // Part 1 LTV table tag — published per property index. Same value
+            // as pr_p_totalEncumbrance_N; separate alias because the template
+            // uses {{ln_p_totalEncumbrance_N}} in the Total Senior Encumbrances
+            // column. Force-set: this is the authoritative computed total.
+            fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
           }
         }
 
