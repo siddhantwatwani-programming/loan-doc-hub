@@ -342,6 +342,7 @@ export function normalizeWordXml(xmlContent: string): string {
   
   // Handle fragmented merge fields, braces, conditionals — all paragraph-scoped
   // to avoid catastrophic backtracking on large documents (628KB+).
+  const tFragSuite = Date.now();
   result = processParaByPara(result, (para) => {
     // Quick skip: only process paragraphs with potential merge tag delimiters
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB') && !para.includes('instrText')) {
