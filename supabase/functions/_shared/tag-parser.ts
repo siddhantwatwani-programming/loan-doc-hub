@@ -2356,39 +2356,54 @@ export function replaceMergeTags(
   // and closing "}}" land in different paragraphs (common in table cells like
   // RE851A's Balloon Payment YES/NO checkboxes). We only collapse XML markup
   // between recognized control tokens — surrounding prose is never touched.
-  const stripXmlBetween = (raw: string): string =>
-    raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  //
+  // Cheap pre-check: the regex below is `\{\{([\s\S]{0,400}?)\}\}` over the
+  // whole document, which on large templates (RE885 ~635KB) iterates over
+  // every {{...}} and runs a 400-char window scan. It only acts on
+  // recognized control tokens (#if / #unless / else / /if / /unless), so
+  // when none of those substrings exist anywhere in the document we can
+  // skip the pass entirely. Intact `{{field}}` placeholders are unaffected.
+  const __hasControlTokens =
+    result.indexOf("#if") !== -1 ||
+    result.indexOf("#unless") !== -1 ||
+    result.indexOf("else") !== -1 ||
+    result.indexOf("/if") !== -1 ||
+    result.indexOf("/unless") !== -1;
+  if (__hasControlTokens) {
+    const stripXmlBetween = (raw: string): string =>
+      raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-  result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
-    // Only act if the inner span actually contains XML markup (i.e. fragmented).
-    if (!inner.includes("<")) return full;
-    const cleaned = stripXmlBetween(inner);
-    if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    // Also consolidate `{{#if (eq FIELD "literal")}}` / `{{#unless (eq ...)}}`
-    // helpers split across runs. Restrict the literal to safe characters so we
-    // never accidentally swallow unrelated content.
-    if (/^#if\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    if (/^#unless\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
+    result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
+      // Only act if the inner span actually contains XML markup (i.e. fragmented).
+      if (!inner.includes("<")) return full;
+      const cleaned = stripXmlBetween(inner);
+      if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      // Also consolidate `{{#if (eq FIELD "literal")}}` / `{{#unless (eq ...)}}`
+      // helpers split across runs. Restrict the literal to safe characters so we
+      // never accidentally swallow unrelated content.
+      if (/^#if\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      if (/^#unless\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
 
-    if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    return full;
-  });
+      if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      return full;
+    });
+  }
 
   // Unconditional safety net: strip BARE Handlebars-style control directives
   // that template authors sometimes leave in DOCX paragraphs as plain text
