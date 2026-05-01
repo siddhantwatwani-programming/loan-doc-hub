@@ -1,71 +1,82 @@
-## RE851D – Merge Lien Sections into Single "Liens Details"
 
-### Goal
-In Admin → Field Dictionary, the **Section = Property** dropdown currently lists four lien sub-forms:
+# RE851D — Fix PROPERTY #2/#3 / #4 / #5 Population
 
-- Liens — General Details
-- Liens — Loan Type
-- Liens — Balance & Payment
-- Liens — Recording & Tracking
+## Root Cause Analysis
 
-Replace these four entries with one unified entry called **"Liens Details"**. Existing field rows, field keys, document mappings, and generation flow stay untouched — this is a UI/grouping change only.
+I inspected the actual stored data for the open deal and the generator code:
 
-### Scope
-Only `src/pages/admin/FieldDictionaryPage.tsx` is modified. No DB migration. No changes to document generation, RE851D logic, deal UI, or field keys.
+1. **Property fields (yearBuilt, squareFeet, construcType, occupanc, appraiseDate, appraiseValue) for indices ≥ 2 ARE saved correctly** as `property2::<dictId>` / `property3::<dictId>` rows with `indexed_key = property2.year_built`, etc. The bridging at `generate-document/index.ts` lines 280-289 maps these to `propertyN.<suffix>`, and the per-index publisher at lines 833-836 publishes `pr_p_<key>_<N>`. This logic is sound — for any row that exists, `pr_p_yearBuilt_2`, `pr_p_squareFeet_2`, `pr_p_construcType_2`, `pr_p_occupanc_2`, `pr_p_appraiseDate_2`, `pr_p_appraiseValue_2` will be set. Property #2 / #3 of this exact deal already have data saved at `property2.year_built`, `property2.square_feet`, etc., so they will resolve. If any single template tag is still blank for an index where data exists, it is a tag-order or tag-uniqueness mismatch in the docx itself, which we will assert via debug logging.
 
-### Changes
+2. **PropertyTax `_N` fields are the actual blocker.** The CSR Property Tax sub-grid stores tax rows in a separate collection (`propertytax1::*`, `propertytax2::*`, ...) — not nested under `propertyN`. For this deal only **one** tax row exists (`propertytax1`). Each tax row carries a `propertytax{N}.property` field whose value is the property address string (e.g., "Umar Adil - Doveson Street, Boston, AL, 10002"), but the per-index tax publisher (`generate-document/index.ts` lines 1019-1055) ONLY reads `propertytax{idx}.<field>` keyed by **property index**, not by address. Result: PROPERTY #2 / #3 in the doc print blank for `propertytax.annual_payment_N` / `delinquent_N` / `delinquent_amount_N` / `source_of_information_N`, and the anti-fallback shield at lines 1066-1103 then correctly blanks them — confirming the symptom.
 
-**1. Replace the four lien entries in `SECTION_FORMS.property` (lines 122–126)**
+The user's spec wires `{{propertytax.annual_payment_N}} → property[index].tax.annual_payment`. So the fix is to **route each propertytax row to the property index whose address it references**, then re-use the existing per-index alias publisher.
 
-Remove the four `liens_*` entries and add a single entry:
+## Fix (single edge-function change)
 
-```ts
-{ value: 'liens_details', label: 'Liens Details', dbSection: 'liens' },
+Edit `supabase/functions/generate-document/index.ts` only. No DB schema changes, no UI changes, no dictionary changes.
+
+### Step 1 — Build a property-address-to-index map (once)
+
+After `propertyIndices` is populated (~line 765) and BEFORE the per-index loop, build:
+
+```
+addressToPropIndex: Map<normalizedAddress, propertyIndex>
 ```
 
-Result: the Property → Forms dropdown shows exactly one Liens option.
+Source: for each idx in `propertyIndices`, normalize (lower-case, trim) the value of `property{idx}.address` (or its computed combo from street/city/state/zip already done at lines 769-788) and map it to idx.
 
-**2. Filter behavior (already supported, no code change)**
+### Step 2 — Pre-bridge propertytax rows by address match
 
-The existing filter logic at lines 696–709 handles a form whose `dbSection` is set but whose `value` is **not** prefixed with `${dbSection}_`. In that case `stripped` is `null` and the filter matches every row where `f.section === 'liens'` regardless of its `form_type`. So selecting the new "Liens Details" entry will display all four legacy buckets together — no data loss, ordering preserved by current default sort.
+Inside the existing per-index loop (~line 829), BEFORE the existing per-index tax publisher (~line 1019), add a pre-pass that scans every `propertytax{srcIdx}.<field>` already in `fieldValues` and, when `propertytax{srcIdx}.property` matches the current property's address (case-insensitive normalized) AND the destination key `propertytax{idx}.<field>` is not yet set, copies the four spec'd fields (`annual_payment`, `delinquent`, `delinquent_amount`, `source_of_information`) into `propertytax{idx}.<field>`.
 
-**3. New-field creation under "Liens Details"**
+This is purely an in-memory remap; no writes to DB. The existing publisher at lines 1027-1054 then publishes the underscore + dotted aliases (`propertytax_annual_payment_<N>`, `propertytax.annual_payment_<N>`, etc.) without further change.
 
-When a user creates a new field under the unified entry:
-- `resolveDbSection` returns `'liens'` (from `dbSection`) — unchanged behavior.
-- `resolveDbFormType` (lines 374–381) currently strips a `${dbSection}_` prefix from `formDef.value`. Since `'liens_details'` **does** start with `'liens_'`, it would persist as `form_type = 'details'`. That is acceptable (a new canonical bucket alongside the legacy four) and does **not** affect the four existing buckets' rows.
-- Add `liens_details: 'ld'` (or reuse `'gd'`) to `FORM_ABBR` so generated field keys remain valid. Use `'ld'` to avoid collisions.
+Edge cases:
+- If a propertytax row has no `.property` value, leave it bound to its native srcIdx (current behavior).
+- If two tax rows resolve to the same property index, first one wins (deterministic).
+- For `idx === 1`, the current canonical fallback to bare `propertytax.<field>` is preserved.
+- For propertytax rows whose address does NOT match any property, they are ignored (matches "do NOT fallback" acceptance criterion).
 
-**4. Edit-mapping for legacy rows**
+### Step 3 — Checkbox logic verification (already correct, no change)
 
-When editing a field whose DB row has `form_type ∈ {general_details, loan_type, balance_payment, recording_tracking}` and `section = 'liens'`, the edit dialog's form selector must point to the unified "Liens Details" entry (not show a stale value).
+- **OWNER OCCUPIED** Yes/No: lines 961-984 already publish `pr_p_occupancySt_{idx}_yes` / `_no` / glyphs, and accept `"Owner"`, `"owner occupied"`, `"primary borrower"` for YES; `"investor"`, `"tenant"`, `"secondary borrower"`, `"non-owner occupied"` for NO. Spec's "Owner → YES, else → NO" is satisfied — no change needed.
+- **TAX DELINQUENT** Yes/No: After Step 2's address-based bridging publishes `propertytax.delinquent_{idx}` ("true"/"false"), add a small per-index publisher that emits boolean + glyph aliases:
+  - `propertytax_delinquent_{idx}_yes` / `_no` (boolean)
+  - `propertytax_delinquent_{idx}_yes_glyph` / `_no_glyph` (☒ / ☐)
 
-Update `dbFormTypeToUiFormType` (lines 511–518) to add a Liens-specific short-circuit:
+  Mirroring the existing pattern used for occupancy. This unblocks any `{{propertytax.delinquent_N_yes}}`-style tags in the doc and is harmless if unused.
 
-```ts
-if (uiSection === 'property' && dbSection === 'liens') {
-  return 'liens_details';
-}
+### Step 4 — Add diagnostic log (debugging aid)
+
+After Step 2's pre-pass, emit:
+
+```
+[generate-document] RE851D propertytax bridge: {srcIdx → destIdx} mappings: [...]
 ```
 
-This ensures all legacy lien rows open in the edit dialog under the new unified option. On save, the row's `form_type` gets rewritten to `'details'` only if the user actively saves; if they cancel, nothing changes. (Optional safer behavior: preserve the original `form_type` on edit by detecting it. Default plan = let save normalize to `'details'`. Confirm if you'd rather preserve.)
+So the next regression is one log-line away.
 
-**5. Cleanup**
+## Acceptance Criteria Mapping
 
-Remove now-unused `FORM_ABBR` entries `liens_general_details`, `liens_loan_type`, `liens_balance_payment`, `liens_recording_tracking` (lines 244–247). They are only referenced by the removed dropdown values.
+| Criterion | Resolution |
+|---|---|
+| PROPERTY #2 and #3 display correct data | Step 2 routes the matching propertytax row to indices 2/3; existing publisher emits `_2` / `_3` aliases; `_N` rewrite at line 2235 already produces `pr_p_*_2`, `pr_p_*_3` for each block in reading order |
+| No fields blank when CSR has data | All ten listed `_N` tags resolve via existing `pr_p_*` per-index publisher (verified to already cover yearBuilt, squareFeet, construcType, occupanc, appraiseDate, appraiseValue) plus new propertytax routing |
+| Each section maps to correct property index | Address-based routing (Step 2) plus existing per-occurrence `_N`→`_<N>` rewrite |
+| No duplication / no fallback to Property[0] | Anti-fallback shield at lines 1066-1103 stays in place; new pre-pass uses `if (!fieldValues.has(destKey))` guard |
+| Document generates successfully | Change is additive within existing try/catch and existing publisher loop |
 
-Update the comment block at lines 122–126 to reflect the consolidation.
+## Out of Scope (unchanged)
 
-### What is NOT changed
-- `field_dictionary` table rows, field keys, labels, data types
-- Document generation (RE851D and all others)
-- Deal UI lien section components (`LienSectionContent.tsx`, etc.)
-- `legacyKeyMap.ts`, `fieldKeyMap.ts`
-- Permission logic
-- Any non-lien dropdown entries
+- DB schema, RLS, UI components, dictionary entries, template files
+- Property #1 behavior (already working, preserved by `idx === 1` canonical fallback)
+- Lien total computations
+- Memory rule "RE851D Multi-Property Mapping" stays valid; this fix extends it with the address-keyed propertytax bridge.
 
-### Validation
-- Open Admin → Field Dictionary → Section = Property → Forms dropdown shows exactly one "Liens Details" entry; no separate lien sub-forms.
-- Selecting "Liens Details" lists every field that previously appeared under any of the four lien sub-forms.
-- Editing a legacy lien field opens the dialog with form = "Liens Details".
-- Document generation for RE851D, RE885, and other lien-consuming docs continues to work (field keys unchanged).
+## Files To Edit
+
+- `supabase/functions/generate-document/index.ts` (one section, ~30 lines added inside existing per-index loop)
+
+## Memory Update
+
+Append to existing `mem://features/document-generation/re851d-multi-property-mapping`: "PropertyTax rows are routed to their property index via case-insensitive `propertytax{N}.property` ↔ `property{N}.address` matching before the per-index alias publisher runs."
