@@ -1018,6 +1018,100 @@ async function generateSingleDocument(
           }
         }
 
+        // ── RE851D: per-property Property Type → 7-checkbox mapping ──
+        // Spec mapping (CSR Property Type dropdown → RE851D checkboxes):
+        //   SFR 1-4                       → property_type_sfr_owner
+        //   Condo / Townhouse             → property_type_sfr_non_owner
+        //   Multi-family                  → property_type_commercial
+        //   Commercial                    → property_type_commercial
+        //   Commercial Income             → property_type_commercial
+        //   Mixed-use                     → property_type_commercial
+        //   Land SFR Residential          → property_type_sfr_zoned
+        //   Land Residential              → property_type_land_zoned
+        //   Land Commercial               → property_type_land_zoned
+        //   Land Income Producing         → property_type_land_income
+        //   <anything else>               → property_type_other (+ property_type_other_text = raw value)
+        // Publishes booleans, glyphs, and text for index N. Mirrors as bare
+        // (non-_N) aliases for index 1 so single-property templates work.
+        {
+          const RE851D_TARGETS = [
+            "property_type_sfr_owner",
+            "property_type_sfr_non_owner",
+            "property_type_sfr_zoned",
+            "property_type_commercial",
+            "property_type_land_zoned",
+            "property_type_land_income",
+            "property_type_other",
+          ];
+          const SPEC_MAP: Record<string, string> = {
+            "sfr 1-4": "property_type_sfr_owner",
+            "sfr1-4": "property_type_sfr_owner",
+            "sfr": "property_type_sfr_owner",
+            "single family": "property_type_sfr_owner",
+            "single-family": "property_type_sfr_owner",
+            "singlefamily": "property_type_sfr_owner",
+            "condo / townhouse": "property_type_sfr_non_owner",
+            "condo/townhouse": "property_type_sfr_non_owner",
+            "condo": "property_type_sfr_non_owner",
+            "townhouse": "property_type_sfr_non_owner",
+            "condominium": "property_type_sfr_non_owner",
+            "multi-family": "property_type_commercial",
+            "multi family": "property_type_commercial",
+            "multifamily": "property_type_commercial",
+            "commercial": "property_type_commercial",
+            "commercial income": "property_type_commercial",
+            "mixed-use": "property_type_commercial",
+            "mixed use": "property_type_commercial",
+            "land sfr residential": "property_type_sfr_zoned",
+            "land residential": "property_type_land_zoned",
+            "land commercial": "property_type_land_zoned",
+            "land income producing": "property_type_land_income",
+          };
+          const ptRawSpec = String(
+            fieldValues.get(`pr_p_propertyTyp_${idx}`)?.rawValue ||
+            fieldValues.get(`pr_p_propertyType_${idx}`)?.rawValue ||
+            fieldValues.get(`${prefix}.propertyType`)?.rawValue ||
+            fieldValues.get(`${prefix}.appraisal_property_type`)?.rawValue ||
+            ""
+          ).trim();
+          if (ptRawSpec) {
+            const matched = SPEC_MAP[ptRawSpec.toLowerCase()] || "";
+            const useOther = !matched;
+            const otherText = useOther ? ptRawSpec : "";
+            for (const t of RE851D_TARGETS) {
+              const isMatch = useOther ? (t === "property_type_other") : (t === matched);
+              fieldValues.set(`${t}_${idx}`, {
+                rawValue: isMatch ? "true" : "false",
+                dataType: "boolean",
+              });
+              fieldValues.set(`${t}_${idx}_glyph`, {
+                rawValue: isMatch ? "☒" : "☐",
+                dataType: "text",
+              });
+              if (idx === 1) {
+                fieldValues.set(t, {
+                  rawValue: isMatch ? "true" : "false",
+                  dataType: "boolean",
+                });
+                fieldValues.set(`${t}_glyph`, {
+                  rawValue: isMatch ? "☒" : "☐",
+                  dataType: "text",
+                });
+              }
+            }
+            fieldValues.set(`property_type_other_text_${idx}`, {
+              rawValue: otherText,
+              dataType: "text",
+            });
+            if (idx === 1) {
+              fieldValues.set("property_type_other_text", {
+                rawValue: otherText,
+                dataType: "text",
+              });
+            }
+          }
+        }
+
         // ── RE851D: per-property Owner-Occupied Yes/No checkbox booleans ──
         // Source strictly from property{idx}.occupancyStatus. Missing => no aliases.
         {
