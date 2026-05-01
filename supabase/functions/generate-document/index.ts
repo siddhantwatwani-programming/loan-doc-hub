@@ -2371,7 +2371,11 @@ async function generateSingleDocument(
 
           const part1Start = findOne(/PART\s*1\b|LOAN\s+TO\s+VALUE\s+RATIO/i);
           const part2Start = findOne(/PART\s*2\b|SECURING\s+PROPERTIES/i);
-          const propMatches = findAll(/PROPERTY\s*#\s*([1-5])\b/gi);
+          // Strict heading match: ALL-CAPS "PROPERTY #K" immediately followed by
+          // " PROPERTY INFORMATION". Excludes inline mixed-case mentions like
+          // "Property #1" inside the PART 2 explanatory paragraph, which would
+          // otherwise be mistaken for region anchors and shift the boundaries.
+          const propMatches = findAll(/PROPERTY\s*#\s*([1-5])\s+PROPERTY\s+INFORMATION/g);
           // Deduplicate by k, keep first occurrence (the heading), sort by offset.
           const seen = new Set<number>();
           const propsOrdered = propMatches
