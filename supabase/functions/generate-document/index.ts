@@ -2983,6 +2983,7 @@ async function generateSingleDocument(
     }
 
     let processedDocx: Uint8Array;
+    const tRenderStart = performance.now();
     try {
       processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, effectiveValidFieldKeys, { templateName: template.name });
     } catch (err) {
@@ -2995,6 +2996,9 @@ async function generateSingleDocument(
         return result;
       }
       throw err;
+    }
+    if (isTemplate885) {
+      console.log(`[RE885] DOCX Render: ${Math.round(performance.now() - tRenderStart)} ms (output=${processedDocx.length} bytes)`);
     }
 
     debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
