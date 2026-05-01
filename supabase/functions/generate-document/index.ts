@@ -827,6 +827,66 @@ async function generateSingleDocument(
       );
 
       const sortedPropIndices = [...propertyIndices].sort((a, b) => a - b).slice(0, MAX_PROPERTIES);
+
+      // ── RE851D: Build property-address → property-index map ──
+      // Used to route propertytax{N} rows to their associated property by the
+      // tax row's `.property` field (which carries the property's address).
+      const normAddr = (s: string) => String(s || "").trim().toLowerCase().replace(/\s+/g, " ");
+      const addressToPropIndex = new Map<string, number>();
+      for (const pi of sortedPropIndices) {
+        const a = normAddr(String(fieldValues.get(`property${pi}.address`)?.rawValue || ""));
+        if (a && !addressToPropIndex.has(a)) addressToPropIndex.set(a, pi);
+      }
+
+      // ── RE851D: Pre-bridge propertytax{srcIdx} → propertytax{destIdx} by address match ──
+      // Scan all propertytax{srcIdx}.property values; if they match a property's
+      // normalized address, copy the four spec'd tax fields into the destination
+      // index so the per-index tax publisher below emits per-property aliases.
+      // Strict: only copy when destination key is empty; idx==1 canonical fallback
+      // remains intact.
+      {
+        const TAX_FIELDS = ["annual_payment", "delinquent", "delinquent_amount", "source_of_information"];
+        const srcIndices = new Set<number>();
+        for (const [k] of fieldValues.entries()) {
+          const m = k.match(/^propertytax(\d+)\./);
+          if (m) srcIndices.add(parseInt(m[1], 10));
+        }
+        const bridgeLog: string[] = [];
+        for (const srcIdx of srcIndices) {
+          const propAddrRaw = String(fieldValues.get(`propertytax${srcIdx}.property`)?.rawValue || "");
+          if (!propAddrRaw) continue;
+          // Address may be stored as "Borrower - Street, City, ST, ZIP" — try
+          // exact match first, then a relaxed match where the property address
+          // is a substring of the tax-row property string.
+          const propAddrNorm = normAddr(propAddrRaw);
+          let destIdx = addressToPropIndex.get(propAddrNorm);
+          if (!destIdx) {
+            for (const [a, pi] of addressToPropIndex.entries()) {
+              if (a && propAddrNorm.includes(a)) { destIdx = pi; break; }
+            }
+          }
+          if (!destIdx || destIdx === srcIdx) continue;
+          for (const tf of TAX_FIELDS) {
+            const srcKey = `propertytax${srcIdx}.${tf}`;
+            const destKey = `propertytax${destIdx}.${tf}`;
+            const srcVal = fieldValues.get(srcKey);
+            if (
+              srcVal &&
+              srcVal.rawValue !== undefined &&
+              srcVal.rawValue !== null &&
+              srcVal.rawValue !== "" &&
+              !fieldValues.has(destKey)
+            ) {
+              fieldValues.set(destKey, { rawValue: srcVal.rawValue, dataType: srcVal.dataType });
+            }
+          }
+          bridgeLog.push(`${srcIdx}->${destIdx}`);
+        }
+        if (bridgeLog.length > 0) {
+          debugLog(`[generate-document] RE851D propertytax bridge (address-keyed): ${bridgeLog.join(", ")}`);
+        }
+      }
+
       for (const idx of sortedPropIndices) {
         const prefix = `property${idx}`;
         // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
@@ -1049,6 +1109,37 @@ async function generateSingleDocument(
               const dottedKey = `propertytax.${tf}_${idx}`;
               if (!fieldValues.has(dottedKey)) {
                 fieldValues.set(dottedKey, { rawValue: v.rawValue, dataType });
+              }
+            }
+          }
+        }
+
+        // ── RE851D: per-property TAX DELINQUENT Yes/No checkbox booleans ──
+        // After the propertytax bridge + per-index publisher, emit boolean +
+        // glyph aliases so any {{propertytax_delinquent_N_yes}}-style tag in
+        // the template resolves correctly. true → YES ☒ / false → NO ☒.
+        {
+          const delRaw = String(
+            fieldValues.get(`propertytax_delinquent_${idx}`)?.rawValue ||
+            fieldValues.get(`propertytax.delinquent_${idx}`)?.rawValue ||
+            (idx === 1 ? fieldValues.get(`propertytax.delinquent`)?.rawValue : "") ||
+            ""
+          ).trim().toLowerCase();
+          const isYes = ["true", "yes", "y", "1"].includes(delRaw);
+          const isNo = ["false", "no", "n", "0"].includes(delRaw);
+          if (isYes || isNo) {
+            for (const base of [`propertytax_delinquent_${idx}`, `propertytax.delinquent_${idx}`]) {
+              if (!fieldValues.has(`${base}_yes`)) {
+                fieldValues.set(`${base}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
+              }
+              if (!fieldValues.has(`${base}_no`)) {
+                fieldValues.set(`${base}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
+              }
+              if (!fieldValues.has(`${base}_yes_glyph`)) {
+                fieldValues.set(`${base}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
+              }
+              if (!fieldValues.has(`${base}_no_glyph`)) {
+                fieldValues.set(`${base}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
               }
             }
           }
