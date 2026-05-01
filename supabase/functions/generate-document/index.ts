@@ -117,6 +117,8 @@ async function generateSingleDocument(
 
     result.templateName = template.name;
     const isTemplate885 = /885/i.test(template.name || "");
+    const t885Total = performance.now();
+    const tDataFetchStart = performance.now();
     const tDataMappingStart = performance.now();
 
     if (!template.file_path) {
