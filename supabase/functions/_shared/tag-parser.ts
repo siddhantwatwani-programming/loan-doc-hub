@@ -2374,7 +2374,7 @@ export function replaceMergeTags(
   // immediately preceding any boolean label in labelMap into the equivalent
   // glyph here. The replacement is strictly bounded to the marker region —
   // surrounding text, spacing, and XML structure are preserved unchanged.
-  if (result.includes('[') && result.includes(']')) {
+  if (is851A && result.includes('[') && result.includes(']')) {
     const booleanLabels = Object.entries(labelMap)
       .filter(([, mapping]) => {
         const fd = fieldValues.get(mapping.fieldKey);
