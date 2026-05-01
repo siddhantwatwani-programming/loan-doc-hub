@@ -2264,6 +2264,7 @@ async function generateSingleDocument(
     // RE851D placeholder families — no other tags are touched.
     if (/851d/i.test(template.name || "")) {
       try {
+        // Full set of _N families that appear inside PROPERTY #K blocks.
         const RE851D_INDEXED_TAGS = [
           "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
           "pr_p_zip_N", "pr_p_county_N", "pr_p_country_N", "pr_p_apn_N",
@@ -2281,19 +2282,118 @@ async function generateSingleDocument(
           "pr_p_delinquHowMany_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
           // RE851D propertytax dotted-form _N tags. Order is critical: longer
-          // matches FIRST so "delinquent_amount_N" wins before "delinquent_N"
-          // (regex iteration is sequential per the loop below at line ~2228).
+          // matches FIRST so "delinquent_amount_N" wins before "delinquent_N".
           "propertytax.delinquent_amount_N",
           "propertytax.source_of_information_N",
           "propertytax.annual_payment_N",
           "propertytax.delinquent_N",
         ];
+        // Tags that appear in the repeating PART 1 / PART 2 row blocks.
+        const PART1_TAGS = ["pr_p_appraiseValue_N", "ln_p_loanToValueRatio_N"];
+        const PART2_TAGS = ["pr_p_address_N", "pr_p_appraiseValue_N", "ln_p_loanToValueRatio_N"];
+
         const decoder = new TextDecoder("utf-8");
         const encoder = new TextEncoder();
         const decompressed = fflate.unzipSync(templateBuffer);
         const out: fflate.Zippable = {};
-        const counters = new Map<string, number>();
         let totalRewrites = 0;
+        const regionRewriteCounts: Record<string, number> = {};
+
+        // Strip XML tags to find anchor text (PART 1 / PART 2 / PROPERTY #K)
+        // even when the heading is split across multiple <w:r> runs. We build
+        // a parallel offset map: stripped-index -> original-index, so anchor
+        // matches in the stripped text translate back to character offsets
+        // in the original XML for region boundary computation.
+        const findAnchorOffsets = (xml: string): {
+          partA: [number, number] | null;
+          partB: [number, number] | null;
+          props: Array<{ k: number; range: [number, number] }>;
+        } => {
+          // Build stripped text + offset map (skip <...> tag content).
+          const strippedChars: string[] = [];
+          const map: number[] = []; // strippedChars[i] originated at map[i] in xml
+          let i = 0;
+          while (i < xml.length) {
+            const ch = xml[i];
+            if (ch === "<") {
+              const end = xml.indexOf(">", i);
+              if (end === -1) break;
+              i = end + 1;
+              continue;
+            }
+            strippedChars.push(ch);
+            map.push(i);
+            i++;
+          }
+          const stripped = strippedChars.join("");
+          const collapsed = stripped.replace(/\s+/g, " ");
+          // Build collapsed -> stripped index map (1:1 except runs of ws collapse to 1 space).
+          const collapsedToStripped: number[] = [];
+          {
+            let lastWasWs = false;
+            for (let j = 0; j < stripped.length; j++) {
+              const c = stripped[j];
+              const isWs = /\s/.test(c);
+              if (isWs) {
+                if (!lastWasWs) collapsedToStripped.push(j);
+                lastWasWs = true;
+              } else {
+                collapsedToStripped.push(j);
+                lastWasWs = false;
+              }
+            }
+          }
+          const strippedToOriginal = (sIdx: number): number => {
+            if (sIdx < 0) return 0;
+            if (sIdx >= map.length) return xml.length;
+            return map[sIdx];
+          };
+          const collapsedToOriginal = (cIdx: number): number => {
+            if (cIdx < 0) return 0;
+            if (cIdx >= collapsedToStripped.length) return xml.length;
+            return strippedToOriginal(collapsedToStripped[cIdx]);
+          };
+          const findOne = (re: RegExp): number => {
+            const m = re.exec(collapsed);
+            return m ? collapsedToOriginal(m.index) : -1;
+          };
+          const findAll = (re: RegExp): Array<{ k: number; orig: number }> => {
+            const res: Array<{ k: number; orig: number }> = [];
+            re.lastIndex = 0;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(collapsed)) !== null) {
+              const k = parseInt(m[1], 10);
+              if (k >= 1 && k <= 5) res.push({ k, orig: collapsedToOriginal(m.index) });
+              if (m.index === re.lastIndex) re.lastIndex++;
+            }
+            return res;
+          };
+
+          const part1Start = findOne(/PART\s*1\b|LOAN\s+TO\s+VALUE\s+RATIO/i);
+          const part2Start = findOne(/PART\s*2\b|SECURING\s+PROPERTIES/i);
+          const propMatches = findAll(/PROPERTY\s*#\s*([1-5])\b/gi);
+          // Deduplicate by k, keep first occurrence (the heading), sort by offset.
+          const seen = new Set<number>();
+          const propsOrdered = propMatches
+            .filter(p => (seen.has(p.k) ? false : (seen.add(p.k), true)))
+            .sort((a, b) => a.orig - b.orig);
+          const xmlEnd = xml.length;
+          const firstPropOffset = propsOrdered.length > 0 ? propsOrdered[0].orig : xmlEnd;
+          const partA: [number, number] | null = part1Start >= 0
+            ? [part1Start, part2Start >= 0 ? part2Start : (firstPropOffset >= 0 ? firstPropOffset : xmlEnd)]
+            : null;
+          const partB: [number, number] | null = part2Start >= 0
+            ? [part2Start, firstPropOffset >= 0 ? firstPropOffset : xmlEnd]
+            : null;
+          const props: Array<{ k: number; range: [number, number] }> = [];
+          for (let pi = 0; pi < propsOrdered.length; pi++) {
+            const start = propsOrdered[pi].orig;
+            const end = pi + 1 < propsOrdered.length ? propsOrdered[pi + 1].orig : xmlEnd;
+            props.push({ k: propsOrdered[pi].k, range: [start, end] });
+          }
+          return { partA, partB, props };
+        };
+
         // Process content parts in a deterministic order so per-tag occurrence
         // numbering follows document reading order (header, document, footer).
         const orderedNames = Object.keys(decompressed).sort((a, b) => {
@@ -2306,6 +2406,12 @@ async function generateSingleDocument(
           const ra = rank(a), rb = rank(b);
           return ra !== rb ? ra - rb : a.localeCompare(b);
         });
+
+        // Global fallback counters (used when no region matches the offset).
+        const globalCounters = new Map<string, number>();
+        // Region log buffer for diagnostics.
+        const regionLog: string[] = [];
+
         for (const filename of orderedNames) {
           const bytes = decompressed[filename];
           const isContentPart =
@@ -2323,33 +2429,148 @@ async function generateSingleDocument(
             out[filename] = bytes;
             continue;
           }
-          for (const tag of RE851D_INDEXED_TAGS) {
-            // Match the exact tag text — works whether or not surrounding
-            // braces have already been consolidated (the inner Word XML may
-            // hold "pr_p_address_N" between «»/{{ }} runs).
-            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
-            xml = xml.replace(re, () => {
-              const next = (counters.get(tag) || 0) + 1;
-              if (next > 5) {
-                // Beyond Property #5: leave blank by mapping to a guaranteed-empty key.
-                // Keeping a unique suffix avoids collisions with valid resolved keys.
-                counters.set(tag, next);
-                totalRewrites++;
-                return tag.replace(/_N$/, `_overflow${next}`);
-              }
-              counters.set(tag, next);
-              totalRewrites++;
-              return tag.replace(/_N$/, `_${next}`);
-            });
+
+          // Detect region boundaries (only meaningful in word/document.xml,
+          // but harmless to attempt elsewhere — anchors won't be present).
+          let regions: ReturnType<typeof findAnchorOffsets>;
+          try {
+            regions = findAnchorOffsets(xml);
+          } catch (e) {
+            regions = { partA: null, partB: null, props: [] };
           }
+          if (filename === "word/document.xml") {
+            regionLog.push(
+              `${filename}: PART1=${regions.partA ? `[${regions.partA[0]},${regions.partA[1]}]` : "none"}, ` +
+              `PART2=${regions.partB ? `[${regions.partB[0]},${regions.partB[1]}]` : "none"}, ` +
+              `PROPS=[${regions.props.map(p => `#${p.k}@[${p.range[0]},${p.range[1]}]`).join(", ")}]`
+            );
+          }
+
+          // Per-region counters: regionId -> tag -> count
+          const regionCounters = new Map<string, Map<string, number>>();
+          const bumpRegion = (id: string) => {
+            if (!regionRewriteCounts[id]) regionRewriteCounts[id] = 0;
+            regionRewriteCounts[id]++;
+          };
+          const getRegionCounter = (id: string, tag: string): number => {
+            let m = regionCounters.get(id);
+            if (!m) { m = new Map(); regionCounters.set(id, m); }
+            const next = (m.get(tag) || 0) + 1;
+            m.set(tag, next);
+            return next;
+          };
+
+          // Resolve which region contains a given character offset.
+          // Returns { id, forcedIndex?, allowedTags? }.
+          const resolveRegion = (offset: number): {
+            id: string;
+            forcedIndex: number | null;
+            allowedTags: Set<string> | null;
+          } => {
+            // Property sections take precedence (they sit after PART 2).
+            for (const p of regions.props) {
+              if (offset >= p.range[0] && offset < p.range[1]) {
+                return {
+                  id: `PROP#${p.k}`,
+                  forcedIndex: p.k,
+                  allowedTags: new Set(RE851D_INDEXED_TAGS),
+                };
+              }
+            }
+            if (regions.partB && offset >= regions.partB[0] && offset < regions.partB[1]) {
+              return {
+                id: "PART2",
+                forcedIndex: null,
+                allowedTags: new Set(PART2_TAGS),
+              };
+            }
+            if (regions.partA && offset >= regions.partA[0] && offset < regions.partA[1]) {
+              return {
+                id: "PART1",
+                forcedIndex: null,
+                allowedTags: new Set(PART1_TAGS),
+              };
+            }
+            return { id: "GLOBAL", forcedIndex: null, allowedTags: null };
+          };
+
+          // Use exec-based scan so we can read each match's offset and decide
+          // its region. Process tags longest-first to avoid prefix collisions
+          // (e.g. "propertytax.delinquent_amount_N" before "...delinquent_N").
+          const tagsByLengthDesc = [...RE851D_INDEXED_TAGS].sort((a, b) => b.length - a.length);
+          // We collect all rewrites first, then apply them in reverse order so
+          // earlier offsets remain valid. Each rewrite is (start, end, replacement).
+          type Rewrite = { start: number; end: number; replacement: string };
+          const rewrites: Rewrite[] = [];
+
+          // Track consumed [start,end) ranges to avoid double-matching when
+          // a shorter tag is a substring of a longer one already matched.
+          const consumed: Array<[number, number]> = [];
+          const isConsumed = (s: number, e: number): boolean => {
+            for (const [cs, ce] of consumed) {
+              if (s < ce && e > cs) return true;
+            }
+            return false;
+          };
+
+          for (const tag of tagsByLengthDesc) {
+            const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(xml)) !== null) {
+              const start = m.index;
+              const end = start + m[0].length;
+              if (isConsumed(start, end)) continue;
+              const region = resolveRegion(start);
+              // If the region restricts allowed tags and this tag isn't in the
+              // allowlist, skip it (don't rewrite, don't consume the counter).
+              if (region.allowedTags && !region.allowedTags.has(tag)) continue;
+
+              let indexNum: number;
+              if (region.forcedIndex !== null) {
+                // PROPERTY #K: force every _N inside this block to _K.
+                indexNum = region.forcedIndex;
+                // Still bump the region counter so logs reflect activity.
+                getRegionCounter(region.id, tag);
+              } else if (region.id === "GLOBAL") {
+                // Outside known regions: preserve previous global behavior.
+                indexNum = (globalCounters.get(tag) || 0) + 1;
+                globalCounters.set(tag, indexNum);
+              } else {
+                // PART1 / PART2: per-region running counter that resets at
+                // the region boundary (each region has its own counter map).
+                indexNum = getRegionCounter(region.id, tag);
+              }
+
+              let replacement: string;
+              if (indexNum > 5) {
+                // Beyond Property #5: blank by mapping to a guaranteed-empty key.
+                replacement = tag.replace(/_N$/, `_overflow${indexNum}`);
+              } else {
+                replacement = tag.replace(/_N$/, `_${indexNum}`);
+              }
+              rewrites.push({ start, end, replacement });
+              consumed.push([start, end]);
+              bumpRegion(region.id);
+              totalRewrites++;
+            }
+          }
+
+          // Apply rewrites in reverse offset order so earlier offsets are stable.
+          rewrites.sort((a, b) => b.start - a.start);
+          for (const r of rewrites) {
+            xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+          }
+
           out[filename] = encoder.encode(xml);
         }
+
         if (totalRewrites > 0) {
           templateBuffer = new Uint8Array(fflate.zipSync(out, { level: 0 }));
           console.log(
-            `[generate-document] RE851D: rewrote ${totalRewrites} literal "_N" placeholders to per-occurrence indices (${
-              [...counters.entries()].map(([k, v]) => `${k}=${v}`).join(", ")
-            })`
+            `[generate-document] RE851D regions: ${regionLog.join(" | ")}; ` +
+            `rewrites per region: ${
+              Object.entries(regionRewriteCounts).map(([k, v]) => `${k}=${v}`).join(", ")
+            }; total=${totalRewrites}`
           );
         }
       } catch (err) {
