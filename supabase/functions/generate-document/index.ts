@@ -900,6 +900,15 @@ async function generateSingleDocument(
 
       for (const idx of sortedPropIndices) {
         const prefix = `property${idx}`;
+        // ── RE851D: auto-numbered Property No. for Part 1 LTV table ──
+        // Set unconditionally for any index that has a property record so the
+        // {{property_number_N}} tag in the Part 1 row resolves to 1, 2, 3, ...
+        // Indices without a property record never reach this loop, so empty
+        // template rows stay blank (matches existing per-index publisher contract).
+        fieldValues.set(`property_number_${idx}`, {
+          rawValue: String(idx),
+          dataType: "number",
+        });
         // Per-property field aliases (pr_p_<short>_<N> -> property{N}.<short>)
         for (const [sfx, prKey] of Object.entries(suffixToPrKey)) {
           const v = fieldValues.get(`${prefix}.${sfx}`);
@@ -1282,12 +1291,18 @@ async function generateSingleDocument(
           const haveExpected = !isNaN(expectedNum);
           if (haveRemaining || haveExpected) {
             const total = (haveRemaining ? remainingNum : 0) + (haveExpected ? expectedNum : 0);
+            const totalVal = {
+              rawValue: total.toFixed(2),
+              dataType: "currency" as const,
+            };
             if (!fieldValues.has(`pr_p_totalEncumbrance_${idx}`)) {
-              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, {
-                rawValue: total.toFixed(2),
-                dataType: "currency",
-              });
+              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, totalVal);
             }
+            // Part 1 LTV table tag — published per property index. Same value
+            // as pr_p_totalEncumbrance_N; separate alias because the template
+            // uses {{ln_p_totalEncumbrance_N}} in the Total Senior Encumbrances
+            // column. Force-set: this is the authoritative computed total.
+            fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
           }
         }
 
@@ -1390,6 +1405,7 @@ async function generateSingleDocument(
           "pr_p_occupanc", "pr_p_remainingSenior", "pr_p_expectedSenior",
           "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
           "pr_p_totalSenior", "pr_p_totalEncumbrance", "pr_p_totalSeniorPlusLoan",
+          "ln_p_totalEncumbrance", "property_number",
           "pr_p_construcType", "pr_p_purchasePrice", "pr_p_downPayme",
           "pr_p_protectiveEquity", "pr_p_descript", "pr_p_ltv", "pr_p_cltv",
           "pr_p_zoning", "pr_p_floodZone", "pr_p_pledgedEquity",
@@ -2532,6 +2548,7 @@ async function generateSingleDocument(
           "pr_p_occupanc_N", "pr_p_remainingSenior_N", "pr_p_expectedSenior_N",
           "ln_p_expectedEncumbrance_N", "ln_p_remainingEncumbrance_N",
           "pr_p_totalSenior_N", "pr_p_totalEncumbrance_N", "pr_p_totalSeniorPlusLoan_N",
+          "ln_p_totalEncumbrance_N", "property_number_N",
           "pr_p_construcType_N", "pr_p_purchasePrice_N", "pr_p_downPayme_N",
           "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
@@ -2552,17 +2569,21 @@ async function generateSingleDocument(
         // rewrite and stayed as the literal "_N" form, resolving to blank in
         // the generated document (the reported bug).
         const PART1_TAGS = [
+          "property_number_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
+          "ln_p_totalEncumbrance_N",
         ];
         const PART2_TAGS = [
+          "property_number_N",
           "pr_p_address_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
+          "ln_p_totalEncumbrance_N",
         ];
 
         const decoder = new TextDecoder("utf-8");
@@ -2991,6 +3012,7 @@ async function generateSingleDocument(
         "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
         "pr_p_expectedSenior", "pr_p_remainingSenior",
         "pr_p_totalEncumbrance", "pr_p_totalSenior", "pr_p_totalSeniorPlusLoan",
+        "ln_p_totalEncumbrance", "property_number",
       ];
       for (let i = 1; i <= 5; i++) {
         for (const base of SUFFIXED_BASES) {

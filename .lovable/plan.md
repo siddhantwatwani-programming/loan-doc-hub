@@ -1,43 +1,59 @@
 ## Goal
 
-Add the 5 requested RE885 fields under Other Origination → Origination Fees to the `field_dictionary` so that values entered in the UI are persisted and resolved into the document tags during generation.
+Add two backend-computed merge tags to RE851D document generation so the LOAN TO VALUE RATIO table (Part 1) auto-fills:
 
-## Background
+1. **Total Senior Encumbrances** column → `{{ln_p_totalEncumbrance_N}}` = Remaining + Expected (per property index, missing = 0).
+2. **Property No.** column → `{{property_number_N}}` = the row index (1, 2, 3, …).
 
-The 5 fields already exist in the UI (`src/components/deal/RE885ProposedLoanTerms.tsx`) and already have legacy → short-key mappings in `src/lib/legacyKeyMap.ts`. However, there are **no `field_dictionary` rows** for any RE885 keys (verified: `SELECT … WHERE field_key LIKE 'origination_fees.re885%'` returns 0 rows). Per the project rule "missing UI keys are skipped" by `useDealFields`, this means the values are silently dropped on save and never reach `deal_section_values` — so the document also gets no value to substitute.
+Both are pre-computed in the edge function before substitution — no template-side math, no UI input required.
 
-Adding the dictionary rows fixes both persistence and document population in one step, because:
-- The save hook (`useDealFields`) writes JSONB keyed by `field_dictionary_id`, which the doc-gen edge function (`supabase/functions/generate-document/index.ts`) already resolves back to `field_key` (and via `legacyKeyMap` to the short tag, e.g. `of_re_viiPaymentAmount`) before substituting tags.
+## Why this is the right place
 
-## Field rows to insert
+- `supabase/functions/generate-document/index.ts` already publishes per-index keys for RE851D (e.g. `ln_p_expectedEncumbrance_${idx}`, `ln_p_remainingEncumbrance_${idx}`, `pr_p_totalEncumbrance_${idx}`) inside the property loop guarded by `/851d/i.test(template.name)`.
+- The `PART1_TAGS` / `PART2_TAGS` allowlists already restrict which `_N` tags get rewritten per row inside the LTV table and SECURING PROPERTIES region. We just need to add the two new tag names to that allowlist so the per-row `_N` rewriter assigns `_1`, `_2`, … indices to them.
+- A `pr_p_totalSeniorEncumb` row already exists in `field_dictionary`, but it is the singular (non-indexed) variant. The Part 1 table is per-property, so we need a new tag family `ln_p_totalEncumbrance_N` (matches the user's spec and the existing `ln_p_*Encumbrance_N` naming).
 
-Section: `origination_fees`, form_type: `primary`.
+## Backend changes (`supabase/functions/generate-document/index.ts`)
 
-| field_key | label | data_type |
-|---|---|---|
-| `origination_fees.re885_vii_payment_amount` | VII. Proposed Initial (Minimum) Loan Payment | `currency` |
-| `origination_fees.re885_viii_rate_increase_pct` | VIII. Interest Rate can Increase Percentage | `percentage` |
-| `origination_fees.re885_viii_rate_increase_months` | VIII. Interest Rate can Increase Months | `number` |
-| `origination_fees.re885_ix_payment_end_months` | IX. Payment Options end after Months | `number` |
-| `origination_fees.re885_ix_payment_end_pct` | IX. Payment Options end after Percentage | `percentage` |
+1. **Publish `ln_p_totalEncumbrance_${idx}`** alongside the existing `pr_p_totalEncumbrance_${idx}` block (~line 1283). Same value (Remaining + Expected, missing treated as 0), `dataType: "currency"`. If both are missing, do not set the key (leaves cell blank — per user "blank or 0").
+2. **Publish `property_number_${idx}`** at the top of the per-property loop in the RE851D publisher (`if (/851d/i.test(...))` block ~line 808), set to the string form of `idx` with `dataType: "number"`. Set only for indices that have a corresponding property record so empty rows in the template stay blank (matches existing "indices not present in CSR get NO alias" behavior).
+3. **Add to PART1_TAGS / PART2_TAGS allowlists** (~lines 2554 and 2560):
+   - `ln_p_totalEncumbrance_N`
+   - `property_number_N`
+4. **Add to `RE851D_INDEXED_TAGS`** (~line 2523) so the in-property-block rewriter also handles them.
+5. **Add to the bare-tag shield** (~line 2991, the list of canonical tags that should resolve to empty if no per-index value exists) so an unindexed `{{ln_p_totalEncumbrance}}` or `{{property_number}}` doesn't leak the literal tag.
 
-`canonical_key` will be set to the short key (`of_re_viiPaymentAmount`, `of_re_viiiRateIncreasePct`, `of_re_viiiRateIncreaseMonths`, `of_re_ixPaymentEndMonths`, `of_re_ixPaymentEndPct`) to match `legacyKeyMap.ts` and the document tag names already supported by the resolver.
+No changes to the Part 1 sum/aggregation logic — the calculation is per-row only, exactly as specified.
 
-## Steps
+## Field dictionary registration
 
-1. **Create migration** that inserts the 5 rows into `public.field_dictionary` with `ON CONFLICT (field_key) DO UPDATE` so re-runs are safe. Set `section='origination_fees'`, `form_type='primary'`, default `allowed_roles=['admin','csr']`, and the `canonical_key` listed above.
-2. **No UI changes required** — `RE885ProposedLoanTerms.tsx` already binds these 5 keys via `getValue` / `setValue`. Once the dictionary rows exist, `useDealFields` will accept and persist them.
-3. **No edge-function changes required** — the doc-gen function already:
-   - resolves `field_dictionary_id` → `field_key` from `deal_section_values`,
-   - bridges `field_key` → short canonical key via `legacyKeyMap`,
-   - so tags like `{{of_re_viiPaymentAmount}}`, `{{of_re_viiiRateIncreasePct}}`, `{{of_re_viiiRateIncreaseMonths}}`, `{{of_re_ixPaymentEndMonths}}`, `{{of_re_ixPaymentEndPct}}` in the RE885 template will populate automatically once data exists.
-4. **Verification** after migration:
-   - `SELECT field_key, data_type FROM field_dictionary WHERE field_key LIKE 'origination_fees.re885_v%' OR field_key LIKE 'origination_fees.re885_ix%';` returns 5 rows.
-   - In the UI, enter values in the VII / VIII / IX inputs of the RE885 form, save, and confirm `deal_section_values` row contains the new field IDs.
-   - Generate the RE885 document; the 5 tags resolve to the entered values.
+Insert two rows into `public.field_dictionary` (section `property`, form_type `primary`) so the keys appear in the Admin → Field Dictionary UI. They are publish-only (computed by the edge function), so they are not bound to any UI input — matching the pattern of the existing `pr_p_totalSeniorEncumb` row.
 
-## Out of scope (per Minimal Change Policy)
+| field_key | label | data_type | canonical_key |
+|---|---|---|---|
+| `ln_p_totalEncumbrance` | Total Senior Encumbrances (per property) | `currency` | `ln_p_totalEncumbrance` |
+| `property_number` | Property No. (auto-numbered) | `number` | `property_number` |
 
-- No changes to UI layout, form components, or the doc-gen pipeline.
-- No backfill of the other ~25 RE885 dictionary entries (this request is scoped to these 5 fields only). If you'd like, I can add the rest in a follow-up.
-- No `template_field_maps` rows are required — generation works off `field_dictionary` + `legacyKeyMap` for these tags.
+Migration uses `ON CONFLICT (field_key) DO UPDATE` so it's safe to re-run.
+
+## Verification
+
+1. Open RE851D template — confirm Part 1 "Total Senior Encumbrances" cell contains `{{ln_p_totalEncumbrance_N}}` and "Property No." cell contains `{{property_number_N}}`. (If the user's current template has empty cells in those columns as shown in the screenshot, the user will need to add the merge tags — flagged in the response.)
+2. Generate RE851D for a deal with 2+ properties and lien data:
+   - Property 1: Remaining=100000, Expected=50000 → Total=150,000.00, No.=1
+   - Property 2: Remaining=80000, Expected=blank → Total=80,000.00, No.=2
+   - Property 3: blank/blank → row stays blank, No. blank
+3. Check edge function logs for the existing `RE851D lien rollup` line and confirm the new totals are not logged as errors.
+
+## Out of scope (Minimal Change Policy)
+
+- No UI changes — these are pure backend-derived values.
+- No changes to `pr_p_totalEncumbrance_N` (already published), `pr_p_totalSenior_N`, or `pr_p_totalSeniorPlusLoan_N`.
+- No edits to other RE851 templates (RE851A, etc.) — the publisher additions live inside the existing `/851d/i.test(...)` guard.
+- No retroactive backfill of `deal_section_values` (these are computed, not stored).
+
+## Files to edit
+
+- `supabase/functions/generate-document/index.ts` (publisher + 3 allowlists + 1 bare-tag shield list)
+- New SQL migration to insert the two `field_dictionary` rows
+- `mem://features/document-generation/re851d-lien-encumbrance-mapping` — append the two new tag families to the documented mapping
