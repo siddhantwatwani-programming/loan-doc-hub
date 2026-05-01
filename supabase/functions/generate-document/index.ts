@@ -2568,17 +2568,21 @@ async function generateSingleDocument(
         // rewrite and stayed as the literal "_N" form, resolving to blank in
         // the generated document (the reported bug).
         const PART1_TAGS = [
+          "property_number_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
+          "ln_p_totalEncumbrance_N",
         ];
         const PART2_TAGS = [
+          "property_number_N",
           "pr_p_address_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
+          "ln_p_totalEncumbrance_N",
         ];
 
         const decoder = new TextDecoder("utf-8");
