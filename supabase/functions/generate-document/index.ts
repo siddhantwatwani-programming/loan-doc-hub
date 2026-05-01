@@ -1156,7 +1156,9 @@ async function generateSingleDocument(
         }
 
         // ── RE851D: per-property Owner-Occupied Yes/No checkbox booleans ──
-        // Source strictly from property{idx}.occupancyStatus. Missing => no aliases.
+        // New 4-value vocabulary: "Owner Occupied" | "Tenant / Other" | "Vacant" | "NA".
+        // Only "Owner Occupied" => Yes; everything else (including empty) => No.
+        // Aliases are always published so empty values render as ☐ Yes / ☒ No.
         {
           const occRaw = String(
             fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
@@ -1165,20 +1167,12 @@ async function generateSingleDocument(
             fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
             ""
           ).trim().toLowerCase();
-          const isYes = [
-            "yes", "y", "true", "owner occupied", "owner-occupied", "owneroccupied",
-            "owner", "primary borrower",
-          ].includes(occRaw);
-          const isNo = [
-            "no", "n", "false", "non-owner occupied", "non owner occupied", "nonowneroccupied",
-            "investor", "tenant", "vacant", "secondary borrower", "other", "unknown",
-          ].includes(occRaw);
-          if (isYes || isNo) {
-            fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
-            fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
-            fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
-            fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
-          }
+          const isYes = occRaw === "owner occupied";
+          const isNo = !isYes;
+          fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
         }
 
         // ── RE851D: per-property Expected / Remaining Senior Encumbrance from Lien data ──
