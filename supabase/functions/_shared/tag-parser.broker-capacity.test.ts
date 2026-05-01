@@ -48,6 +48,7 @@ function run(value: "true" | "false" | null): string {
     mergeTagMap,
     labelMap,
     validFieldKeys,
+    "RE851A",
   );
 }
 

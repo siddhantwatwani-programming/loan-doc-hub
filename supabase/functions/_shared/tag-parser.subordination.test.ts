@@ -47,7 +47,7 @@ function run(value: "true" | "false"): string {
     "ln_p_subordinationProvision",
     "loan_terms.subordination_provision",
   ]);
-  return replaceMergeTags(buildFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+  return replaceMergeTags(buildFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, "RE851A");
 }
 
 function checkboxStatesAroundLabels(xml: string): { yes: string | null; no: string | null } {
@@ -132,7 +132,7 @@ function runHandlebars(value: "true" | "false"): string {
     "ln_p_subordinationProvision",
     "loan_terms.subordination_provision",
   ]);
-  return replaceMergeTags(buildHandlebarsFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+  return replaceMergeTags(buildHandlebarsFixture(), fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, "RE851A");
 }
 
 function runHandlebarsSameParagraph(value: "true" | "false"): string {
@@ -154,7 +154,7 @@ function runHandlebarsSameParagraph(value: "true" | "false"): string {
 <w:p><w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}☑{{else}}☐{{/if}} Yes</w:t></w:r><w:r><w:br/></w:r><w:r><w:t xml:space="preserve">{{#if ln_p_subordinationProvision}}☐{{else}}☑{{/if}} No</w:t></w:r></w:p>
 <w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
 </w:body></w:document>`;
-  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, "RE851A");
 }
 
 function visibleGlyphsBeforeLabel(xml: string, label: string): string {
@@ -225,7 +225,7 @@ function runBareNoLabel(value: "true" | "false"): string {
 <w:p><w:r><w:t xml:space="preserve">No</w:t></w:r></w:p>
 <w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
 </w:body></w:document>`;
-  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, "RE851A");
 }
 
 Deno.test("RE851A subordination provision (bare No label) — unchecked: Yes=☐, No=☑", () => {
@@ -271,7 +271,7 @@ function runEqHelper(value: "true" | "false", literal: 'true' | '"true"'): strin
 <w:p><w:r><w:t xml:space="preserve">{{#if (eq ln_p_subordinationProvision ${literal})}}☐{{else}}☑{{/if}} No</w:t></w:r></w:p>
 <w:p><w:r><w:t>PART 4 MULTI-LENDER TRANSACTIONS</w:t></w:r></w:p>
 </w:body></w:document>`;
-  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys);
+  return replaceMergeTags(fixture, fieldValues, fieldTransforms, mergeTagMap, labelMap, validFieldKeys, "RE851A");
 }
 
 Deno.test("RE851A subordination provision — (eq KEY \"true\") checked", () => {
