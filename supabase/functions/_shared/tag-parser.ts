@@ -2245,8 +2245,19 @@ export function replaceMergeTags(
   fieldTransforms: Map<string, string>,
   mergeTagMap: Record<string, string>,
   labelMap: Record<string, LabelMapping>,
-  validFieldKeys?: Set<string>
+  validFieldKeys?: Set<string>,
+  templateName?: string
 ): string {
+  // Template-specific gating. The numerous RE851A safety passes below each
+  // perform multiple full-document regex sweeps. On large unrelated templates
+  // (e.g. RE885 HUD-1, ~628KB word/document.xml) that work added enough CPU
+  // cost to push the Edge Function past its 2s isolate budget — surfacing as
+  // "Generation timed out (CPU limit exceeded)". Gating each block by
+  // template name removes the cost on non-matching templates while keeping
+  // RE851A output bit-for-bit identical (every gated block was already
+  // anchored to RE851A-only labels).
+  const __tplName = templateName || "";
+  const is851A = /851a/i.test(__tplName);
   // Phase timing: when DOC_PERF env flag set OR content > 200KB, emit per-phase
   // durations so we can pinpoint the exact bottleneck for large templates
   // (e.g. RE885 word/document.xml ~635KB). Cheap (Date.now) and bounded to one
