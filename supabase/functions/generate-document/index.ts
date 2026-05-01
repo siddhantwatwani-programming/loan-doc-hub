@@ -1153,25 +1153,40 @@ async function generateSingleDocument(
         let lienExpectedHit = false;
         let lienRemainingHit = false;
         {
-          const propAddrNorm = String(
-            fieldValues.get(`${prefix}.address`)?.rawValue || ""
-          ).trim().toLowerCase();
-          const prefixLower = prefix.toLowerCase();
+          // Normalize property identifiers — collapse whitespace, strip stray
+          // punctuation/quotes, lowercase. Catches values like "Property1 ",
+          // "property 1", "'property1", etc.
+          const norm = (s: string): string =>
+            String(s || "")
+              .trim()
+              .toLowerCase()
+              .replace(/[''""`]/g, "")
+              .replace(/\s+/g, " ");
+          const propAddrNorm = norm(
+            String(fieldValues.get(`${prefix}.address`)?.rawValue || "")
+          );
+          const prefixLower = norm(prefix);
+          const prefixNoSpace = prefixLower.replace(/\s+/g, ""); // "property1"
           // Discover all lien indices present (lien1.*, lien2.*, ...).
           const lienIndices = new Set<string>();
           for (const [k] of fieldValues.entries()) {
             const m = k.match(/^lien(\d*)\./);
             if (m) lienIndices.add(m[1]); // "" for canonical "lien."
           }
+          const matchedLiens: string[] = [];
           for (const li of lienIndices) {
             const base = li ? `lien${li}` : "lien";
-            const propRaw = String(fieldValues.get(`${base}.property`)?.rawValue || "")
-              .trim().toLowerCase();
+            const propRaw = norm(
+              String(fieldValues.get(`${base}.property`)?.rawValue || "")
+            );
             if (!propRaw) continue;
+            const propRawNoSpace = propRaw.replace(/\s+/g, "");
             const matches =
               propRaw === prefixLower ||
+              propRawNoSpace === prefixNoSpace ||
               (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
             if (!matches) continue;
+            matchedLiens.push(li || "0");
             const anticipatedRaw = String(
               fieldValues.get(`${base}.anticipated`)?.rawValue || ""
             ).trim().toLowerCase();
@@ -1195,28 +1210,37 @@ async function generateSingleDocument(
               lienRemainingHit = true;
             }
           }
+          // Unconditional log so we can verify the rollup in production
+          // without flipping DOC_GEN_DEBUG. One line per property index.
+          if (matchedLiens.length > 0 || lienIndices.size > 0) {
+            console.log(
+              `[generate-document] RE851D lien rollup ${prefix}: liens=[${matchedLiens.join(",")}], ` +
+              `expected=${lienExpectedHit ? lienExpectedSum.toFixed(2) : "—"}, ` +
+              `remaining=${lienRemainingHit ? lienRemainingSum.toFixed(2) : "—"} ` +
+              `(scanned=${lienIndices.size})`
+            );
+          }
           if (lienExpectedHit) {
             const v = { rawValue: lienExpectedSum.toFixed(2), dataType: "currency" as const };
-            if (!fieldValues.has(`ln_p_expectedEncumbrance_${idx}`)) {
-              fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
-            }
+            // Force-set: authoritative for any lien-derived index. Removes the
+            // race where a stale empty key (from a prior shield run or upstream
+            // hydration) would silently mask the real value.
+            fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
             // Backfill legacy alias only if the static PropertyDetailsForm field is empty.
             const staticExpected = String(
               fieldValues.get(`${prefix}.expected_senior`)?.rawValue || ""
             ).trim();
-            if (!staticExpected && !fieldValues.has(`pr_p_expectedSenior_${idx}`)) {
+            if (!staticExpected) {
               fieldValues.set(`pr_p_expectedSenior_${idx}`, v);
             }
           }
           if (lienRemainingHit) {
             const v = { rawValue: lienRemainingSum.toFixed(2), dataType: "currency" as const };
-            if (!fieldValues.has(`ln_p_remainingEncumbrance_${idx}`)) {
-              fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
-            }
+            fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
             const staticRemaining = String(
               fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || ""
             ).trim();
-            if (!staticRemaining && !fieldValues.has(`pr_p_remainingSenior_${idx}`)) {
+            if (!staticRemaining) {
               fieldValues.set(`pr_p_remainingSenior_${idx}`, v);
             }
           }
@@ -1377,6 +1401,24 @@ async function generateSingleDocument(
         if (blanked.length > 0) {
           debugLog(`[generate-document] RE851D anti-fallback shield: blanked unpublished _N tags for indices [${blanked.join(", ")}]`);
         }
+      }
+
+      // ── RE851D final encumbrance state log ──
+      // One unconditional console line per generation summarizing exactly
+      // what processDocx will see for the lien-derived encumbrance keys.
+      // Critical for diagnosing "tag is in template but value is blank"
+      // reports without flipping DOC_GEN_DEBUG.
+      {
+        const fmt = (k: string) => {
+          const v = fieldValues.get(k);
+          if (!v) return "∅";
+          const raw = v.rawValue;
+          if (raw === "" || raw === null || raw === undefined) return "''";
+          return String(raw);
+        };
+        const exp = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
+        const rem = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
+        console.log(`[generate-document] RE851D final encumbrance state: expected=[${exp}], remaining=[${rem}]`);
       }
     }
 
@@ -2900,9 +2942,31 @@ async function generateSingleDocument(
       }
     }
 
+    // ── RE851D: seed suffixed _N keys into validFieldKeys ──
+    // The merge resolver's priority-1 direct match uses validFieldKeys, which is
+    // built only from field_dictionary.field_key + canonical_key. Suffixed keys
+    // like ln_p_expectedEncumbrance_1..5 are never in the dictionary, so the
+    // resolver falls through to fallbacks. Seeding them here forces priority-1
+    // direct match and removes any chance of the resolver returning a different
+    // ultimate key for our publisher-set values. Template-gated.
+    let effectiveValidFieldKeys = validFieldKeys;
+    if (/851d/i.test(template.name || "")) {
+      effectiveValidFieldKeys = new Set(validFieldKeys);
+      const SUFFIXED_BASES = [
+        "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
+        "pr_p_expectedSenior", "pr_p_remainingSenior",
+        "pr_p_totalEncumbrance", "pr_p_totalSenior", "pr_p_totalSeniorPlusLoan",
+      ];
+      for (let i = 1; i <= 5; i++) {
+        for (const base of SUFFIXED_BASES) {
+          effectiveValidFieldKeys.add(`${base}_${i}`);
+        }
+      }
+    }
+
     let processedDocx: Uint8Array;
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys, { templateName: template.name });
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, effectiveValidFieldKeys, { templateName: template.name });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
