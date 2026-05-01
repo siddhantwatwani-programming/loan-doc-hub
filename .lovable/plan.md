@@ -1,82 +1,92 @@
+## Problem
 
-# RE851D — Fix PROPERTY #2/#3 / #4 / #5 Population
+In `supabase/functions/generate-document/index.ts`, the RE851D `_N` placeholder rewrite (lines 2257–2361) uses a **single global occurrence counter per tag across the entire document**. The RE851D template uses the same `_N` tags in three different regions:
 
-## Root Cause Analysis
+1. **PART 1 — Loan to Value Ratio** (repeated rows): `pr_p_appraiseValue_N`, `ln_p_loanToValueRatio_N`
+2. **PART 2 — Securing Properties** (repeated rows): `pr_p_address_N`, `pr_p_appraiseValue_N`, `ln_p_loanToValueRatio_N`
+3. **PROPERTY #1 … #5** (5 fixed blocks): full per-property field set including `propertytax.*_N`, `pr_p_yearBuilt_N`, `pr_p_squareFeet_N`, `pr_p_construcType_N`, `pr_p_occupanc_N`, `pr_p_appraiseValue_N`, `pr_p_appraiseDate_N`.
 
-I inspected the actual stored data for the open deal and the generator code:
+Because the counter is shared, occurrences in PART 1 are numbered `_1.._K`, PART 2 continues `_K+1..`, and the property sections receive indices well past `_5`. The anti-fallback shield (lines 1150–1192) then blanks them. Result: only PROPERTY #1 (and only the first row of each Part 1 / Part 2) populates.
 
-1. **Property fields (yearBuilt, squareFeet, construcType, occupanc, appraiseDate, appraiseValue) for indices ≥ 2 ARE saved correctly** as `property2::<dictId>` / `property3::<dictId>` rows with `indexed_key = property2.year_built`, etc. The bridging at `generate-document/index.ts` lines 280-289 maps these to `propertyN.<suffix>`, and the per-index publisher at lines 833-836 publishes `pr_p_<key>_<N>`. This logic is sound — for any row that exists, `pr_p_yearBuilt_2`, `pr_p_squareFeet_2`, `pr_p_construcType_2`, `pr_p_occupanc_2`, `pr_p_appraiseDate_2`, `pr_p_appraiseValue_2` will be set. Property #2 / #3 of this exact deal already have data saved at `property2.year_built`, `property2.square_feet`, etc., so they will resolve. If any single template tag is still blank for an index where data exists, it is a tag-order or tag-uniqueness mismatch in the docx itself, which we will assert via debug logging.
+The expected behavior is **per-region occurrence numbering reset to 1 at the start of each repeating region** so every region produces `_1, _2, _3, …` mapped to `Property[0], Property[1], Property[2], …`.
 
-2. **PropertyTax `_N` fields are the actual blocker.** The CSR Property Tax sub-grid stores tax rows in a separate collection (`propertytax1::*`, `propertytax2::*`, ...) — not nested under `propertyN`. For this deal only **one** tax row exists (`propertytax1`). Each tax row carries a `propertytax{N}.property` field whose value is the property address string (e.g., "Umar Adil - Doveson Street, Boston, AL, 10002"), but the per-index tax publisher (`generate-document/index.ts` lines 1019-1055) ONLY reads `propertytax{idx}.<field>` keyed by **property index**, not by address. Result: PROPERTY #2 / #3 in the doc print blank for `propertytax.annual_payment_N` / `delinquent_N` / `delinquent_amount_N` / `source_of_information_N`, and the anti-fallback shield at lines 1066-1103 then correctly blanks them — confirming the symptom.
+## Fix (single edge-function change, additive)
 
-The user's spec wires `{{propertytax.annual_payment_N}} → property[index].tax.annual_payment`. So the fix is to **route each propertytax row to the property index whose address it references**, then re-use the existing per-index alias publisher.
+Edit only `supabase/functions/generate-document/index.ts` inside the existing `if (/851d/i.test(template.name || ""))` block (~line 2265). No DB, UI, dictionary, schema, or template changes. No other code paths are touched.
 
-## Fix (single edge-function change)
+### Step 1 — Detect region boundaries in `word/document.xml`
 
-Edit `supabase/functions/generate-document/index.ts` only. No DB schema changes, no UI changes, no dictionary changes.
+Before iterating tags, scan the decoded XML for region anchors and collect their character offsets (case-insensitive, tolerant of XML run-splits via stripping XML tags for the search-string match only):
 
-### Step 1 — Build a property-address-to-index map (once)
+- **Region A (PART 1)**: from the visible heading text matching `PART 1` (or `LOAN TO VALUE RATIO`) up to the next heading.
+- **Region B (PART 2)**: from `PART 2` (or `SECURING PROPERTIES`) up to the first `PROPERTY #1`.
+- **Region C₁..C₅ (PROPERTY #1..#5)**: from each `PROPERTY #K` heading up to the next `PROPERTY #K+1` heading (or end of body for #5).
 
-After `propertyIndices` is populated (~line 765) and BEFORE the per-index loop, build:
+Implementation note: do the offset scan against a copy of the XML where tags are normalized to a single space, but apply rewrites to the original XML. Maintain a parallel `original→stripped` offset map (or simpler: locate anchor strings with a regex on the raw XML allowing `<[^>]+>` between every character of the heading word — same trick used elsewhere in this file for tag detection). If anchor detection fails for any region, fall back to the current global-counter behavior for that region only (logged) so we never regress.
+
+### Step 2 — Per-region counters
+
+Replace the single `counters: Map<tag, number>` with **per-region counters**: `regionCounters: Map<regionId, Map<tag, number>>`. For each `replace()` callback, determine the current match's character offset (use `RegExp.exec` in a `while` loop instead of `String.replace` with a function) and pick the counter for the region whose `[start, end)` contains the offset. Region C₁ rewrites consume `_1`, C₂ consume `_1` (reset), etc.
+
+For PART 1 and PART 2 the counter ALSO resets at the region boundary, so the first row in PART 1 gets `_1`, second `_2`, …, and PART 2 likewise restarts at `_1`. This gives exact alignment with `Property[0]..Property[N-1]`.
+
+### Step 3 — Tag-list scoping per region
+
+Restrict the rewritten tag set per region to the families that actually appear there, so a stray match in the wrong region cannot be miscounted:
+
+- **Region A (PART 1)**: `pr_p_appraiseValue_N`, `ln_p_loanToValueRatio_N`.
+- **Region B (PART 2)**: `pr_p_address_N`, `pr_p_appraiseValue_N`, `ln_p_loanToValueRatio_N`.
+- **Region C_K (PROPERTY #K)**: the full existing `RE851D_INDEXED_TAGS` list.
+- Anything outside any detected region: keep current global behavior (preserves backward compatibility).
+
+### Step 4 — Property-section forced index
+
+For each `PROPERTY #K` region, additionally force every `_N` rewrite inside that region to resolve to `_K` (not just the running counter). This is the strongest guarantee for the per-property blocks: PROPERTY #2 always gets `_2` regardless of how many tag occurrences appear inside the block. PART 1 and PART 2 keep the running per-region counter (because they have no fixed K).
+
+### Step 5 — Overflow / missing-property handling
+
+Unchanged: indices > 5 in PART 1 / PART 2 still resolve to `_overflow{n}` (guaranteed-empty). For PROPERTY #K where `Property[K-1]` is absent, the per-index publisher (lines 769–796) does not publish aliases, the anti-fallback shield blanks the `_K` tags, and the block renders blank — matching the spec ("Do NOT duplicate or reuse previous data").
+
+### Step 6 — Checkbox logic verification (no change)
+
+- **OWNER OCCUPIED** (`pr_p_occupancySt_N`): already publishes `_yes/_no/_yes_glyph/_no_glyph` per index at lines 1021–1045 with the spec's "Owner → YES, else → NO" semantics.
+- **TAX DELINQUENT**: already publishes `propertytax_delinquent_N_yes/_no/_yes_glyph/_no_glyph` at lines 1117–1146 with `true → YES, false → NO`.
+
+These already exist; verifying they remain unchanged is the only action.
+
+### Step 7 — Diagnostic log
+
+Emit one summary line:
 
 ```
-addressToPropIndex: Map<normalizedAddress, propertyIndex>
+[generate-document] RE851D regions: A=[start,end] B=[start,end] C1..C5=[...]; rewrites per region: {...}
 ```
 
-Source: for each idx in `propertyIndices`, normalize (lower-case, trim) the value of `property{idx}.address` (or its computed combo from street/city/state/zip already done at lines 769-788) and map it to idx.
+So future regressions are diagnosable from a single log line.
 
-### Step 2 — Pre-bridge propertytax rows by address match
+## Files To Edit
 
-Inside the existing per-index loop (~line 829), BEFORE the existing per-index tax publisher (~line 1019), add a pre-pass that scans every `propertytax{srcIdx}.<field>` already in `fieldValues` and, when `propertytax{srcIdx}.property` matches the current property's address (case-insensitive normalized) AND the destination key `propertytax{idx}.<field>` is not yet set, copies the four spec'd fields (`annual_payment`, `delinquent`, `delinquent_amount`, `source_of_information`) into `propertytax{idx}.<field>`.
-
-This is purely an in-memory remap; no writes to DB. The existing publisher at lines 1027-1054 then publishes the underscore + dotted aliases (`propertytax_annual_payment_<N>`, `propertytax.annual_payment_<N>`, etc.) without further change.
-
-Edge cases:
-- If a propertytax row has no `.property` value, leave it bound to its native srcIdx (current behavior).
-- If two tax rows resolve to the same property index, first one wins (deterministic).
-- For `idx === 1`, the current canonical fallback to bare `propertytax.<field>` is preserved.
-- For propertytax rows whose address does NOT match any property, they are ignored (matches "do NOT fallback" acceptance criterion).
-
-### Step 3 — Checkbox logic verification (already correct, no change)
-
-- **OWNER OCCUPIED** Yes/No: lines 961-984 already publish `pr_p_occupancySt_{idx}_yes` / `_no` / glyphs, and accept `"Owner"`, `"owner occupied"`, `"primary borrower"` for YES; `"investor"`, `"tenant"`, `"secondary borrower"`, `"non-owner occupied"` for NO. Spec's "Owner → YES, else → NO" is satisfied — no change needed.
-- **TAX DELINQUENT** Yes/No: After Step 2's address-based bridging publishes `propertytax.delinquent_{idx}` ("true"/"false"), add a small per-index publisher that emits boolean + glyph aliases:
-  - `propertytax_delinquent_{idx}_yes` / `_no` (boolean)
-  - `propertytax_delinquent_{idx}_yes_glyph` / `_no_glyph` (☒ / ☐)
-
-  Mirroring the existing pattern used for occupancy. This unblocks any `{{propertytax.delinquent_N_yes}}`-style tags in the doc and is harmless if unused.
-
-### Step 4 — Add diagnostic log (debugging aid)
-
-After Step 2's pre-pass, emit:
-
-```
-[generate-document] RE851D propertytax bridge: {srcIdx → destIdx} mappings: [...]
-```
-
-So the next regression is one log-line away.
+- `supabase/functions/generate-document/index.ts` — only the existing RE851D `_N`-preprocessing block (~lines 2265–2361). Estimated ~80 net additional lines, all inside the existing `try/catch`.
 
 ## Acceptance Criteria Mapping
 
 | Criterion | Resolution |
 |---|---|
-| PROPERTY #2 and #3 display correct data | Step 2 routes the matching propertytax row to indices 2/3; existing publisher emits `_2` / `_3` aliases; `_N` rewrite at line 2235 already produces `pr_p_*_2`, `pr_p_*_3` for each block in reading order |
-| No fields blank when CSR has data | All ten listed `_N` tags resolve via existing `pr_p_*` per-index publisher (verified to already cover yearBuilt, squareFeet, construcType, occupanc, appraiseDate, appraiseValue) plus new propertytax routing |
-| Each section maps to correct property index | Address-based routing (Step 2) plus existing per-occurrence `_N`→`_<N>` rewrite |
-| No duplication / no fallback to Property[0] | Anti-fallback shield at lines 1066-1103 stays in place; new pre-pass uses `if (!fieldValues.has(destKey))` guard |
-| Document generates successfully | Change is additive within existing try/catch and existing publisher loop |
+| PART 1 rows align to `Property[0..N-1]` | Step 2 per-region counter resets at PART 1 start |
+| PART 2 rows align to `Property[0..N-1]` | Step 2 per-region counter resets at PART 2 start |
+| PROPERTY #K populates from `Property[K-1]` | Step 4 forces `_K` inside each PROPERTY #K region |
+| No duplication of `Property[0]` | Per-region counters + per-section forced index eliminate the global-counter spillover |
+| 1–5 properties dynamic | Existing `propertyIndices` set + anti-fallback shield (lines 1150–1192) handle missing properties; no change required |
+| Checkbox YES/NO correct | Already correct (Step 6) |
+| Document still generates | Change is fully contained within existing `try/catch`; failure of region detection falls back to current behavior |
 
 ## Out of Scope (unchanged)
 
 - DB schema, RLS, UI components, dictionary entries, template files
-- Property #1 behavior (already working, preserved by `idx === 1` canonical fallback)
-- Lien total computations
-- Memory rule "RE851D Multi-Property Mapping" stays valid; this fix extends it with the address-keyed propertytax bridge.
+- Address-keyed `propertytax` bridge (already in place from prior fix)
+- Per-index publisher and anti-fallback shield (already in place)
+- Memory rule "RE851D Multi-Property Mapping" — extend description to mention region-scoped `_N` rewrite after merge.
 
-## Files To Edit
+## Memory Update (post-merge)
 
-- `supabase/functions/generate-document/index.ts` (one section, ~30 lines added inside existing per-index loop)
-
-## Memory Update
-
-Append to existing `mem://features/document-generation/re851d-multi-property-mapping`: "PropertyTax rows are routed to their property index via case-insensitive `propertytax{N}.property` ↔ `property{N}.address` matching before the per-index alias publisher runs."
+Append to `mem://features/document-generation/re851d-multi-property-mapping`: "_N placeholders are rewritten per-region (PART 1, PART 2, PROPERTY #K) with counters reset at each region boundary; PROPERTY #K regions force the index to K so per-property blocks always pull from `Property[K-1]`."
