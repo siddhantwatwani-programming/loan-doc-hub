@@ -244,8 +244,17 @@ function hasFragmentedMergeTagCandidates(xml: string): boolean {
  * Word often splits text across multiple <w:t> elements.
  */
 export function normalizeWordXml(xmlContent: string): string {
+  const __nwxStart = Date.now();
+  const __nwxLog = (label: string, t0: number) => {
+    if (xmlContent.length > 200_000) {
+      console.log(`[tag-parser] normalizeWordXml.${label}=${Date.now() - t0}ms (size=${xmlContent.length}B)`);
+    }
+  };
+
+  const tCheck = Date.now();
   const hasFieldCodeStructures = xmlContent.includes('w:fldChar') || xmlContent.includes('w:fldSimple') || xmlContent.includes('w:instrText');
   const hasFragmentedCandidates = hasFragmentedMergeTagCandidates(xmlContent);
+  __nwxLog('preCheck', tCheck);
   if (!hasFieldCodeStructures && !hasFragmentedCandidates) {
     if (xmlContent.length > 200_000) {
       console.log(`[tag-parser] normalizeWordXml fast-path: skipped fragmented-run normalization (${xmlContent.length}B)`);
@@ -254,7 +263,9 @@ export function normalizeWordXml(xmlContent: string): string {
   }
 
   // First: flatten Word MERGEFIELD structures into plain «fieldName» text runs
+  const tFlatten = Date.now();
   let result = flattenMergeFieldStructures(xmlContent);
+  __nwxLog('flattenMergeFieldStructures', tFlatten);
 
   // If the template only had field-code structures (or already-intact tags),
   // flattening is sufficient. Skip the expensive fragmented-run regex suite
@@ -265,10 +276,50 @@ export function normalizeWordXml(xmlContent: string): string {
     }
     return result;
   }
+
+  // CPU-budget guard for very large templates (e.g. RE885 HUD-1, ~635KB).
+  // The downstream paragraph-scoped fragmented-run normalization suite is
+  // gated per-paragraph by hasFragmentedMergeTagCandidates(), so when the
+  // ONLY signal that fired at the document level was the loose split-brace
+  // detector (`\{(?:\s|<[^>]+>)+\{` / `\}(?:\s|<[^>]+>)+\}`) — which can
+  // match intact-but-adjacent tags in dense templates — we can verify
+  // whether real per-paragraph fragmentation exists before paying the
+  // full document-scoped cleanup cost. If no paragraph individually
+  // qualifies, skip the heavy regex suite. Intact `{{tag}}` placeholders
+  // continue to be replaced normally downstream.
+  if (xmlContent.length > 200_000 && hasFragmentedCandidates && !hasFieldCodeStructures) {
+    const tProbe = Date.now();
+    let anyParaFragmented = false;
+    const probeResult = result;
+    let pos = 0;
+    let probeCount = 0;
+    while (pos < probeResult.length) {
+      const pStart = probeResult.indexOf('<w:p', pos);
+      if (pStart === -1) break;
+      const pEnd = probeResult.indexOf('</w:p>', pStart);
+      if (pEnd === -1) break;
+      const para = probeResult.substring(pStart, pEnd + 6);
+      pos = pEnd + 6;
+      if (!para.includes('{') && !para.includes('\u00AB')) continue;
+      probeCount++;
+      if (para.includes('instrText') || hasFragmentedMergeTagCandidates(para)) {
+        anyParaFragmented = true;
+        break;
+      }
+    }
+    __nwxLog(`paragraphProbe(scanned=${probeCount}, fragmented=${anyParaFragmented})`, tProbe);
+    if (!anyParaFragmented) {
+      console.log(
+        `[tag-parser] normalizeWordXml fast-path: large template with no per-paragraph fragmentation — skipped heavy normalization (${xmlContent.length}B, total=${Date.now() - __nwxStart}ms)`
+      );
+      return result;
+    }
+  }
   
   // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
   // paragraphs that contain merge-tag delimiters. This preserves page layout,
   // bookmarks, and structural XML in all non-tag paragraphs.
+  const tStrip = Date.now();
   result = processParaByPara(result, (para) => {
     // Only strip in paragraphs that contain merge tag delimiters
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
@@ -281,6 +332,7 @@ export function normalizeWordXml(xmlContent: string): string {
     cleaned = cleaned.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
     return cleaned;
   });
+  __nwxLog('stripProofBookmarks', tStrip);
   
   // NOTE: We intentionally preserve <w:rPr> blocks (run properties) which contain
   // font names, sizes, bold, italic, colors, etc. Stripping them would collapse
@@ -290,6 +342,7 @@ export function normalizeWordXml(xmlContent: string): string {
   
   // Handle fragmented merge fields, braces, conditionals — all paragraph-scoped
   // to avoid catastrophic backtracking on large documents (628KB+).
+  const tFragSuite = Date.now();
   result = processParaByPara(result, (para) => {
     // Quick skip: only process paragraphs with potential merge tag delimiters
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB') && !para.includes('instrText')) {
@@ -564,6 +617,7 @@ export function normalizeWordXml(xmlContent: string): string {
 
     return p;
   });
+  __nwxLog('fragmentedSuite', tFragSuite);
 
   // Diagnostic: count tags BEFORE paragraph-level consolidation
   const preConsolidationCurly = (result.match(/\{\{[A-Za-z0-9_.| ]+\}\}/g) || []).length;
@@ -573,10 +627,15 @@ export function normalizeWordXml(xmlContent: string): string {
   // Safety-net: paragraph-level consolidation for tags that span multiple
   // <w:t> runs. Skip it when the earlier passes prove no fragmented
   // delimiters remain; intact tags already parse correctly.
+  const tConsolidate = Date.now();
   if (hasFragmentedMergeTagCandidates(result)) {
     result = consolidateFragmentedTagsInParagraphs(result);
   }
+  __nwxLog('paraConsolidation', tConsolidate);
 
+  if (xmlContent.length > 200_000) {
+    console.log(`[tag-parser] normalizeWordXml total=${Date.now() - __nwxStart}ms (size=${xmlContent.length}B)`);
+  }
   return result;
 }
 
@@ -2297,39 +2356,54 @@ export function replaceMergeTags(
   // and closing "}}" land in different paragraphs (common in table cells like
   // RE851A's Balloon Payment YES/NO checkboxes). We only collapse XML markup
   // between recognized control tokens — surrounding prose is never touched.
-  const stripXmlBetween = (raw: string): string =>
-    raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  //
+  // Cheap pre-check: the regex below is `\{\{([\s\S]{0,400}?)\}\}` over the
+  // whole document, which on large templates (RE885 ~635KB) iterates over
+  // every {{...}} and runs a 400-char window scan. It only acts on
+  // recognized control tokens (#if / #unless / else / /if / /unless), so
+  // when none of those substrings exist anywhere in the document we can
+  // skip the pass entirely. Intact `{{field}}` placeholders are unaffected.
+  const __hasControlTokens =
+    result.indexOf("#if") !== -1 ||
+    result.indexOf("#unless") !== -1 ||
+    result.indexOf("else") !== -1 ||
+    result.indexOf("/if") !== -1 ||
+    result.indexOf("/unless") !== -1;
+  if (__hasControlTokens) {
+    const stripXmlBetween = (raw: string): string =>
+      raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 
-  result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
-    // Only act if the inner span actually contains XML markup (i.e. fragmented).
-    if (!inner.includes("<")) return full;
-    const cleaned = stripXmlBetween(inner);
-    if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    // Also consolidate `{{#if (eq FIELD "literal")}}` / `{{#unless (eq ...)}}`
-    // helpers split across runs. Restrict the literal to safe characters so we
-    // never accidentally swallow unrelated content.
-    if (/^#if\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    if (/^#unless\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
+    result = result.replace(/\{\{([\s\S]{0,400}?)\}\}/g, (full, inner: string) => {
+      // Only act if the inner span actually contains XML markup (i.e. fragmented).
+      if (!inner.includes("<")) return full;
+      const cleaned = stripXmlBetween(inner);
+      if (/^#if\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      if (/^#unless\s+[A-Za-z0-9_.]+$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      // Also consolidate `{{#if (eq FIELD "literal")}}` / `{{#unless (eq ...)}}`
+      // helpers split across runs. Restrict the literal to safe characters so we
+      // never accidentally swallow unrelated content.
+      if (/^#if\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      if (/^#unless\s+\(\s*eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+)\s*\)$/.test(cleaned)) {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
 
-    if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
-      debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
-      return `{{${cleaned}}}`;
-    }
-    return full;
-  });
+      if (cleaned === "else" || cleaned === "/if" || cleaned === "/unless") {
+        debugLog(`[tag-parser] Cross-run consolidated {{${cleaned}}}`);
+        return `{{${cleaned}}}`;
+      }
+      return full;
+    });
+  }
 
   // Unconditional safety net: strip BARE Handlebars-style control directives
   // that template authors sometimes leave in DOCX paragraphs as plain text
@@ -2338,18 +2412,20 @@ export function replaceMergeTags(
   // The engine cannot evaluate such directives and they would otherwise print
   // verbatim. We only clear matching <w:t> run text; the surrounding run and
   // paragraph wrappers are kept so the template's layout/spacing is preserved.
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
-  );
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
-  );
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
-  );
+  if (__hasControlTokens) {
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
+    );
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
+    );
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
+    );
+  }
   __mark('controlConsolidation');
 
   if (result.includes('{{#each')) {
