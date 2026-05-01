@@ -68,6 +68,7 @@ function run(fixture: string, activeKey: string): string {
     mergeTagMap,
     labelMap,
     validFieldKeys,
+    "RE851A",
   );
 }
 
