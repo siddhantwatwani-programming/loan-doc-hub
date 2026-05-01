@@ -319,6 +319,7 @@ export function normalizeWordXml(xmlContent: string): string {
   // Strip proofErr, lastRenderedPageBreak, and bookmark elements ONLY inside
   // paragraphs that contain merge-tag delimiters. This preserves page layout,
   // bookmarks, and structural XML in all non-tag paragraphs.
+  const tStrip = Date.now();
   result = processParaByPara(result, (para) => {
     // Only strip in paragraphs that contain merge tag delimiters
     if (!para.includes('{') && !para.includes('\u00AB') && !para.includes('\u00BB')) {
@@ -331,6 +332,7 @@ export function normalizeWordXml(xmlContent: string): string {
     cleaned = cleaned.replace(/<w:bookmarkEnd[^/]*\/>/g, '');
     return cleaned;
   });
+  __nwxLog('stripProofBookmarks', tStrip);
   
   // NOTE: We intentionally preserve <w:rPr> blocks (run properties) which contain
   // font names, sizes, bold, italic, colors, etc. Stripping them would collapse
