@@ -1269,6 +1269,10 @@ async function generateSingleDocument(
           "propertytax_delinquent", "propertytax.delinquent",
           "propertytax_delinquent_amount", "propertytax.delinquent_amount",
           "propertytax_source_of_information", "propertytax.source_of_information",
+          "property_type_sfr_owner", "property_type_sfr_non_owner",
+          "property_type_sfr_zoned", "property_type_commercial",
+          "property_type_land_zoned", "property_type_land_income",
+          "property_type_other", "property_type_other_text",
         ];
         const blanked: number[] = [];
         for (let idx = 1; idx <= MAX_PROPERTIES; idx++) {
