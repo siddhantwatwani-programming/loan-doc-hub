@@ -3032,7 +3032,8 @@ async function generateSingleDocument(
       return result;
     }
     if (isTemplate885) {
-      console.log(`[885] File Export: ${Math.round(performance.now() - tFileExportStart)} ms`);
+      console.log(`[RE885] File Export: ${Math.round(performance.now() - tFileExportStart)} ms`);
+      console.log(`[RE885] Total CPU Time: ${Math.round(performance.now() - t885Total)} ms`);
     }
 
     debugLog(`[generate-document] Uploaded to generated-docs: ${outputFileName}`);
