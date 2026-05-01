@@ -2567,13 +2567,16 @@ export function replaceMergeTags(
     tagReplacementMap.set(tag.fullMatch, xmlSafeValue);
   }
 
-  // Single-pass replacement: build regex from all tag patterns and replace in one go
+  // Single-pass replacement using a generic delimiter scanner instead of an
+  // alternation regex of every parsed tag literal. The previous approach built
+  // `new RegExp(escapedPatterns.join('|'), 'g')` with hundreds of branches on
+  // dense templates (RE885 ~250+ {{...}} placeholders) which forces the regex
+  // engine to attempt each alternative at every position — a major CPU sink.
+  // The replacement scanner walks the document ONCE and looks each match up in
+  // the map (O(1)). Behavior is identical: unknown matches pass through.
   if (tagReplacementMap.size > 0) {
-    const escapedPatterns = [...tagReplacementMap.keys()].map(k =>
-      k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    );
-    const combinedRegex = new RegExp(escapedPatterns.join('|'), 'g');
-    result = result.replace(combinedRegex, (match, offset: number) => {
+    const tagScanRe = /\{\{[^{}\n]{1,400}?\}\}|«[^«»\n]{1,400}?»/g;
+    result = result.replace(tagScanRe, (match, offset: number) => {
       const replacement = tagReplacementMap.get(match);
       if (replacement === undefined) return match;
       if (!replacement.includes('\n')) return replacement;
