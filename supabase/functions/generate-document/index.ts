@@ -2966,7 +2966,7 @@ async function generateSingleDocument(
 
     let processedDocx: Uint8Array;
     try {
-      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, validFieldKeys, { templateName: template.name });
+      processedDocx = await processDocx(templateBuffer, fieldValues, fieldTransforms, mergeTagMap, effectiveLabelMap, effectiveValidFieldKeys, { templateName: template.name });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       // Surface DOCX integrity failures as a real generation failure rather
