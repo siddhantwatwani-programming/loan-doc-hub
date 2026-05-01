@@ -794,7 +794,11 @@ async function generateSingleDocument(
     // ln_p_loanToValueRatio_<N>. Indices not present in CSR get NO alias set,
     // so the resolver falls through to empty string and the corresponding
     // RE851D block stays blank. Capped at 5 per spec; extras ignored.
-    {
+    // Template-gated: only run for RE851D templates. The publisher writes
+    // ~160 _N alias keys per generation; running it for unrelated templates
+    // (e.g. RE885 HUD-1) is pure overhead that contributed to the
+    // "Generation timed out (CPU limit exceeded)" failure.
+    if (/851d/i.test(template.name || "")) {
       const MAX_PROPERTIES = 5;
       // Reverse: short suffix -> pr_p_* full key (mirrors prKeyToSuffix above)
       const suffixToPrKey: Record<string, string> = {};
