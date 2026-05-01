@@ -2412,18 +2412,20 @@ export function replaceMergeTags(
   // The engine cannot evaluate such directives and they would otherwise print
   // verbatim. We only clear matching <w:t> run text; the surrounding run and
   // paragraph wrappers are kept so the template's layout/spacing is preserved.
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
-  );
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
-  );
-  result = result.replace(
-    /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
-    (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
-  );
+  if (__hasControlTokens) {
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:#if|#unless|#each)\s*\([^<]*?\)\s*</, "><"),
+    );
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:#if|#unless|#each)\s+[A-Za-z0-9_.]+\s*</, "><"),
+    );
+    result = result.replace(
+      /<w:t(\s[^>]*)?>\s*(?:\/if|\/unless|\/each|else)\s*<\/w:t>/g,
+      (m) => m.replace(/>\s*(?:\/if|\/unless|\/each|else)\s*</, "><"),
+    );
+  }
   __mark('controlConsolidation');
 
   if (result.includes('{{#each')) {
