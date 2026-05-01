@@ -2840,6 +2840,24 @@ async function generateSingleDocument(
             out[filename] = bytes;
             continue;
           }
+          // Normalize fragmented Word runs BEFORE scanning for `_N` placeholders.
+          // Word frequently splits "{{property_type_sfr_owner_N}}" across multiple
+          // <w:r> runs, which prevents the plain-regex rewriter below from matching
+          // those occurrences. Running normalizeWordXml first joins the runs so
+          // every `_N` placeholder becomes a contiguous string. This is idempotent
+          // — the later processDocx() call will re-normalize as a no-op fast-path.
+          try {
+            xml = normalizeWordXml(xml, template.name || "");
+          } catch (_normErr) {
+            // If normalization fails for any reason, fall back to the raw XML
+            // (preserves previous behavior — partial rewrites are still better
+            // than failing the whole document).
+          }
+          // Re-check after normalization in case it stripped all `_N` markers.
+          if (!xml.includes("_N")) {
+            out[filename] = encoder.encode(xml);
+            continue;
+          }
 
           // Detect region boundaries (only meaningful in word/document.xml,
           // but harmless to attempt elsewhere — anchors won't be present).
