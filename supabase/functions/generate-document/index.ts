@@ -1113,6 +1113,37 @@ async function generateSingleDocument(
             }
           }
         }
+
+        // ── RE851D: per-property TAX DELINQUENT Yes/No checkbox booleans ──
+        // After the propertytax bridge + per-index publisher, emit boolean +
+        // glyph aliases so any {{propertytax_delinquent_N_yes}}-style tag in
+        // the template resolves correctly. true → YES ☒ / false → NO ☒.
+        {
+          const delRaw = String(
+            fieldValues.get(`propertytax_delinquent_${idx}`)?.rawValue ||
+            fieldValues.get(`propertytax.delinquent_${idx}`)?.rawValue ||
+            (idx === 1 ? fieldValues.get(`propertytax.delinquent`)?.rawValue : "") ||
+            ""
+          ).trim().toLowerCase();
+          const isYes = ["true", "yes", "y", "1"].includes(delRaw);
+          const isNo = ["false", "no", "n", "0"].includes(delRaw);
+          if (isYes || isNo) {
+            for (const base of [`propertytax_delinquent_${idx}`, `propertytax.delinquent_${idx}`]) {
+              if (!fieldValues.has(`${base}_yes`)) {
+                fieldValues.set(`${base}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
+              }
+              if (!fieldValues.has(`${base}_no`)) {
+                fieldValues.set(`${base}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
+              }
+              if (!fieldValues.has(`${base}_yes_glyph`)) {
+                fieldValues.set(`${base}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
+              }
+              if (!fieldValues.has(`${base}_no_glyph`)) {
+                fieldValues.set(`${base}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
+              }
+            }
+          }
+        }
       }
       debugLog(`[generate-document] RE851D multi-property: published indexed aliases for properties [${sortedPropIndices.join(", ")}]`);
 
