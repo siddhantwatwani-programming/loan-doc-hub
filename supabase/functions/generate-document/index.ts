@@ -1168,10 +1168,21 @@ async function generateSingleDocument(
           const prefixLower = norm(prefix);
           const prefixNoSpace = prefixLower.replace(/\s+/g, ""); // "property1"
           // Discover all lien indices present (lien1.*, lien2.*, ...).
+          // IMPORTANT: when at least one indexed lien (lien1, lien2, ...) exists,
+          // we deliberately exclude the canonical "lien." entries — those are
+          // duplicates created by the generic indexed→canonical bridge upstream
+          // (line ~657) and would cause us to count the same lien twice
+          // (the bug seen in logs: matchedLiens=[1,0], sum=2×actual).
           const lienIndices = new Set<string>();
+          let hasIndexedLien = false;
           for (const [k] of fieldValues.entries()) {
             const m = k.match(/^lien(\d*)\./);
-            if (m) lienIndices.add(m[1]); // "" for canonical "lien."
+            if (!m) continue;
+            if (m[1]) hasIndexedLien = true;
+            lienIndices.add(m[1]); // "" for canonical "lien."
+          }
+          if (hasIndexedLien) {
+            lienIndices.delete(""); // drop canonical duplicates
           }
           const matchedLiens: string[] = [];
           for (const li of lienIndices) {
