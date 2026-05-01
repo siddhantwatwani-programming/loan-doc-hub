@@ -1142,17 +1142,100 @@ async function generateSingleDocument(
           }
         }
 
-        // ── RE851D: per-property total encumbrance (remaining + expected senior) ──
-        // Computed from property{idx}.* components only. No cross-index fallback.
+        // ── RE851D: per-property Expected / Remaining Senior Encumbrance from Lien data ──
+        // Source: Lien section (lien{k}.anticipated, lien{k}.anticipated_amount,
+        // lien{k}.new_remaining_balance, lien{k}.property). For each property index
+        // we sum across every lien whose `lien{k}.property` matches either the
+        // entity prefix ("property{idx}") OR the property's normalized address.
+        // Strict per-index — no cross-index fallback.
+        let lienExpectedSum = 0;
+        let lienRemainingSum = 0;
+        let lienExpectedHit = false;
+        let lienRemainingHit = false;
         {
-          const remainingNum = parseFloat(
+          const propAddrNorm = String(
+            fieldValues.get(`${prefix}.address`)?.rawValue || ""
+          ).trim().toLowerCase();
+          const prefixLower = prefix.toLowerCase();
+          // Discover all lien indices present (lien1.*, lien2.*, ...).
+          const lienIndices = new Set<string>();
+          for (const [k] of fieldValues.entries()) {
+            const m = k.match(/^lien(\d*)\./);
+            if (m) lienIndices.add(m[1]); // "" for canonical "lien."
+          }
+          for (const li of lienIndices) {
+            const base = li ? `lien${li}` : "lien";
+            const propRaw = String(fieldValues.get(`${base}.property`)?.rawValue || "")
+              .trim().toLowerCase();
+            if (!propRaw) continue;
+            const matches =
+              propRaw === prefixLower ||
+              (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
+            if (!matches) continue;
+            const anticipatedRaw = String(
+              fieldValues.get(`${base}.anticipated`)?.rawValue || ""
+            ).trim().toLowerCase();
+            const isAnticipated = ["true", "yes", "y", "1"].includes(anticipatedRaw);
+            if (isAnticipated) {
+              const amt = parseFloat(
+                String(fieldValues.get(`${base}.anticipated_amount`)?.rawValue || "")
+                  .replace(/[^0-9.-]/g, "")
+              );
+              if (!isNaN(amt)) {
+                lienExpectedSum += amt;
+                lienExpectedHit = true;
+              }
+            }
+            const remAmt = parseFloat(
+              String(fieldValues.get(`${base}.new_remaining_balance`)?.rawValue || "")
+                .replace(/[^0-9.-]/g, "")
+            );
+            if (!isNaN(remAmt)) {
+              lienRemainingSum += remAmt;
+              lienRemainingHit = true;
+            }
+          }
+          if (lienExpectedHit) {
+            const v = { rawValue: lienExpectedSum.toFixed(2), dataType: "currency" as const };
+            if (!fieldValues.has(`ln_p_expectedEncumbrance_${idx}`)) {
+              fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
+            }
+            // Backfill legacy alias only if the static PropertyDetailsForm field is empty.
+            const staticExpected = String(
+              fieldValues.get(`${prefix}.expected_senior`)?.rawValue || ""
+            ).trim();
+            if (!staticExpected && !fieldValues.has(`pr_p_expectedSenior_${idx}`)) {
+              fieldValues.set(`pr_p_expectedSenior_${idx}`, v);
+            }
+          }
+          if (lienRemainingHit) {
+            const v = { rawValue: lienRemainingSum.toFixed(2), dataType: "currency" as const };
+            if (!fieldValues.has(`ln_p_remainingEncumbrance_${idx}`)) {
+              fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
+            }
+            const staticRemaining = String(
+              fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || ""
+            ).trim();
+            if (!staticRemaining && !fieldValues.has(`pr_p_remainingSenior_${idx}`)) {
+              fieldValues.set(`pr_p_remainingSenior_${idx}`, v);
+            }
+          }
+        }
+
+        // ── RE851D: per-property total encumbrance (remaining + expected senior) ──
+        // Computed from property{idx}.* components, with fallback to the Lien-derived
+        // sums computed just above. No cross-index fallback.
+        {
+          let remainingNum = parseFloat(
             String(fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || "")
               .replace(/[^0-9.-]/g, "")
           );
-          const expectedNum = parseFloat(
+          let expectedNum = parseFloat(
             String(fieldValues.get(`${prefix}.expected_senior`)?.rawValue || "")
               .replace(/[^0-9.-]/g, "")
           );
+          if (isNaN(remainingNum) && lienRemainingHit) remainingNum = lienRemainingSum;
+          if (isNaN(expectedNum) && lienExpectedHit) expectedNum = lienExpectedSum;
           const haveRemaining = !isNaN(remainingNum);
           const haveExpected = !isNaN(expectedNum);
           if (haveRemaining || haveExpected) {
