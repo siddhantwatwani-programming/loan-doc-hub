@@ -2592,19 +2592,19 @@ export function replaceMergeTags(
 
     // Dedup: after merge tag replacement, collapse adjacent duplicate checkbox
     // glyphs that arise when a merge tag resolves to ☑/☐ next to a static ☐
-    // already present in the template (e.g., "☑☐ Label" → "☑ Label").
-    //
-    // SCOPING: Restrict the dedup so the gap between the two glyphs may NOT
-    // cross a paragraph boundary (`</w:p>` / new `<w:p>` start) OR a soft
-    // line break (`<w:br/>`). Without this guard, two glyphs that
-    // legitimately belong to *different* logical lines but live in the same
-    // paragraph (e.g., the RE851A "Is Broker also a Borrower?" A./B. row
-    // where each {{#if}} block is on its own line separated by Shift+Enter)
-    // would be collapsed, silently dropping Option B's checkbox.
-    result = result.replace(
-      /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])/g,
-      (_m, g1, mid, _g2) => `${g1}${mid}`
-    );
+    // already present in the template. Skip entirely when no glyphs exist
+    // anywhere in the document — the lazy regex scan is otherwise O(N) over
+    // ~635KB on RE885 even though no merge tag in that template emits a glyph.
+    if (
+      result.indexOf('\u2610') !== -1 ||
+      result.indexOf('\u2611') !== -1 ||
+      result.indexOf('\u2612') !== -1
+    ) {
+      result = result.replace(
+        /([☐☑☒])((?:\s|<(?!\/w:p\b|w:p[\s>\/]|w:br[\s>\/])[^>]*>)*?)([☐☑☒])/g,
+        (_m, g1, mid, _g2) => `${g1}${mid}`
+      );
+    }
   }
   
   __mark('mergeTagReplace');
