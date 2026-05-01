@@ -1153,25 +1153,40 @@ async function generateSingleDocument(
         let lienExpectedHit = false;
         let lienRemainingHit = false;
         {
-          const propAddrNorm = String(
-            fieldValues.get(`${prefix}.address`)?.rawValue || ""
-          ).trim().toLowerCase();
-          const prefixLower = prefix.toLowerCase();
+          // Normalize property identifiers — collapse whitespace, strip stray
+          // punctuation/quotes, lowercase. Catches values like "Property1 ",
+          // "property 1", "'property1", etc.
+          const norm = (s: string): string =>
+            String(s || "")
+              .trim()
+              .toLowerCase()
+              .replace(/[''""`]/g, "")
+              .replace(/\s+/g, " ");
+          const propAddrNorm = norm(
+            String(fieldValues.get(`${prefix}.address`)?.rawValue || "")
+          );
+          const prefixLower = norm(prefix);
+          const prefixNoSpace = prefixLower.replace(/\s+/g, ""); // "property1"
           // Discover all lien indices present (lien1.*, lien2.*, ...).
           const lienIndices = new Set<string>();
           for (const [k] of fieldValues.entries()) {
             const m = k.match(/^lien(\d*)\./);
             if (m) lienIndices.add(m[1]); // "" for canonical "lien."
           }
+          const matchedLiens: string[] = [];
           for (const li of lienIndices) {
             const base = li ? `lien${li}` : "lien";
-            const propRaw = String(fieldValues.get(`${base}.property`)?.rawValue || "")
-              .trim().toLowerCase();
+            const propRaw = norm(
+              String(fieldValues.get(`${base}.property`)?.rawValue || "")
+            );
             if (!propRaw) continue;
+            const propRawNoSpace = propRaw.replace(/\s+/g, "");
             const matches =
               propRaw === prefixLower ||
+              propRawNoSpace === prefixNoSpace ||
               (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
             if (!matches) continue;
+            matchedLiens.push(li || "0");
             const anticipatedRaw = String(
               fieldValues.get(`${base}.anticipated`)?.rawValue || ""
             ).trim().toLowerCase();
@@ -1195,28 +1210,37 @@ async function generateSingleDocument(
               lienRemainingHit = true;
             }
           }
+          // Unconditional log so we can verify the rollup in production
+          // without flipping DOC_GEN_DEBUG. One line per property index.
+          if (matchedLiens.length > 0 || lienIndices.size > 0) {
+            console.log(
+              `[generate-document] RE851D lien rollup ${prefix}: liens=[${matchedLiens.join(",")}], ` +
+              `expected=${lienExpectedHit ? lienExpectedSum.toFixed(2) : "—"}, ` +
+              `remaining=${lienRemainingHit ? lienRemainingSum.toFixed(2) : "—"} ` +
+              `(scanned=${lienIndices.size})`
+            );
+          }
           if (lienExpectedHit) {
             const v = { rawValue: lienExpectedSum.toFixed(2), dataType: "currency" as const };
-            if (!fieldValues.has(`ln_p_expectedEncumbrance_${idx}`)) {
-              fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
-            }
+            // Force-set: authoritative for any lien-derived index. Removes the
+            // race where a stale empty key (from a prior shield run or upstream
+            // hydration) would silently mask the real value.
+            fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
             // Backfill legacy alias only if the static PropertyDetailsForm field is empty.
             const staticExpected = String(
               fieldValues.get(`${prefix}.expected_senior`)?.rawValue || ""
             ).trim();
-            if (!staticExpected && !fieldValues.has(`pr_p_expectedSenior_${idx}`)) {
+            if (!staticExpected) {
               fieldValues.set(`pr_p_expectedSenior_${idx}`, v);
             }
           }
           if (lienRemainingHit) {
             const v = { rawValue: lienRemainingSum.toFixed(2), dataType: "currency" as const };
-            if (!fieldValues.has(`ln_p_remainingEncumbrance_${idx}`)) {
-              fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
-            }
+            fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
             const staticRemaining = String(
               fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || ""
             ).trim();
-            if (!staticRemaining && !fieldValues.has(`pr_p_remainingSenior_${idx}`)) {
+            if (!staticRemaining) {
               fieldValues.set(`pr_p_remainingSenior_${idx}`, v);
             }
           }
