@@ -1177,7 +1177,8 @@ async function generateSingleDocument(
             fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
             ""
           ).trim().toLowerCase();
-          const isYes = occRaw === "owner occupied";
+          const occRawNorm = occRaw === "n/a" ? "na" : occRaw;
+          const isYes = occRawNorm === "owner occupied";
           const isNo = !isYes;
           fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
