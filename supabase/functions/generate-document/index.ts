@@ -3523,7 +3523,7 @@ async function generateSingleDocument(
                   (pIdx === 1 ? fieldValues.get("pr_p_occupanc")?.rawValue : "") ??
                   "",
               ).trim().toLowerCase();
-              const isOwner = occVal === "owner occupied";
+              const isOwner = occVal === "owner occupied" || occVal === "owner";
               const yesGlyph = isOwner ? "☑" : "☐";
               const noGlyph = isOwner ? "☐" : "☑";
               rewrites.push({ start: yesStart, end: yesEnd, replacement: `${yesM[1]}${yesGlyph}${yesM[3]}` });
