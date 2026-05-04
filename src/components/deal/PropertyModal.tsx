@@ -64,9 +64,10 @@ const getEmptyProperty = (): PropertyData => ({
   informationProvidedBy: '',
 });
 
-export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress }) => {
+export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress, borrowerOptions = [] }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [ownerPickerOpen, setOwnerPickerOpen] = useState(false);
 
   const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   useEffect(() => {
@@ -84,11 +85,18 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     const resolved = value === '__none__' ? '' : value;
     setFormData(prev => {
       const next = { ...prev, [field]: resolved } as PropertyData;
-      if (field === 'copyBorrowerAddress' && value === true && borrowerAddress) {
-        next.street = borrowerAddress.street || '';
-        next.city = borrowerAddress.city || '';
-        next.state = borrowerAddress.state || '';
-        next.zipCode = borrowerAddress.zipCode || '';
+      if (field === 'copyBorrowerAddress') {
+        if (value === true && borrowerAddress) {
+          next.street = borrowerAddress.street || '';
+          next.city = borrowerAddress.city || '';
+          next.state = borrowerAddress.state || '';
+          next.zipCode = borrowerAddress.zipCode || '';
+        } else if (value === false) {
+          next.street = '';
+          next.city = '';
+          next.state = '';
+          next.zipCode = '';
+        }
       }
       return next;
     });
