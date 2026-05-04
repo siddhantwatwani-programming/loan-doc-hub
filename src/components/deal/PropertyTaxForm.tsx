@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -40,6 +41,7 @@ const FREQUENCY_OPTIONS = [
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
 const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
+const TAX_CONFIDENCE_OPTIONS = ['Actual', 'Estimated'];
 
 const PREFIX = 'propertytax1';
 
@@ -52,6 +54,23 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   const getValue = (field: string): string => values[`${PREFIX}.${field}`] || '';
   const getBoolValue = (field: string): boolean => values[`${PREFIX}.${field}`] === 'true';
   const handleChange = (field: string, value: string) => onValueChange(`${PREFIX}.${field}`, value);
+
+  // Auto-derive 'delinquent' boolean from amount fields for downstream consumers.
+  useEffect(() => {
+    const parseAmt = (s: string) => {
+      const n = parseFloat(String(s || '').replace(/[^0-9.\-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    };
+    const derived =
+      parseAmt(values[`${PREFIX}.delinquent_amount`] || '') > 0 ||
+      parseAmt(values[`${PREFIX}.bring_current_amount`] || '') > 0;
+    const current = values[`${PREFIX}.delinquent`] === 'true';
+    if (derived !== current) {
+      onValueChange(`${PREFIX}.delinquent`, derived ? 'true' : 'false');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values[`${PREFIX}.delinquent_amount`], values[`${PREFIX}.bring_current_amount`]]);
+
 
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
@@ -161,6 +180,10 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.type`}>
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.tax_confidence`}>
+              {renderDropdownField('tax_confidence', 'Tax Confidence', TAX_CONFIDENCE_OPTIONS)}
             </DirtyFieldWrapper>
 
 
@@ -292,22 +315,31 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent`}>
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={getBoolValue('delinquent')}
-                  onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap">Delinquent</Label>
-              </div>
+            {/* Delinquent: derived from amount(s); no manual checkbox */}
+            {(() => {
+              const parseAmt = (s: string) => {
+                const n = parseFloat(String(s || '').replace(/[^0-9.\-]/g, ''));
+                return isNaN(n) ? 0 : n;
+              };
+              const isDelinquent =
+                parseAmt(getValue('delinquent_amount')) > 0 ||
+                parseAmt(getValue('bring_current_amount')) > 0;
+              return isDelinquent ? (
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Status</Label>
+                  <Badge variant="destructive" className="text-xs">Delinquent</Badge>
+                </div>
+              ) : null;
+            })()}
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
+              {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
             </DirtyFieldWrapper>
 
-            {getBoolValue('delinquent') && (
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
-                {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
-              </DirtyFieldWrapper>
-            )}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.bring_current_amount`}>
+              {renderCurrencyField('bring_current_amount', 'Amt to Bring Current')}
+            </DirtyFieldWrapper>
+
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified`}>
               <div className="flex items-center gap-3">
