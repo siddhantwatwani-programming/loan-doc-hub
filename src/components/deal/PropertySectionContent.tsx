@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -228,7 +230,57 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [selectedTaxPrefix, setSelectedTaxPrefix] = useState<string | null>(null);
   const PAGE_SIZE = 5;
   const { dirtyFieldKeys } = useDirtyFields();
-  
+  const { id: routeDealId } = useParams<{ id: string }>();
+
+  // Borrower participants for Property Owner picker + Copy Borrower's Address.
+  // Sourced directly from deal_participants (role='borrower') joined with contacts.
+  const [borrowerParticipants, setBorrowerParticipants] = useState<Array<{
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  }>>([]);
+
+  useEffect(() => {
+    if (!routeDealId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: parts } = await supabase
+          .from('deal_participants')
+          .select('id, name, contact_id, role')
+          .eq('deal_id', routeDealId)
+          .eq('role', 'borrower');
+        const rows = parts || [];
+        const contactIds = rows.map(r => r.contact_id).filter((x): x is string => !!x);
+        let contactMap: Record<string, any> = {};
+        if (contactIds.length) {
+          const { data: contacts } = await supabase
+            .from('contacts')
+            .select('id, full_name, contact_data')
+            .in('id', contactIds);
+          for (const c of contacts || []) contactMap[c.id] = c;
+        }
+        const list = rows.map(r => {
+          const c = r.contact_id ? contactMap[r.contact_id] : null;
+          const cd = (c?.contact_data || {}) as Record<string, string>;
+          return {
+            name: (c?.full_name || r.name || '').trim(),
+            street: cd['address.street'] || '',
+            city: cd['address.city'] || '',
+            state: cd['address.state'] || '',
+            zipCode: cd['address.zip'] || '',
+          };
+        }).filter(x => x.name);
+        if (!cancelled) setBorrowerParticipants(list);
+      } catch (e) {
+        console.error('Failed to load borrower participants', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [routeDealId]);
+
   // Check if we're in detail view
   const isDetailView = ['property_details', 'legal_description'].includes(activeSubSection);
   
@@ -275,8 +327,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     });
   }, [allProperties]);
 
-  // Borrower options + primary borrower address (mirrors PropertyDetailsForm logic)
+  // Borrower options + primary borrower address — sourced from deal_participants
+  // (Participant Type = 'Borrower'). Falls back to in-form values if no participants.
   const borrowerOptions = useMemo(() => {
+    if (borrowerParticipants.length > 0) {
+      return Array.from(new Set(borrowerParticipants.map(b => b.name).filter(Boolean)));
+    }
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
       const m = key.match(/^(borrower\d*)\./);
@@ -291,9 +347,18 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       if (composed && !names.includes(composed)) names.push(composed);
     });
     return names;
-  }, [values]);
+  }, [values, borrowerParticipants]);
 
+  // Address for "Copy Borrower's Address": prefer the selected Property Owner
+  // (looked up among Borrower participants); fall back to the first borrower
+  // participant; final fallback is the in-form primary borrower address.
+  const selectedPropertyOwner = values[`${selectedPropertyPrefix}.property_owner`] || '';
   const primaryBorrowerAddress = useMemo(() => {
+    if (borrowerParticipants.length > 0) {
+      const match = borrowerParticipants.find(b => b.name === selectedPropertyOwner)
+        || borrowerParticipants[0];
+      return { street: match.street, city: match.city, state: match.state, zipCode: match.zipCode };
+    }
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
       const m = key.match(/^(borrower\d+)\./);
@@ -314,7 +379,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       state: values[`${primary}.address.state`] || values[`${primary}.state`] || '',
       zipCode: values[`${primary}.address.zip`] || '',
     };
-  }, [values]);
+  }, [values, borrowerParticipants, selectedPropertyOwner]);
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
@@ -579,6 +644,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
+            borrowerOptions={borrowerOptions}
+            borrowerAddress={primaryBorrowerAddress}
           />
         );
       case 'legal_description':

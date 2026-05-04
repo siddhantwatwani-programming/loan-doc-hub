@@ -33,6 +33,8 @@ interface PropertyDetailsFormProps {
   showValidation?: boolean;
   disabled?: boolean;
   calculationResults?: Record<string, CalculationResult>;
+  borrowerOptions?: string[];
+  borrowerAddress?: { street: string; city: string; state: string; zipCode: string };
 }
 
 const PROPERTY_TYPE_OPTIONS = [
@@ -56,6 +58,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   onValueChange,
   showValidation = false,
   disabled = false,
+  borrowerOptions: borrowerOptionsProp,
+  borrowerAddress: borrowerAddressProp,
 }) => {
   const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const getFieldValue = (key: string) => values[key] || '';
@@ -140,9 +144,9 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   // searchable Property Owner picker. Includes both numbered (borrower1.*)
   // and base (borrower.*) records, plus any co-borrower entries.
   const borrowerOptions = React.useMemo(() => {
+    if (borrowerOptionsProp && borrowerOptionsProp.length > 0) return borrowerOptionsProp;
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
-      // Restrict to Borrower participant type only — exclude coborrower/* prefixes.
       const m = key.match(/^(borrower\d*)\./);
       if (m) prefixes.add(m[1]);
     });
@@ -155,15 +159,16 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
       if (composed && !names.includes(composed)) names.push(composed);
     });
     return names;
-  }, [values]);
+  }, [values, borrowerOptionsProp]);
   const [ownerPickerOpen, setOwnerPickerOpen] = React.useState(false);
 
-  const borrowerStreet = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.street`] || '') : '';
-  const borrowerCity = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.city`] || '') : '';
-  const borrowerState = primaryBorrowerPrefix
+  const borrowerStreet = borrowerAddressProp?.street ?? (primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.street`] || '') : '');
+  const borrowerCity = borrowerAddressProp?.city ?? (primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.city`] || '') : '');
+  const borrowerState = borrowerAddressProp?.state ?? (primaryBorrowerPrefix
     ? (values[`${primaryBorrowerPrefix}.address.state`] || values[`${primaryBorrowerPrefix}.state`] || '')
-    : '';
-  const borrowerZip = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.zip`] || '') : '';
+    : '');
+  const borrowerZip = borrowerAddressProp?.zipCode ?? (primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.zip`] || '') : '');
+
 
   // Track previous checkbox state: copy on check, clear on uncheck.
   const prevCopyRef = React.useRef<boolean>(isCopyBorrower);
@@ -181,7 +186,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
     if (!isCopyBorrower) return;
 
-    if (!primaryBorrowerPrefix) {
+    const hasBorrowerSource = !!primaryBorrowerPrefix || !!(borrowerAddressProp && (borrowerAddressProp.street || borrowerAddressProp.city || borrowerAddressProp.state || borrowerAddressProp.zipCode));
+    if (!hasBorrowerSource) {
       if (justChecked) {
         toast.error('Primary Borrower not found in Participants');
       }
