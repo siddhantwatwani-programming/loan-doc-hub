@@ -362,10 +362,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           <div className="pt-1">
             <span className="text-xs font-medium text-primary">Land Classification</span>
           </div>
-          {renderCheckboxField('property1.land_sfr_residential', 'Land SFR Residential')}
-          {renderCheckboxField('property1.land_residential', 'Land Residential')}
-          {renderCheckboxField('property1.land_commercial', 'Land Commercial')}
-          {renderCheckboxField('property1.land_income_producing', 'Land Income Producing')}
+          {renderInlineSelect('property1.land_classification', 'Land Classification', ['Land SFR Residential', 'Land Residential', 'Land Commercial', 'Land Income Producing'], 'Select...')}
 
           <div className="pt-1">
             <span className="text-xs font-medium text-primary">Address</span>
