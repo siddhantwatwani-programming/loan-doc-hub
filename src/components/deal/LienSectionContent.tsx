@@ -16,6 +16,7 @@ interface LienSectionContentProps {
   onPersist?: () => Promise<boolean>;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
+  currentPropertyId?: string;
   onBack?: () => void;
   onRefresh?: () => void;
 }
