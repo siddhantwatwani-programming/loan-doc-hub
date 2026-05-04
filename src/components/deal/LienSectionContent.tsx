@@ -279,10 +279,13 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
 
     // Bind the lien to the current property when adding a new lien and the
-    // user did not pick one explicitly. This is what isolates liens per property.
+    // user did not pick one explicitly (or left it as "unassigned").
+    // This is what isolates liens per property and ensures the new lien shows
+    // up in the current property's Liens grid after save.
+    const isUnboundProperty = !lienData.property || lienData.property === 'unassigned';
     const boundLienData: LienData = {
       ...lienData,
-      property: lienData.property || currentPropertyId || lienData.property,
+      property: isUnboundProperty ? (currentPropertyId || lienData.property) : lienData.property,
     };
 
     flushSync(() => {
