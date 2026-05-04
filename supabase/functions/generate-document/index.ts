@@ -24,7 +24,8 @@ import type {
 } from "../_shared/types.ts";
 import { fetchMergeTagMappings, fetchFieldKeyMappings, extractRawValueFromJsonb, getFieldData } from "../_shared/field-resolver.ts";
 import { processDocx } from "../_shared/docx-processor.ts";
-import { normalizeWordXml } from "../_shared/tag-parser.ts";
+import { normalizeWordXml, escapeXmlValue } from "../_shared/tag-parser.ts";
+import { formatByDataType } from "../_shared/formatting.ts";
 
 const DOC_GEN_DEBUG = Deno.env.get("DOC_GEN_DEBUG") === "true";
 const debugLog = (...args: unknown[]) => {
@@ -1849,7 +1850,7 @@ async function generateSingleDocument(
       // property block populates with its own data. Concatenating all addresses into
       // pr_p_address caused every property block to display the same combined list.
       // Templates that need the combined list can use {{all_properties_list}}.
-    }
+          }
 
 
     const existingBrPFullName = fieldValues.get("br_p_fullName");
@@ -3125,7 +3126,19 @@ async function generateSingleDocument(
             // (preserves previous behavior — partial rewrites are still better
             // than failing the whole document).
           }
-          // Re-check after normalization in case it stripped all `_N` markers.
+          // Normalize parenthesized index syntax used by some authored RE851D
+          // templates: pr_li_(rem|ant)_<field>_(N)_(S) -> _N_S, _(N) -> _N.
+          // Strictly scoped to encumbrance families so other prose with
+          // literal parens is never touched.
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\(N\)_\(S\)/g,
+            "$1_N_S",
+          );
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\(N\)/g,
+            "$1_N",
+          );
+
           if (!xml.includes("_N")) {
             out[filename] = encoder.encode(xml);
             continue;
@@ -3250,6 +3263,50 @@ async function generateSingleDocument(
                 replacement = tag.replace(/_N$/, `_${indexNum}`);
               }
               rewrites.push({ start, end, replacement });
+              consumed.push([start, end]);
+              bumpRegion(region.id);
+              totalRewrites++;
+            }
+          }
+
+          // ── RE851D bare encumbrance-token rewrite ──
+          // Some authored RE851D templates write encumbrance tags as bare text
+          // (no {{ }} braces), so the merge-tag parser cannot resolve them and
+          // they print verbatim. Substitute the resolved value directly inside
+          // PROPERTY #K regions. Strictly limited to the encumbrance field
+          // whitelist; nothing else in the document is touched.
+          if (regions.props.length > 0) {
+            const encFields = [
+              "priority", "interestRate", "beneficiary",
+              "originalAmount", "principalBalance",
+              "monthlyPayment", "maturityDate", "balloonAmount",
+              "balloonYes", "balloonNo", "balloonUnknown",
+            ];
+            const encTagRe = new RegExp(
+              "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?\\b",
+              "g",
+            );
+            let m2: RegExpExecArray | null;
+            while ((m2 = encTagRe.exec(xml)) !== null) {
+              const start = m2.index;
+              const end = start + m2[0].length;
+              if (isConsumed(start, end)) continue;
+              const region = resolveRegion(start);
+              if (region.forcedIndex === null) continue;
+              const pIdx = region.forcedIndex;
+              const family = `${m2[1]}_${m2[2]}`;
+              const slot = getRegionCounter(region.id, `__enc_${family}`);
+              const lookupKey = `pr_li_${family}_${pIdx}_${slot}`;
+              const v = fieldValues.get(lookupKey)
+                || fieldValues.get(`pr_li_${family}_${pIdx}`);
+              let rendered = "";
+              if (v && v.rawValue !== null && v.rawValue !== undefined) {
+                rendered = formatByDataType(v.rawValue, v.dataType);
+                if (v.dataType === "currency" && rendered.startsWith("$")) {
+                  rendered = rendered.substring(1);
+                }
+              }
+              rewrites.push({ start, end, replacement: escapeXmlValue(rendered) });
               consumed.push([start, end]);
               bumpRegion(region.id);
               totalRewrites++;
