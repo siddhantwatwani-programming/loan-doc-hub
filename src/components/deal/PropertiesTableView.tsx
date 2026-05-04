@@ -72,6 +72,7 @@ export interface PropertyData {
   protectiveEquity?: string;
   cltv?: string;
   informationProvidedBy?: string;
+  propertyOwner?: string;
 }
 
 interface PropertiesTableViewProps {
