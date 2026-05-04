@@ -298,22 +298,31 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent`}>
-              <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={getBoolValue('delinquent')}
-                  onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap">Delinquent</Label>
-              </div>
+            {/* Delinquent: derived from amount(s); no manual checkbox */}
+            {(() => {
+              const parseAmt = (s: string) => {
+                const n = parseFloat(String(s || '').replace(/[^0-9.\-]/g, ''));
+                return isNaN(n) ? 0 : n;
+              };
+              const isDelinquent =
+                parseAmt(getValue('delinquent_amount')) > 0 ||
+                parseAmt(getValue('bring_current_amount')) > 0;
+              return isDelinquent ? (
+                <div className="flex items-center gap-3">
+                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Status</Label>
+                  <Badge variant="destructive" className="text-xs">Delinquent</Badge>
+                </div>
+              ) : null;
+            })()}
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
+              {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
             </DirtyFieldWrapper>
 
-            {getBoolValue('delinquent') && (
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
-                {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
-              </DirtyFieldWrapper>
-            )}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.bring_current_amount`}>
+              {renderCurrencyField('bring_current_amount', 'Amt to Bring Current')}
+            </DirtyFieldWrapper>
+
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified`}>
               <div className="flex items-center gap-3">
