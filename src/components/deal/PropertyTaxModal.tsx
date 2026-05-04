@@ -153,7 +153,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
             <DialogTitle>{isEdit ? 'Edit Property Tax' : 'Add Property Tax'}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 grid grid-cols-3 gap-x-4 gap-y-3 py-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 grid grid-cols-2 gap-x-6 gap-y-3 py-4">
             {/* Left column — Property Tax core */}
             <div className="space-y-3">
               {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
@@ -191,10 +191,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">ZIP</Label>
                 <ZipInput value={formData.pmaZip} onValueChange={(v) => handleChange('pmaZip', v)} className="h-7 text-xs" />
               </div>
-            </div>
 
-            {/* Middle column */}
-            <div className="space-y-3">
               {renderCurrencyField('annualPayment', 'Annual Payment')}
               {renderDropdownField('taxConfidence' as keyof PropertyTaxData, 'Confidence', TAX_CONFIDENCE_OPTIONS)}
               {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
