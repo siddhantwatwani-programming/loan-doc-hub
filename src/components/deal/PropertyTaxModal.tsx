@@ -153,44 +153,18 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
             <DialogTitle>{isEdit ? 'Edit Property Tax' : 'Add Property Tax'}</DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 grid grid-cols-2 gap-x-6 gap-y-3 py-4">
-            {/* Left column */}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 px-6 grid grid-cols-3 gap-x-4 gap-y-3 py-4">
+            {/* Left column — Property Tax core */}
             <div className="space-y-3">
               {propertyOptions.length > 0 && renderDropdownField('property', 'Property', propertyOptions)}
+
+              {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
+
+              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Tax Authority</Label>
                 <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
-              </div>
-
-              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
-
-              {renderDropdownField('tax_confidence' as keyof PropertyTaxData, 'Confidence', TAX_CONFIDENCE_OPTIONS)}
-
-              {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
-              {renderCurrencyField('amount', 'Amount')}
-              {renderDateField('nextDue', 'Next Due')}
-
-              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
-
-              {renderDropdownField('escrowImpounds', 'Impounded', IMPOUNDED_OPTIONS)}
-
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={(formData as any).passThrough === true || (formData as any).passThrough === 'true'}
-                  onCheckedChange={(checked) => handleChange('passThrough' as keyof PropertyTaxData, checked === true)}
-                />
-                <Label className="text-xs text-foreground">Pass Through</Label>
-              </div>
-
-              {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
-            </div>
-
-            {/* Right column */}
-            <div className="space-y-3">
-              {/* Payment Mailing Address */}
-              <div className="border-b border-border pb-1 mb-2">
-                <span className="font-semibold text-xs text-foreground">Payment Mailing Address</span>
               </div>
 
               <div className="flex items-center gap-2">
@@ -215,15 +189,31 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">ZIP</Label>
-                <ZipInput
-                  value={formData.pmaZip}
-                  onValueChange={(v) => handleChange('pmaZip', v)}
-                  className="h-7 text-xs"
-                />
+                <ZipInput value={formData.pmaZip} onValueChange={(v) => handleChange('pmaZip', v)} className="h-7 text-xs" />
               </div>
+            </div>
 
-              {/* Tax Tracking */}
-              <div className="border-b border-border pb-1 mb-2 mt-2">
+            {/* Middle column */}
+            <div className="space-y-3">
+              {renderCurrencyField('annualPayment', 'Annual Payment')}
+              {renderDropdownField('taxConfidence' as keyof PropertyTaxData, 'Confidence', TAX_CONFIDENCE_OPTIONS)}
+              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
+              {renderDateField('nextDue', 'Next Due')}
+              {renderCurrencyField('delinquentAmount', 'Delinquent Amount')}
+              {renderDropdownField('escrowImpounds', 'Impounded', IMPOUNDED_OPTIONS)}
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={(formData as any).passThrough === true || (formData as any).passThrough === 'true'}
+                  onCheckedChange={(checked) => handleChange('passThrough' as keyof PropertyTaxData, checked === true)}
+                />
+                <Label className="text-xs text-foreground">Pass Through</Label>
+              </div>
+            </div>
+
+            {/* Right column — Tax Tracking */}
+            <div className="space-y-3">
+              <div className="border-b border-border pb-1 mb-2">
                 <span className="font-semibold text-xs text-foreground">Tax Tracking</span>
               </div>
 
@@ -236,7 +226,6 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               </div>
 
               {renderDateField('lastVerified', 'Last Verified')}
-              {renderDateField('lenderNotified', 'Lender Notified')}
 
               <div className="flex items-center gap-2">
                 <Checkbox
@@ -246,40 +235,47 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 <Label className="text-xs text-foreground">Current</Label>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
                 <Checkbox
                   checked={formData.delinquent}
                   onCheckedChange={(checked) => handleChange('delinquent', checked === true)}
                 />
-                <Label className="text-xs text-foreground">Delinquent</Label>
+                <Label className="text-xs text-foreground min-w-[80px]">Delinquent</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                  <Input
+                    value={String(formData.delinquentAmount || '')}
+                    onChange={(e) => handleChange('delinquentAmount', e.target.value)}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (v) => handleChange('delinquentAmount', v))}
+                    onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('delinquentAmount', v); }}
+                    onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('delinquentAmount', v); }}
+                    className="h-7 text-xs pl-5"
+                  />
+                </div>
               </div>
 
-              {formData.delinquent && (
-                renderCurrencyField('delinquentAmount', 'Delinquent Amt')
-              )}
-
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-1">
                 <Checkbox
                   checked={formData.borrowerNotified}
                   onCheckedChange={(checked) => handleChange('borrowerNotified', checked === true)}
                 />
-                <Label className="text-xs text-foreground">Borrower Notified</Label>
+                <Label className="text-xs text-foreground min-w-[110px]">Borrower Notified</Label>
+                <div className="flex-1">{renderDateField('borrowerNotifiedDate', '')}</div>
               </div>
 
-              {formData.borrowerNotified && (
-                renderDateField('borrowerNotifiedDate', 'Borrower Notified')
-              )}
-
-              {renderDateField('lenderNotifiedDate', 'Lender Notified')}
-
-              <div className="flex items-center gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground">APN</Label>
-                <Input value={formData.apn} onChange={(e) => handleChange('apn', e.target.value)} className="h-7 text-xs flex-1" />
+              <div className="flex items-center gap-2 flex-1">
+                <Checkbox
+                  checked={(formData as any).lenderNotified === true || (formData as any).lenderNotified === 'true'}
+                  onCheckedChange={(checked) => handleChange('lenderNotified' as keyof PropertyTaxData, checked === true ? 'true' : 'false')}
+                />
+                <Label className="text-xs text-foreground min-w-[110px]">Lender Notified</Label>
+                <div className="flex-1">{renderDateField('lenderNotifiedDate', '')}</div>
               </div>
 
               <div className="flex items-start gap-2">
-                <Label className="w-[120px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
-                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[50px]" />
+                <Label className="w-[60px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
+                <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[80px]" />
               </div>
             </div>
           </div>
