@@ -24,6 +24,7 @@ import { BORROWER_AUTHORIZED_PARTY_KEYS } from '@/lib/fieldKeyMap';
 const FIELD_KEYS = BORROWER_AUTHORIZED_PARTY_KEYS;
 
 const CAPACITY_OPTIONS = [
+  'Authorized Party',
   'Corporate Officer', 'Attorney', 'Power of Attorney',
   'Accountant / CPA', 'Family', 'Bankruptcy Trustee', 'Other',
 ];
