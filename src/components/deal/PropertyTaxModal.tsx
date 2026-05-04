@@ -40,7 +40,7 @@ const TAX_CONFIDENCE_OPTIONS = ['Actual', 'Estimated'];
 const getDefaultTax = (): PropertyTaxData => ({
   id: '', property: '', authority: '', address: '', type: '', apn: '', memo: '',
   annualPayment: '', amount: '', nextDue: '', frequency: '',
-  escrowImpounds: '', passThrough: '', sourceOfInformation: '',
+  escrowImpounds: '', passThrough: '', sourceOfInformation: '', taxConfidence: '',
   active: false, lastVerified: '', lenderNotified: '',
   current: false, delinquent: false, delinquentAmount: '',
   borrowerNotified: false, borrowerNotifiedDate: '', lenderNotifiedDate: '',
