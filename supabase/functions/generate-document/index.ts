@@ -1335,6 +1335,22 @@ async function generateSingleDocument(
             // uses {{ln_p_totalEncumbrance_N}} in the Total Senior Encumbrances
             // column. Force-set: this is the authoritative computed total.
             fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
+            // RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
+            // Publishes ln_p_totalWithLoan_N = ln_p_totalEncumbrance_N + ln_p_loanAmount.
+            // Null/missing values treated as 0; strings sanitized before parseFloat.
+            {
+              const loanAmtRaw =
+                fieldValues.get("ln_p_loanAmount")?.rawValue ??
+                fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
+              const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
+              const encNum = parseFloat(String(totalVal.rawValue).replace(/[^0-9.\-]/g, ""));
+              const sum = (Number.isFinite(encNum) ? encNum : 0)
+                        + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
+              fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
+                rawValue: sum.toFixed(2),
+                dataType: "currency" as const,
+              });
+            }
           }
         }
 
@@ -2799,7 +2815,7 @@ async function generateSingleDocument(
           "pr_p_occupanc_N", "pr_p_remainingSenior_N", "pr_p_expectedSenior_N",
           "ln_p_expectedEncumbrance_N", "ln_p_remainingEncumbrance_N",
           "pr_p_totalSenior_N", "pr_p_totalEncumbrance_N", "pr_p_totalSeniorPlusLoan_N",
-          "ln_p_totalEncumbrance_N", "property_number_N",
+          "ln_p_totalEncumbrance_N", "ln_p_totalWithLoan_N", "property_number_N",
           "pr_p_construcType_N", "pr_p_purchasePrice_N", "pr_p_downPayme_N",
           "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
@@ -2846,6 +2862,7 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "ln_p_totalWithLoan_N",
           "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
           "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
           "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
@@ -2863,6 +2880,7 @@ async function generateSingleDocument(
           "ln_p_remainingEncumbrance_N",
           "ln_p_expectedEncumbrance_N",
           "ln_p_totalEncumbrance_N",
+          "ln_p_totalWithLoan_N",
           "property_type_sfr_owner_N_glyph", "property_type_sfr_owner_N",
           "property_type_sfr_non_owner_N_glyph", "property_type_sfr_non_owner_N",
           "property_type_sfr_zoned_N_glyph", "property_type_sfr_zoned_N",
