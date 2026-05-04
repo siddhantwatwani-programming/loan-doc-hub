@@ -58,6 +58,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   onValueChange,
   showValidation = false,
   disabled = false,
+  borrowerOptions: borrowerOptionsProp,
+  borrowerAddress: borrowerAddressProp,
 }) => {
   const [datePickerStates, setDatePickerStates] = React.useState<Record<string, boolean>>({});
   const getFieldValue = (key: string) => values[key] || '';
