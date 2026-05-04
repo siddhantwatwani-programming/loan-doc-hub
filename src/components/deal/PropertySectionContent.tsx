@@ -275,6 +275,47 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     });
   }, [allProperties]);
 
+  // Borrower options + primary borrower address (mirrors PropertyDetailsForm logic)
+  const borrowerOptions = useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d*)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    const names: string[] = [];
+    Array.from(prefixes).sort().forEach(p => {
+      const full = (values[`${p}.full_name`] || '').trim();
+      const first = (values[`${p}.first_name`] || '').trim();
+      const last = (values[`${p}.last_name`] || '').trim();
+      const composed = full || [first, last].filter(Boolean).join(' ').trim();
+      if (composed && !names.includes(composed)) names.push(composed);
+    });
+    return names;
+  }, [values]);
+
+  const primaryBorrowerAddress = useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d+)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    let primary: string | null = null;
+    for (const p of prefixes) {
+      if (values[`${p}.is_primary`] === 'true') { primary = p; break; }
+    }
+    if (!primary) {
+      const hasBase = Object.keys(values).some(k => k.startsWith('borrower.') && !k.match(/^borrower\d+\./));
+      if (hasBase) primary = 'borrower';
+    }
+    if (!primary) return { street: '', city: '', state: '', zipCode: '' };
+    return {
+      street: values[`${primary}.address.street`] || '',
+      city: values[`${primary}.address.city`] || '',
+      state: values[`${primary}.address.state`] || values[`${primary}.state`] || '',
+      zipCode: values[`${primary}.address.zip`] || '',
+    };
+  }, [values]);
+
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
     const property = allProperties.find(p => p.id === selectedPropertyPrefix);
