@@ -62,6 +62,7 @@ const getEmptyProperty = (): PropertyData => ({
   valuationDate: '', valuationType: '', thirdPartyFullName: '', thirdPartyStreet: '', thirdPartyCity: '',
   thirdPartyState: '', thirdPartyZip: '', protectiveEquity: '', cltv: '',
   informationProvidedBy: '',
+  propertyOwner: '',
 });
 
 export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress, borrowerOptions = [] }) => {
