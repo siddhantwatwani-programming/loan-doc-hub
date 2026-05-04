@@ -186,7 +186,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
     if (!isCopyBorrower) return;
 
-    if (!primaryBorrowerPrefix) {
+    const hasBorrowerSource = !!primaryBorrowerPrefix || !!(borrowerAddressProp && (borrowerAddressProp.street || borrowerAddressProp.city || borrowerAddressProp.state || borrowerAddressProp.zipCode));
+    if (!hasBorrowerSource) {
       if (justChecked) {
         toast.error('Primary Borrower not found in Participants');
       }
