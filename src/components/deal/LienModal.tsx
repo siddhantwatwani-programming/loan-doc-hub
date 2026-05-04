@@ -377,7 +377,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0 mt-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid || !propertyValid} title={!propertyValid ? 'A lien must be assigned to one property' : undefined}>OK</Button>
           </div>
         </DialogContent>
       </Dialog>
