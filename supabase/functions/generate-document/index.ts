@@ -2418,10 +2418,18 @@ async function generateSingleDocument(
                   ["balloonAmount", get("balloon_amount"), "currency"],
                 ];
 
+                const fieldAliases: Record<string, string[]> = {
+                  interestRate: ["interest_rate", "intRate"],
+                  beneficiary: ["lienHolder", "holder"],
+                  maturityDate: ["maturity_date", "matDate"],
+                };
                 for (const [f, v, dt] of fields) {
-                  setVal(`${tagPrefix}_${f}_${pIdx}_${s}`, v, dt);
-                  if (s === 1) setVal(`${tagPrefix}_${f}_${pIdx}`, v, dt);
-                  if (pIdx === 1 && s === 1) setVal(`${tagPrefix}_${f}`, v, dt);
+                  const names = [f, ...(fieldAliases[f] ?? [])];
+                  for (const name of names) {
+                    setVal(`${tagPrefix}_${name}_${pIdx}_${s}`, v, dt);
+                    if (s === 1) setVal(`${tagPrefix}_${name}_${pIdx}`, v, dt);
+                    if (pIdx === 1 && s === 1) setVal(`${tagPrefix}_${name}`, v, dt);
+                  }
                 }
 
                 setBoolV(`${tagPrefix}_balloonYes_${pIdx}_${s}`, isYes);
