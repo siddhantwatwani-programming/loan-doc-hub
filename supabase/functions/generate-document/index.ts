@@ -3322,6 +3322,15 @@ async function generateSingleDocument(
               "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?(?![A-Za-z0-9_])",
               "g",
             );
+            const mergeTagContext = (offset: number): "curly" | "chevron" | null => {
+              const lastCurlyOpen = xml.lastIndexOf("{{", offset);
+              const lastCurlyClose = xml.lastIndexOf("}}", offset);
+              if (lastCurlyOpen > lastCurlyClose) return "curly";
+              const lastChevronOpen = xml.lastIndexOf("«", offset);
+              const lastChevronClose = xml.lastIndexOf("»", offset);
+              if (lastChevronOpen > lastChevronClose) return "chevron";
+              return null;
+            };
             let m2: RegExpExecArray | null;
             while ((m2 = encTagRe.exec(xml)) !== null) {
               const start = m2.index;
@@ -3335,14 +3344,19 @@ async function generateSingleDocument(
               const lookupKey = `pr_li_${family}_${pIdx}_${slot}`;
               const v = fieldValues.get(lookupKey)
                 || fieldValues.get(`pr_li_${family}_${pIdx}`);
-              let rendered = "";
-              if (v && v.rawValue !== null && v.rawValue !== undefined) {
-                rendered = formatByDataType(v.rawValue, v.dataType);
-                if (v.dataType === "currency" && rendered.startsWith("$")) {
-                  rendered = rendered.substring(1);
+              const context = mergeTagContext(start);
+              if (context) {
+                rewrites.push({ start, end, replacement: lookupKey });
+              } else {
+                let rendered = "";
+                if (v && v.rawValue !== null && v.rawValue !== undefined) {
+                  rendered = formatByDataType(v.rawValue, v.dataType);
+                  if (v.dataType === "currency" && rendered.startsWith("$")) {
+                    rendered = rendered.substring(1);
+                  }
                 }
+                rewrites.push({ start, end, replacement: escapeXmlValue(rendered) });
               }
-              rewrites.push({ start, end, replacement: escapeXmlValue(rendered) });
               consumed.push([start, end]);
               bumpRegion(region.id);
               totalRewrites++;
