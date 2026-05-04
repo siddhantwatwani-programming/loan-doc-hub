@@ -123,7 +123,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
           onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange(field, v); }}
           onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange(field, v); }}
           disabled={disabled}
-          className="h-7 text-sm flex-1 pl-5 text-left"
+          className="h-7 text-sm flex-1 pl-5"
         />
       </div>
     </div>
@@ -133,7 +133,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
     <div className="flex items-center gap-3">
       <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
       <Select value={getValue(field)} onValueChange={(value) => handleChange(field, value)} disabled={disabled}>
-        <SelectTrigger className="h-7 text-sm flex-1 bg-background text-left"><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
         <SelectContent className="bg-background z-50">
           {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
         </SelectContent>
@@ -161,7 +161,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Source of<br />Information</Label>
                 <Select value={getValue('source_of_information')} onValueChange={(value) => handleChange('source_of_information', value)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm flex-1 bg-background text-left"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     {SOURCE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                   </SelectContent>
@@ -177,7 +177,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Tax Authority</Label>
                 <div className="flex flex-1 gap-1.5">
-                  <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1 text-left" />
+                  <Input value={getValue('authority')} onChange={(e) => handleChange('authority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
                   <Button
                     type="button"
                     variant="outline"
@@ -196,14 +196,14 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_street`}>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Street</Label>
-                <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1 text-left" />
+                <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_city`}>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">City</Label>
-                <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1 text-left" />
+                <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
               </div>
             </DirtyFieldWrapper>
 
@@ -211,7 +211,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">State</Label>
                 <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm flex-1 bg-background text-left"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent className="bg-background z-50 max-h-[200px]">
                     {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
                   </SelectContent>
@@ -222,7 +222,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_zip`}>
               <div className="flex items-center gap-3">
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">ZIP</Label>
-                <ZipInput value={getValue('pma_zip')} onValueChange={(v) => handleChange('pma_zip', v)} disabled={disabled} className="h-7 text-sm text-left" />
+                <ZipInput value={getValue('pma_zip')} onValueChange={(v) => handleChange('pma_zip', v)} disabled={disabled} className="h-7 text-sm" />
               </div>
             </DirtyFieldWrapper>
 
@@ -312,7 +312,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                     onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
                     onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
                     disabled={disabled}
-                    className="h-7 text-sm pl-5 text-left"
+                    className="h-7 text-sm pl-5"
                   />
                 </div>
               </div>
