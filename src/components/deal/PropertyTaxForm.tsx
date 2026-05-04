@@ -148,7 +148,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
       </div>
 
       <div className="w-full">
-        <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-3">
           {/* Left column — Property Tax core */}
           <div className="space-y-3">
             {propertyOptions.length > 0 && (
@@ -225,10 +225,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 <ZipInput value={getValue('pma_zip')} onValueChange={(v) => handleChange('pma_zip', v)} disabled={disabled} className="h-7 text-sm" />
               </div>
             </DirtyFieldWrapper>
-          </div>
 
-          {/* Middle column */}
-          <div className="space-y-3">
             <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
               {renderCurrencyField('annual_payment', 'Annual Payment')}
             </DirtyFieldWrapper>
