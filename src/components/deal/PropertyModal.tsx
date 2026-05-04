@@ -36,11 +36,14 @@ interface PropertyModalProps {
 
 const PROPERTY_TYPE_OPTIONS = [
   'SFR 1-4', 'Multi-family', 'Condo / Townhouse', 'Mobile Home', 'Commercial',
-  'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
+  'Commercial Income', 'Mixed-use', 'Land SFR Residential', 'Land Residential',
+  'Land Commercial', 'Land Income Producing', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Tenant / Other', 'Vacant', 'NA'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
-const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
+const CONSTRUCTION_TYPES = ['Wood Frame', 'Wood Frame / Stucco', 'Modular', 'Steel Frame', 'Brick / Block', 'NA'];
+const ZONING_OPTIONS = ['R1 SFR', 'R2 SFR', 'R3 Multi-family', 'R-M Multi-family', 'PUD', 'Residential Lot / Parcel', 'Mixed Use', 'C Commercial', 'Agriculture', 'NA'];
+const LAND_CLASSIFICATION_OPTIONS = ['Land SFR Residential', 'Land Residential', 'Land Commercial', 'Land Income Producing'];
 const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Public Record', 'Other'];
 
@@ -51,7 +54,8 @@ const generatePropertyId = () => `property_${Date.now()}_${Math.random().toStrin
 const getEmptyProperty = (): PropertyData => ({
   id: generatePropertyId(), isPrimary: false, description: '', street: '', city: '', state: '', zipCode: '', county: '',
   propertyType: '', occupancy: '', appraisedValue: '', appraisedDate: '', ltv: '', apn: '',
-  loanPriority: '', floodZone: '', zoning: '', performedBy: '', copyBorrowerAddress: false,
+  loanPriority: '', floodZone: '', fireZone: '', landClassification: '', pledgedEquity: '',
+  zoning: '', performedBy: '', copyBorrowerAddress: false,
   purchasePrice: '', downPayment: '', delinquentTaxes: '',
   appraiserStreet: '', appraiserCity: '', appraiserState: '', appraiserZip: '', appraiserPhone: '', appraiserEmail: '',
   yearBuilt: '', squareFeet: '', constructionType: '', monthlyIncome: '', lienProtectiveEquity: '', sourceLienInfo: '',
@@ -70,7 +74,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const [showConfirm, setShowConfirm] = useState(false);
   const [ownerPickerOpen, setOwnerPickerOpen] = useState(false);
 
-  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
+  const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity', 'pledgedEquity'];
   useEffect(() => {
     if (open) {
       const base = property ? { ...getEmptyProperty(), ...property } : getEmptyProperty();
@@ -123,7 +127,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
   const emailsValid = hasValidEmails(formData as any, ['appraiserEmail']);
 
   const handleSaveClick = () => setShowConfirm(true);
-  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
+  const CURRENCY_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity', 'pledgedEquity'];
   const handleConfirmSave = () => {
     setShowConfirm(false);
     const cleaned = { ...formData };
@@ -293,6 +297,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 </div>
 
                 <div className="pt-1">
+                  <span className="text-xs font-medium text-primary">Land Classification</span>
+                </div>
+                {renderInlineSelect('landClassification', 'Land Classification', LAND_CLASSIFICATION_OPTIONS, 'Select...')}
+
+                <div className="pt-1">
                   <span className="text-xs font-medium text-primary">Address</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -324,18 +333,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineField('yearBuilt', 'Year Built', 'date')}
                 {renderInlineField('squareFeet', 'Square Feet')}
                 {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-                {renderInlineField('zoning', 'Zoning')}
+                {renderInlineSelect('zoning', 'Zoning', ZONING_OPTIONS, 'Select...')}
 
                 {renderCheckboxField('floodZone', 'Flood Zone')}
-
-                {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
-                {formData.propertyGeneratesIncome && (
-                  <>
-                    {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
-                    {renderCurrencyField('fromRent', 'From Rent')}
-                    {renderCurrencyField('fromOtherDescribe', 'From Other (Describe)')}
-                  </>
-                )}
+                {renderCheckboxField('fireZone', 'Fire Zone')}
+                {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
               </div>
 
               {/* Column 3 — Valuation */}
@@ -370,6 +372,7 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 )}
 
                 
+                {renderCurrencyField('pledgedEquity', 'Pledged Equity')}
                 {renderCurrencyField('protectiveEquity', 'Protective Equity')}
                 {renderPercentageField('ltv', 'Loan To Value')}
                 {renderPercentageField('cltv', 'CLTV (If a Junior Lien)')}

@@ -64,7 +64,9 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       apn: values[`${prefix}.apn`] || '',
       loanPriority: values[`${prefix}.priority`] || '',
       floodZone: values[`${prefix}.flood_zone`] || '',
-      
+      fireZone: values[`${prefix}.fire_zone`] || '',
+      landClassification: values[`${prefix}.land_classification`] || '',
+      pledgedEquity: values[`${prefix}.pledged_equity`] || '',
       zoning: values[`${prefix}.zoning`] || '',
       performedBy: values[`${prefix}.appraisal_performed_by`] || '',
       copyBorrowerAddress: values[`${prefix}.copy_borrower_address`] === 'true',
@@ -446,6 +448,9 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.apn`, propertyData.apn);
     onValueChange(`${prefix}.priority`, propertyData.loanPriority);
     onValueChange(`${prefix}.flood_zone`, propertyData.floodZone || '');
+    onValueChange(`${prefix}.fire_zone`, propertyData.fireZone || '');
+    onValueChange(`${prefix}.land_classification`, propertyData.landClassification || '');
+    onValueChange(`${prefix}.pledged_equity`, propertyData.pledgedEquity || '');
     
     onValueChange(`${prefix}.zoning`, propertyData.zoning || '');
     onValueChange(`${prefix}.appraisal_performed_by`, propertyData.performedBy || '');
