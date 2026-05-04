@@ -239,13 +239,13 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.phone}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
-              <PhoneInput value={lien.phone} onValueChange={(val) => onChange('phone', val)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <PhoneInput value={lien.phone} onValueChange={(val) => onChange('phone', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
             </div>
           </DirtyFieldWrapper>
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.fax}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
-              <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
             </div>
           </DirtyFieldWrapper>
 
