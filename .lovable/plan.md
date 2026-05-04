@@ -1,70 +1,63 @@
-# Property Details Consistency, Borrower-Filtered Property Owner, and Copy Borrower's Address (Modal Parity)
+I found why the two shown RE851D fields are not populating:
 
-## Current state (verified)
+1. The template is using indexed document tags such as:
+   - `{{pr_p_delinquHowMany_N}}`
+   - `{{pr_li_sourceOfPayment_N}}`
 
-- **Detail view** — `src/components/deal/PropertyDetailsForm.tsx`
-  - **Property Owner** is a searchable combobox sourced from Participants. The list is derived from keys matching `^(borrower\d*)\.` (i.e. Borrower participant prefixes only, excluding `coborrower*`). Already correct per the requirement.
-  - **Copy Borrower's Address** is wired to the *primary* borrower (`borrower\d+` with `is_primary === 'true'`, fallback `borrower`). On check it copies `street/city/state/zip`; on uncheck it clears them.
-  - Persisted via the standard `onValueChange` → `deal_section_values` path (composite `{prefix}::{field_dictionary_id}` JSONB keys).
+2. The UI fields being used are in CSR / Enter File Data → Property → Liens:
+   - Modal: `src/components/deal/LienModal.tsx`
+     - “60-day + Delinquencies” → `delinquencies60day`
+     - “How Many” → `delinquenciesHowMany`
+     - “Currently Delinquent” → `currentlyDelinquent`
+     - “Will be Paid by this Loan” → `paidByLoan`
+     - “If No, Source of Payment” → `sourceOfPayment`
+   - Detail form: `src/components/deal/LienDetailForm.tsx`
+     - “Number of 60-day in 12 months” → `delinquenciesHowMany`
+     - “If No, Provide Source” → `sourceOfPayment`
+     - plus the related delinquency checkboxes.
 
-- **Modal view** — `src/components/deal/PropertyModal.tsx`
-  - **No Property Owner field** at all (mismatch vs. detail view).
-  - **Copy Borrower's Address** copies on check only — no clear on uncheck (mismatch vs. detail view).
-  - The address it copies comes from `borrowerAddress` prop, which `PropertySectionContent` builds from the *legacy* `borrower.address.street/city/zip` + `borrower.state` keys. Today those keys are populated from the *first* Borrower contact's address only and not from the Participants-resolved primary borrower the detail view uses, so the two views can disagree.
+3. The saved dictionary mappings already exist for these UI fields:
+   - `lien.delinquencies_60day` → `pr_li_delinqu60day`
+   - `lien.delinquencies_how_many` → `pr_li_delinquHowMany`
+   - `lien.currently_delinquent` → `pr_li_currentDelinqu`
+   - `lien.paid_by_loan` → `pr_li_paidByLoan`
+   - `lien.source_of_payment` → `pr_li_sourceOfPayment`
 
-- **Grid view** — `PropertiesTableView` does not display Property Owner; nothing to change there.
+4. The current document generator reads the wrong stored key for the “paid by loan” UI field. It currently looks for `lienN.paid_by_loan`, but the saved/loaded field key resolves from dictionary as `lienN.paidByLoan` because the dictionary key is `pr_li_paidByLoan`.
 
-- **Round-trip** — `PropertySectionContent` extracts properties via `extractPropertiesFromValues` reading `${prefix}.*` and saves back via `handleSaveProperty` writing the same keys. The grid, modal, and detail form already share the same `values` map; what's missing is **Property Owner in the modal/extractor** and **a single source of truth for the borrower address used by Copy Borrower's Address**.
+5. The current generator also only aggregates lien delinquency data when the lien has `lienN.property` populated exactly as `property1`, `property2`, etc. If the lien property association is missing or not normalized, `{{..._N}}` fields remain blank even when the UI fields have values.
 
-## Root causes
+Implementation plan:
 
-1. Modal doesn't include `propertyOwner` → Add Property + view-from-grid round-trips lose the owner. Detail view sets it under `${prefix}.property_owner` (already mapped in `fieldKeyMap.PROPERTY_DETAILS_KEYS.propertyOwner`).
-2. Modal `Copy Borrower's Address` reads a stale, single-borrower source and does not clear on uncheck.
-3. `PropertySectionContent`'s `borrowerAddress` prop wiring is the only way to keep modal/form aligned, but it doesn't resolve the primary Borrower from Participants the same way the detail form does.
+1. Update only `supabase/functions/generate-document/index.ts`.
 
-## Changes (3 files only — no schema, no API, no UI restructure)
+2. In the existing RE851D lien delinquency mapping block, make the value lookups tolerant of both stored/UI key forms, without changing UI, schema, APIs, or template flow:
+   - Read `paidByLoan` from either:
+     - `lienN.paid_by_loan`
+     - `lienN.paidByLoan`
+     - `pr_li_paidByLoan_N` / existing canonical aliases if present
+   - Read `sourceOfPayment` from either:
+     - `lienN.source_of_payment`
+     - `lienN.sourceOfPayment`
+   - Read `delinquenciesHowMany` from either:
+     - `lienN.delinquencies_how_many`
+     - `lienN.delinquenciesHowMany`
+   - Read `delinquencies60day` and `currentlyDelinquent` similarly for both snake_case and camelCase variants.
 
-### 1) `src/components/deal/PropertiesTableView.tsx` (PropertyData type) — add field
+3. Keep the existing conditional behavior but make numeric checks explicit:
+   - Treat “How Many” as populated only when numeric value is greater than 0.
+   - Use `howMany > 0` to derive the 60-day delinquency YES checkbox when the explicit checkbox is not set.
+   - Normalize null/undefined/blank values to empty strings.
 
-Add `propertyOwner?: string` to the `PropertyData` interface so the type round-trips through extractor/modal/save without TS errors. **No table column changes.** No UI change.
+4. Preserve existing per-property indexing logic, but add a safe fallback:
+   - If a lien has `property=propertyN`, continue using that N.
+   - If no property is set and the document has only one property context, map it to property 1 so `{{..._N}}` can populate instead of staying blank.
+   - Do not overwrite valid indexed values from correctly associated liens.
 
-### 2) `src/components/deal/PropertySectionContent.tsx`
+5. Ensure both aliases needed by the screenshots are populated:
+   - `pr_p_delinquHowMany_N` for `{{pr_p_delinquHowMany_N}}`
+   - `pr_li_sourceOfPayment_N` for `{{pr_li_sourceOfPayment_N}}`
 
-- In `extractPropertiesFromValues`, add: `propertyOwner: values[\`${prefix}.property_owner\`] || ''`.
-- In `handleSaveProperty`, add one line: `onValueChange(\`${prefix}.property_owner\`, propertyData.propertyOwner || '')`.
-- Build a memoized `borrowerOptions: string[]` and `primaryBorrowerAddress: { street, city, state, zipCode }` using the same logic as `PropertyDetailsForm`:
-  - Scan `values` for prefixes matching `^(borrower\d*)\.` (excludes `coborrower*`).
-  - For each prefix, compose the display name from `${p}.full_name` or `${p}.first_name + last_name`.
-  - Resolve primary by `${p}.is_primary === 'true'`; fallback to base `borrower` if present.
-  - Read address from `${primary}.address.street|city|zip` and `${primary}.address.state` (fallback `${primary}.state`).
-- Pass both `borrowerOptions` and the resolved `borrowerAddress` to `<PropertyModal />` (replacing the current legacy-key-based borrowerAddress).
+6. Add a very small debug log inside the existing document generator logging path showing which lien UI keys were resolved for RE851D delinquency mapping. This will help confirm payload data is present without changing any user-facing UI.
 
-### 3) `src/components/deal/PropertyModal.tsx`
-
-- Extend `PropertyModalProps` with `borrowerOptions?: string[]`.
-- Render a **Property Owner** searchable combobox in Column 1 (same Popover + Command pattern used in `PropertyDetailsForm`). Bound to `formData.propertyOwner`. If `borrowerOptions` is empty, show "No borrower found." (matches detail view UX).
-- Update `handleFieldChange` for `copyBorrowerAddress`:
-  - On `value === false`: clear `street/city/state/zipCode` to `''`.
-  - On `value === true && !borrowerAddress` (or empty fields): no toast (modal context); just no-op silently to avoid breaking add-flow when participants haven't been entered.
-  - On `value === true && borrowerAddress`: existing copy behavior (already in place).
-- The "Copy Borrower's Address" label and checkbox stay in the same place — no layout change.
-
-## Validation & non-regression
-
-- Persistence path is unchanged (`onValueChange` + `onPersist`). No new tables or RLS work.
-- `propertyOwner` is already a known UI key (`PROPERTY_DETAILS_KEYS.propertyOwner = 'property1.property_owner'`), so it round-trips through the existing dictionary save mechanism with no new field_dictionary entries needed.
-- Grid/Modal/Detail will all read from and write to the same `${prefix}.property_owner` and `${prefix}.{street,city,state,zip}` keys — single source of truth in `values`.
-- View-only/disabled states already cascade through the existing `disabled` prop.
-- No changes to Liens, Insurance, PropertyTax, document generation, or any RLS policy.
-
-## Files touched
-
-- `src/components/deal/PropertyModal.tsx`
-- `src/components/deal/PropertySectionContent.tsx`
-- `src/components/deal/PropertiesTableView.tsx` (type field only)
-
-## Out of scope
-
-- Adding a Property Owner column to the grid (not requested; would change the table UI).
-- Multi-borrower selector in modal beyond the searchable picker (combobox already lets the CSR pick any Borrower; primary is used implicitly for the address copy, matching the detail form).
-- Any field_dictionary, RLS, or schema work.
+No database schema changes, no new tables, no UI layout changes, no API changes, and no document template changes.

@@ -2224,15 +2224,28 @@ async function generateSingleDocument(
           return s === "true" || s === "yes" || s === "1" || s === "on";
         };
 
+        // Helper: read a field accepting multiple key conventions stored by the UI
+        // (snake_case, camelCase) so both LienDetailForm and LienModal saves resolve.
+        const getLienVal = (prefix: string, ...suffixes: string[]): string => {
+          for (const sfx of suffixes) {
+            const v = fieldValues.get(`${prefix}.${sfx}`)?.rawValue;
+            if (v !== undefined && v !== null && String(v).trim() !== "") return String(v);
+          }
+          return "";
+        };
+
         orderedLiens.forEach((prefix, i) => {
           const lienIdx = i + 1;
-          const paidByLoan = truthy(fieldValues.get(`${prefix}.paid_by_loan`)?.rawValue);
-          const howManyRaw = String(fieldValues.get(`${prefix}.delinquencies_how_many`)?.rawValue ?? "").trim();
+          const paidByLoanRaw = getLienVal(prefix, "paid_by_loan", "paidByLoan");
+          const paidByLoan = truthy(paidByLoanRaw);
+          const howManyRaw = getLienVal(prefix, "delinquencies_how_many", "delinquenciesHowMany").trim();
           const howManyNum = parseInt(howManyRaw, 10);
-          const has60 = truthy(fieldValues.get(`${prefix}.delinquencies_60day`)?.rawValue)
+          const has60Raw = getLienVal(prefix, "delinquencies_60day", "delinquencies60day");
+          const has60 = truthy(has60Raw)
             || (Number.isFinite(howManyNum) && howManyNum > 0);
-          const currentDelinq = truthy(fieldValues.get(`${prefix}.currently_delinquent`)?.rawValue);
-          const source = String(fieldValues.get(`${prefix}.source_of_payment`)?.rawValue ?? "").trim();
+          const currentDelinq = truthy(getLienVal(prefix, "currently_delinquent", "currentlyDelinquent"));
+          const source = getLienVal(prefix, "source_of_payment", "sourceOfPayment").trim();
+          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" has60="${has60Raw}" howMany="${howManyRaw}" currentDelinq=${currentDelinq} source="${source}"`);
 
           // Per-lien-index aliases
           const setBool = (k: string, v: boolean) =>
