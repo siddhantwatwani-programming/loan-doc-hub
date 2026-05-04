@@ -2256,6 +2256,11 @@ async function generateSingleDocument(
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
           setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
           setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
+          // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☒ NO)
+          setBool(`pr_li_currentDelinqu_${lienIdx}_yes`, currentDelinq);
+          setBool(`pr_li_currentDelinqu_${lienIdx}_no`, !currentDelinq);
+          setText(`pr_li_currentDelinqu_${lienIdx}_yes_glyph`, currentDelinq ? "☒" : "☐");
+          setText(`pr_li_currentDelinqu_${lienIdx}_no_glyph`, currentDelinq ? "☐" : "☒");
           setText(`pr_li_delinquHowMany_${lienIdx}`,
             Number.isFinite(howManyNum) && howManyNum > 0 ? String(howManyNum) : (howManyRaw || ""),
             "number");
@@ -2291,6 +2296,11 @@ async function generateSingleDocument(
           setBoolP(`pr_li_delinquencyPaidByLoan_${pIdx}`, b.paidByLoan);
           setBoolP(`pr_li_delinqu60day_${pIdx}`, b.delinq60);
           setBoolP(`pr_li_currentDelinqu_${pIdx}`, b.currentDelinq);
+          // Yes/No + glyph aliases per-property index
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes`, { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no`, { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes_glyph`, { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no_glyph`, { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
           // Also fill pr_p_delinquHowMany_N if the property-tax block didn't set it
@@ -2305,6 +2315,10 @@ async function generateSingleDocument(
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_yes", { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_no", { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_yes_glyph", { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_currentDelinqu_no_glyph", { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_delinquHowMany", { rawValue: b.howMany > 0 ? String(b.howMany) : "", dataType: "number" });
             fieldValues.set("pr_li_sourceOfPayment", { rawValue: b.source.join("\n"), dataType: "text" });
           }
@@ -2793,6 +2807,8 @@ async function generateSingleDocument(
           // Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
           "pr_li_delinquencyPaidByLoan_N",
           "pr_li_delinqu60day_N",
+          "pr_li_currentDelinqu_N_yes_glyph", "pr_li_currentDelinqu_N_no_glyph",
+          "pr_li_currentDelinqu_N_yes", "pr_li_currentDelinqu_N_no",
           "pr_li_currentDelinqu_N",
           "pr_li_sourceOfPayment_N",
           "pr_li_delinquHowMany_N",

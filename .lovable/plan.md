@@ -1,63 +1,35 @@
-I found why the two shown RE851D fields are not populating:
+## Problem
 
-1. The template is using indexed document tags such as:
-   - `{{pr_p_delinquHowMany_N}}`
-   - `{{pr_li_sourceOfPayment_N}}`
+In RE851D, the question **"Do any of these payments remain unpaid?"** renders both ☑ YES and ☑ NO. The RE851D template uses paired Yes/No checkbox tags (e.g. `pr_li_currentDelinqu_N_yes` / `pr_li_currentDelinqu_N_no`, plus `_glyph` variants — same pattern as `propertytax_delinquent_N_yes`/`_no` at index.ts:1387 and `pr_p_occupancySt_N_yes`/`_no` at index.ts:1172).
 
-2. The UI fields being used are in CSR / Enter File Data → Property → Liens:
-   - Modal: `src/components/deal/LienModal.tsx`
-     - “60-day + Delinquencies” → `delinquencies60day`
-     - “How Many” → `delinquenciesHowMany`
-     - “Currently Delinquent” → `currentlyDelinquent`
-     - “Will be Paid by this Loan” → `paidByLoan`
-     - “If No, Source of Payment” → `sourceOfPayment`
-   - Detail form: `src/components/deal/LienDetailForm.tsx`
-     - “Number of 60-day in 12 months” → `delinquenciesHowMany`
-     - “If No, Provide Source” → `sourceOfPayment`
-     - plus the related delinquency checkboxes.
+The current generator (`supabase/functions/generate-document/index.ts` lines 2237–2311) only publishes the single boolean `pr_li_currentDelinqu_<N>` (and bare). It never emits the `_yes` / `_no` / `_yes_glyph` / `_no_glyph` aliases. As a result, the template's Yes and No checkbox SDTs are not flipped by the resolver, and both retain their static/default checked state — producing ☑ YES ☑ NO regardless of the CSR value.
 
-3. The saved dictionary mappings already exist for these UI fields:
-   - `lien.delinquencies_60day` → `pr_li_delinqu60day`
-   - `lien.delinquencies_how_many` → `pr_li_delinquHowMany`
-   - `lien.currently_delinquent` → `pr_li_currentDelinqu`
-   - `lien.paid_by_loan` → `pr_li_paidByLoan`
-   - `lien.source_of_payment` → `pr_li_sourceOfPayment`
+## Fix (single, minimal change)
 
-4. The current document generator reads the wrong stored key for the “paid by loan” UI field. It currently looks for `lienN.paid_by_loan`, but the saved/loaded field key resolves from dictionary as `lienN.paidByLoan` because the dictionary key is `pr_li_paidByLoan`.
+In `supabase/functions/generate-document/index.ts`, inside the existing RE851D lien-delinquency block (the same block that currently sets `pr_li_currentDelinqu_*`), additionally publish Yes/No aliases for the `currentDelinq` boolean — mirroring the established pattern used for `propertytax_delinquent` and `pr_p_occupancySt`.
 
-5. The current generator also only aggregates lien delinquency data when the lien has `lienN.property` populated exactly as `property1`, `property2`, etc. If the lien property association is missing or not normalized, `{{..._N}}` fields remain blank even when the UI fields have values.
+For each lien index `lienIdx` (after line 2258) and each property index `pIdx` (after line 2293), and for the bare alias (after line 2307), emit:
 
-Implementation plan:
+```
+pr_li_currentDelinqu_<i>_yes        = "true" if currentDelinq else "false"   (boolean)
+pr_li_currentDelinqu_<i>_no         = "true" if !currentDelinq else "false"  (boolean)
+pr_li_currentDelinqu_<i>_yes_glyph  = "☒" if currentDelinq else "☐"          (text)
+pr_li_currentDelinqu_<i>_no_glyph   = "☐" if currentDelinq else "☒"          (text)
+```
 
-1. Update only `supabase/functions/generate-document/index.ts`.
+Always publish (never conditional on truthiness) so an unchecked CSR value (`false`) explicitly resolves to ☐ YES / ☒ NO and overrides any default-checked SDT in the template.
 
-2. In the existing RE851D lien delinquency mapping block, make the value lookups tolerant of both stored/UI key forms, without changing UI, schema, APIs, or template flow:
-   - Read `paidByLoan` from either:
-     - `lienN.paid_by_loan`
-     - `lienN.paidByLoan`
-     - `pr_li_paidByLoan_N` / existing canonical aliases if present
-   - Read `sourceOfPayment` from either:
-     - `lienN.source_of_payment`
-     - `lienN.sourceOfPayment`
-   - Read `delinquenciesHowMany` from either:
-     - `lienN.delinquencies_how_many`
-     - `lienN.delinquenciesHowMany`
-   - Read `delinquencies60day` and `currentlyDelinquent` similarly for both snake_case and camelCase variants.
+Also add `pr_li_currentDelinqu_N_yes`, `pr_li_currentDelinqu_N_no`, `pr_li_currentDelinqu_N_yes_glyph`, `pr_li_currentDelinqu_N_no_glyph` to the `_N`-family expansion list near line 2796 so the rewrite/resolution layer expands them per property index.
 
-3. Keep the existing conditional behavior but make numeric checks explicit:
-   - Treat “How Many” as populated only when numeric value is greater than 0.
-   - Use `howMany > 0` to derive the 60-day delinquency YES checkbox when the explicit checkbox is not set.
-   - Normalize null/undefined/blank values to empty strings.
+The existing `pr_li_currentDelinqu_<N>` boolean publisher is **unchanged** (kept for backward compatibility with any template variant that uses the single-boolean tag).
 
-4. Preserve existing per-property indexing logic, but add a safe fallback:
-   - If a lien has `property=propertyN`, continue using that N.
-   - If no property is set and the document has only one property context, map it to property 1 so `{{..._N}}` can populate instead of staying blank.
-   - Do not overwrite valid indexed values from correctly associated liens.
+## Out of scope (explicitly NOT changed)
 
-5. Ensure both aliases needed by the screenshots are populated:
-   - `pr_p_delinquHowMany_N` for `{{pr_p_delinquHowMany_N}}`
-   - `pr_li_sourceOfPayment_N` for `{{pr_li_sourceOfPayment_N}}`
+- No UI changes. Source field `pr_li_currentDelinqu_N` (Currently Delinquent checkbox) is unchanged.
+- No schema, no Admin Field Dictionary entries added.
+- No other delinquency fields, no other RE851D blocks, no other templates touched.
+- Existing save/update APIs untouched.
 
-6. Add a very small debug log inside the existing document generator logging path showing which lien UI keys were resolved for RE851D delinquency mapping. This will help confirm payload data is present without changing any user-facing UI.
+## Files
 
-No database schema changes, no new tables, no UI layout changes, no API changes, and no document template changes.
+- `supabase/functions/generate-document/index.ts` — additive lines inside the existing RE851D lien-delinquency block (~lines 2237–2311) and one additive entry in the `_N` expansion list (~line 2796).
