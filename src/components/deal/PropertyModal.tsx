@@ -251,6 +251,46 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineSelect('informationProvidedBy', 'Information Provided By', INFO_PROVIDED_BY_OPTIONS, 'Select...')}
                 {renderCheckboxField('primaryCollateral', 'Primary Property')}
                 {renderInlineField('description', 'Description (Nickname)')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Property Owner</Label>
+                  <Popover open={ownerPickerOpen} onOpenChange={setOwnerPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        className={cn('h-7 flex-1 justify-between text-xs font-normal px-2', !formData.propertyOwner && 'text-muted-foreground')}
+                      >
+                        <span className="truncate">{formData.propertyOwner || 'Search borrower...'}</span>
+                        <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 z-[9999] w-[var(--radix-popover-trigger-width)]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search borrower..." className="h-8 text-xs" />
+                        <CommandList>
+                          <CommandEmpty className="py-2 px-2 text-xs text-muted-foreground">No borrower found.</CommandEmpty>
+                          <CommandGroup>
+                            {borrowerOptions.map((name) => {
+                              const selected = formData.propertyOwner === name;
+                              return (
+                                <CommandItem
+                                  key={name}
+                                  value={name}
+                                  onSelect={() => { handleFieldChange('propertyOwner', name); setOwnerPickerOpen(false); }}
+                                  className="text-xs"
+                                >
+                                  <Check className={cn('mr-2 h-3.5 w-3.5', selected ? 'opacity-100' : 'opacity-0')} />
+                                  {name}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 <div className="pt-1">
                   <span className="text-xs font-medium text-primary">Address</span>
