@@ -230,7 +230,57 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
   const [selectedTaxPrefix, setSelectedTaxPrefix] = useState<string | null>(null);
   const PAGE_SIZE = 5;
   const { dirtyFieldKeys } = useDirtyFields();
-  
+  const { id: routeDealId } = useParams<{ id: string }>();
+
+  // Borrower participants for Property Owner picker + Copy Borrower's Address.
+  // Sourced directly from deal_participants (role='borrower') joined with contacts.
+  const [borrowerParticipants, setBorrowerParticipants] = useState<Array<{
+    name: string;
+    street: string;
+    city: string;
+    state: string;
+    zipCode: string;
+  }>>([]);
+
+  useEffect(() => {
+    if (!routeDealId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: parts } = await supabase
+          .from('deal_participants')
+          .select('id, name, contact_id, role')
+          .eq('deal_id', routeDealId)
+          .eq('role', 'borrower');
+        const rows = parts || [];
+        const contactIds = rows.map(r => r.contact_id).filter((x): x is string => !!x);
+        let contactMap: Record<string, any> = {};
+        if (contactIds.length) {
+          const { data: contacts } = await supabase
+            .from('contacts')
+            .select('id, full_name, contact_data')
+            .in('id', contactIds);
+          for (const c of contacts || []) contactMap[c.id] = c;
+        }
+        const list = rows.map(r => {
+          const c = r.contact_id ? contactMap[r.contact_id] : null;
+          const cd = (c?.contact_data || {}) as Record<string, string>;
+          return {
+            name: (c?.full_name || r.name || '').trim(),
+            street: cd['address.street'] || '',
+            city: cd['address.city'] || '',
+            state: cd['address.state'] || '',
+            zipCode: cd['address.zip'] || '',
+          };
+        }).filter(x => x.name);
+        if (!cancelled) setBorrowerParticipants(list);
+      } catch (e) {
+        console.error('Failed to load borrower participants', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [routeDealId]);
+
   // Check if we're in detail view
   const isDetailView = ['property_details', 'legal_description'].includes(activeSubSection);
   
