@@ -3301,9 +3301,11 @@ async function generateSingleDocument(
           // whitelist; nothing else in the document is touched.
           if (regions.props.length > 0) {
             const encFields = [
-              "priority", "interestRate", "beneficiary",
+              "priority", "interestRate", "interest_rate", "intRate",
+              "beneficiary", "lienHolder", "holder",
               "originalAmount", "principalBalance",
-              "monthlyPayment", "maturityDate", "balloonAmount",
+              "monthlyPayment", "maturityDate", "maturity_date", "matDate",
+              "balloonAmount",
               "balloonYes", "balloonNo", "balloonUnknown",
             ];
             const encTagRe = new RegExp(
