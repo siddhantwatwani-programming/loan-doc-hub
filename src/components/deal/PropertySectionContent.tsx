@@ -327,8 +327,12 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     });
   }, [allProperties]);
 
-  // Borrower options + primary borrower address (mirrors PropertyDetailsForm logic)
+  // Borrower options + primary borrower address — sourced from deal_participants
+  // (Participant Type = 'Borrower'). Falls back to in-form values if no participants.
   const borrowerOptions = useMemo(() => {
+    if (borrowerParticipants.length > 0) {
+      return Array.from(new Set(borrowerParticipants.map(b => b.name).filter(Boolean)));
+    }
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
       const m = key.match(/^(borrower\d*)\./);
@@ -343,9 +347,18 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       if (composed && !names.includes(composed)) names.push(composed);
     });
     return names;
-  }, [values]);
+  }, [values, borrowerParticipants]);
 
+  // Address for "Copy Borrower's Address": prefer the selected Property Owner
+  // (looked up among Borrower participants); fall back to the first borrower
+  // participant; final fallback is the in-form primary borrower address.
+  const selectedPropertyOwner = values[`${selectedPropertyPrefix}.property_owner`] || '';
   const primaryBorrowerAddress = useMemo(() => {
+    if (borrowerParticipants.length > 0) {
+      const match = borrowerParticipants.find(b => b.name === selectedPropertyOwner)
+        || borrowerParticipants[0];
+      return { street: match.street, city: match.city, state: match.state, zipCode: match.zipCode };
+    }
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
       const m = key.match(/^(borrower\d+)\./);
@@ -366,7 +379,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
       state: values[`${primary}.address.state`] || values[`${primary}.state`] || '',
       zipCode: values[`${primary}.address.zip`] || '',
     };
-  }, [values]);
+  }, [values, borrowerParticipants, selectedPropertyOwner]);
 
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
