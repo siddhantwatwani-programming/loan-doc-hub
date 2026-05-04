@@ -221,11 +221,13 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.property}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Related Property</Label>
-              <Select value={lien.property} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
-                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Related Property <span className="text-destructive">*</span></Label>
+              <Select value={lien.property && lien.property !== 'unassigned' ? lien.property : undefined} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
+                <SelectTrigger className={`h-7 text-sm flex-1 ${(!lien.property || lien.property === 'unassigned') ? 'border-destructive' : ''}`}><SelectValue placeholder="Select property" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-50">
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
+                  {propertyOptions.length === 0 && (
+                    <div className="px-2 py-1.5 text-xs text-muted-foreground">No properties available</div>
+                  )}
                   {propertyOptions.map(opt => (
                     <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
                   ))}
