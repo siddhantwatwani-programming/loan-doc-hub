@@ -55,6 +55,23 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
   const getBoolValue = (field: string): boolean => values[`${PREFIX}.${field}`] === 'true';
   const handleChange = (field: string, value: string) => onValueChange(`${PREFIX}.${field}`, value);
 
+  // Auto-derive 'delinquent' boolean from amount fields for downstream consumers.
+  useEffect(() => {
+    const parseAmt = (s: string) => {
+      const n = parseFloat(String(s || '').replace(/[^0-9.\-]/g, ''));
+      return isNaN(n) ? 0 : n;
+    };
+    const derived =
+      parseAmt(values[`${PREFIX}.delinquent_amount`] || '') > 0 ||
+      parseAmt(values[`${PREFIX}.bring_current_amount`] || '') > 0;
+    const current = values[`${PREFIX}.delinquent`] === 'true';
+    if (derived !== current) {
+      onValueChange(`${PREFIX}.delinquent`, derived ? 'true' : 'false');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values[`${PREFIX}.delinquent_amount`], values[`${PREFIX}.bring_current_amount`]]);
+
+
   const [datePickerStates, setDatePickerStates] = useState<Record<string, boolean>>({});
 
   const safeParseDateStr = (val: string): Date | undefined => {
