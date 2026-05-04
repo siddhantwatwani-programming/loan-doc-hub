@@ -278,10 +278,17 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const handleSaveLien = useCallback(async (lienData: LienData) => {
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
 
+    // Bind the lien to the current property when adding a new lien and the
+    // user did not pick one explicitly. This is what isolates liens per property.
+    const boundLienData: LienData = {
+      ...lienData,
+      property: lienData.property || currentPropertyId || lienData.property,
+    };
+
     flushSync(() => {
       Object.entries(LIEN_FIELD_MAP).forEach(([lienKey, dbField]) => {
         if (lienKey === 'id') return;
-        const val = (lienData as any)[lienKey] || '';
+        const val = (boundLienData as any)[lienKey] || '';
         const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
         if (val !== defaultVal || editingLien) {
           onValueChange(`${prefix}.${dbField}`, val);
@@ -295,7 +302,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       setModalOpen(false);
     }
     return success;
-  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix]);
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
