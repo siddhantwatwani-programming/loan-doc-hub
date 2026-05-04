@@ -1177,7 +1177,8 @@ async function generateSingleDocument(
             fieldValues.get(`${prefix}.appraisal_occupancy`)?.rawValue ||
             ""
           ).trim().toLowerCase();
-          const isYes = occRaw === "owner occupied";
+          const occRawNorm = occRaw === "n/a" ? "na" : occRaw;
+          const isYes = occRawNorm === "owner occupied";
           const isNo = !isYes;
           fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
@@ -3471,6 +3472,69 @@ async function generateSingleDocument(
               regionRewriteCounts[`PROP#${pIdx}`] += 2;
               debugLog(
                 `[generate-document] RE851D remain-unpaid YES/NO anchored: PROP#${pIdx} isYes=${isYes}`
+              );
+            }
+          }
+
+          // ── RE851D Owner-Occupied YES/NO safety pass ──
+          // Anchor the next two glyph runs that follow an "Owner Occupied"
+          // question label (containing both Yes and No labels in window) to the
+          // per-property pr_p_occupanc_K string. "Owner Occupied" => YES ☑/NO ☐;
+          // anything else (Tenant / Other, Vacant, NA, empty) => YES ☐/NO ☑.
+          if (regions.props.length > 0) {
+            const ownerOccRe = /Owner[\s\u00A0\-]?Occupied/gi;
+            const glyphRunRe2 = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            const stripTags = (s: string) => s.replace(/<[^>]+>/g, "");
+            let om: RegExpExecArray | null;
+            while ((om = ownerOccRe.exec(xml)) !== null) {
+              const qStart = om.index;
+              let pIdx: number | null = null;
+              for (const p of regions.props) {
+                if (qStart >= p.range[0] && qStart < p.range[1]) {
+                  pIdx = p.k;
+                  break;
+                }
+              }
+              if (pIdx === null) continue;
+              const windowEnd = Math.min(xml.length, qStart + 1024);
+              const windowText = stripTags(xml.slice(qStart, windowEnd));
+              // Require both Yes and No labels in window to filter out property-type lists.
+              if (!/\bYes\b/i.test(windowText) || !/\bNo\b/i.test(windowText)) continue;
+              glyphRunRe2.lastIndex = qStart;
+              const glyphMatches: RegExpExecArray[] = [];
+              let gm: RegExpExecArray | null;
+              while ((gm = glyphRunRe2.exec(xml)) !== null && gm.index < windowEnd) {
+                glyphMatches.push(gm);
+                if (glyphMatches.length >= 2) break;
+              }
+              if (glyphMatches.length < 2) continue;
+              const overlaps = (s: number, e: number) =>
+                rewrites.some((r) => s < r.end && e > r.start) ||
+                consumed.some(([cs, ce]) => s < ce && e > cs);
+              const yesM = glyphMatches[0];
+              const noM = glyphMatches[1];
+              const yesStart = yesM.index;
+              const yesEnd = yesStart + yesM[0].length;
+              const noStart = noM.index;
+              const noEnd = noStart + noM[0].length;
+              if (overlaps(yesStart, yesEnd) || overlaps(noStart, noEnd)) continue;
+              const occVal = String(
+                fieldValues.get(`pr_p_occupanc_${pIdx}`)?.rawValue ??
+                  (pIdx === 1 ? fieldValues.get("pr_p_occupanc")?.rawValue : "") ??
+                  "",
+              ).trim().toLowerCase();
+              const isOwner = occVal === "owner occupied";
+              const yesGlyph = isOwner ? "☑" : "☐";
+              const noGlyph = isOwner ? "☐" : "☑";
+              rewrites.push({ start: yesStart, end: yesEnd, replacement: `${yesM[1]}${yesGlyph}${yesM[3]}` });
+              rewrites.push({ start: noStart, end: noEnd, replacement: `${noM[1]}${noGlyph}${noM[3]}` });
+              consumed.push([yesStart, yesEnd]);
+              consumed.push([noStart, noEnd]);
+              totalRewrites += 2;
+              if (!regionRewriteCounts[`PROP#${pIdx}`]) regionRewriteCounts[`PROP#${pIdx}`] = 0;
+              regionRewriteCounts[`PROP#${pIdx}`] += 2;
+              debugLog(
+                `[generate-document] RE851D owner-occupied YES/NO anchored: PROP#${pIdx} isOwner=${isOwner}`
               );
             }
           }

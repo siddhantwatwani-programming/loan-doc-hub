@@ -1,73 +1,54 @@
 ## Problem
 
-In RE851D, the **Encumbrance(s) Remaining** section renders correctly for Original Amount, Monthly Payment, and Approximate Principal Balance, but **Interest Rate, Beneficiary, and Maturity Date** print blank — even though the publisher already emits per-property values for them.
+Two related issues:
 
-## Root Cause
+1. CSR's "Property Details" Occupancy dropdown still uses the old 3-value list `['Owner Occupied', 'Vacant', 'N/A']`, which doesn't match the spec's 4-value list and saves `"N/A"` instead of `"NA"`.
+2. The RE851D template Owner-Occupied YES/NO checkboxes are sometimes wrong because the template authored `{{#i(eq …)}}` (typo) and/or compares to `"Owner"` instead of `"Owner Occupied"`. The data layer already publishes `pr_p_occupanc_N` correctly, but a typo'd template token won't render.
 
-The publisher in `supabase/functions/generate-document/index.ts` (lines 2410-2418) emits these keys per property and slot:
+## Fix
 
-- `pr_li_rem_interestRate_<N>_<S>` (and `_N`)
-- `pr_li_rem_beneficiary_<N>_<S>` (and `_N`)
-- `pr_li_rem_maturityDate_<N>_<S>` (and `_N`)
+### 1. UI dropdown — `src/components/deal/PropertyDetailsForm.tsx` (line 45)
 
-The bare-token rewrite (lines 3288-3330) recognises these exact camelCase names. The fields that DO render share the same publisher/rewrite path, which means the data layer is fine.
-
-The authored RE851D template almost certainly writes the three failing tokens under alternate names that the whitelist does not match — most likely:
-
-- `pr_li_rem_interest_rate` / `pr_li_rem_intRate`
-- `pr_li_rem_lienHolder` / `pr_li_rem_holder`
-- `pr_li_rem_maturity_date` / `pr_li_rem_matDate`
-
-(Same for `pr_li_ant_*`.) Because they aren't in `encFields`, the bare-token rewrite skips them and they print verbatim/blank.
-
-## Fix (single, minimal, scoped change)
-
-`supabase/functions/generate-document/index.ts`:
-
-### A. Publish alias keys alongside the existing ones (~line 2421)
-
-Inside the existing field-emit loop in `publishSection`, additionally emit the same value under each well-known alias for the three problem fields. Pseudocode:
+Change to the 4-value canonical list to match `PropertyModal.tsx`:
 
 ```ts
-const aliases: Record<string, string[]> = {
-  interestRate: ["interest_rate", "intRate"],
-  beneficiary: ["lienHolder", "holder"],
-  maturityDate: ["maturity_date", "matDate"],
-};
-// after the existing setVal loop, for each [f, v, dt]:
-for (const altName of aliases[f] ?? []) {
-  setVal(`${tagPrefix}_${altName}_${pIdx}_${s}`, v, dt);
-  if (s === 1) setVal(`${tagPrefix}_${altName}_${pIdx}`, v, dt);
-  if (pIdx === 1 && s === 1) setVal(`${tagPrefix}_${altName}`, v, dt);
-}
+const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Tenant / Other', 'Vacant', 'NA'];
 ```
 
-### B. Extend `encFields` in the bare-token rewrite (line 3296)
+No other UI changes.
 
-Add the alias names to `encFields` so any bare occurrence inside a PROPERTY #K block is rewritten:
+### 2. Backend safety pass — `supabase/functions/generate-document/index.ts`
+
+Inside the existing RE851D-gated block (the same area where `Do any of these payments remain unpaid?` and Amortization safety passes already live), add a per-property safety pass for the Owner Occupied question:
+
+- For each PROPERTY #K region detected by the existing `regions.props`, find the literal anchor text **"Owner Occupied"** (the question label in the RE851D form).
+- Walk forward in a bounded window (~4 KB) to the next two `<w:r>` runs that each contain exactly one ☐/☑/☒ glyph.
+- Read `fieldValues.get('pr_p_occupanc_' + K)?.rawValue`. If it equals `"Owner Occupied"` (case-insensitive), set first run = ☑ / second = ☐. Otherwise first = ☐ / second = ☑.
+- Queue rewrites through the existing `rewrites[]` mechanism.
+- Increment a debug counter and log per occurrence.
+
+Also normalize a legacy `"N/A"` value to `"NA"` so older property records map to NO without UI re-save:
 
 ```ts
-const encFields = [
-  "priority", "interestRate", "interest_rate", "intRate",
-  "beneficiary", "lienHolder", "holder",
-  "originalAmount", "principalBalance",
-  "monthlyPayment",
-  "maturityDate", "maturity_date", "matDate",
-  "balloonAmount",
-  "balloonYes", "balloonNo", "balloonUnknown",
-];
+// in the existing per-property occupancy block (~line 1179)
+const occRawNorm = occRaw === "n/a" ? "na" : occRaw;
+const isYes = occRawNorm === "owner occupied";
 ```
+
+This guarantees exactly one of YES / NO is checked per property regardless of whether the template tag used a typo (`{{#i(eq …)}}`) or compared to `"Owner"`.
 
 ### Strict scoping
 
-- All edits live inside the existing RE851D-gated blocks (`if (/851d/i.test(template.name || ""))` and the encumbrance publisher region that already runs only for RE851D).
-- No changes to UI, schema, dictionary, or other templates.
-- No removal of any current alias; only additions.
+- All backend edits live inside the existing `if (/851d/i.test(template.name || ""))` block.
+- No schema, dictionary, or other template changes.
+- The dropdown change is the only UI edit; existing saved values continue to work.
 
 ## Files to change
 
-- `supabase/functions/generate-document/index.ts` — two small additions described above.
+- `src/components/deal/PropertyDetailsForm.tsx` — line 45 dropdown values.
+- `supabase/functions/generate-document/index.ts` — `N/A` → `NA` normalization in the existing occupancy block, plus a new per-property safety pass for the Owner Occupied YES/NO glyph runs.
 
 ## Expected outcome
 
-For every property in the Encumbrance(s) Remaining and Encumbrance(s) Anticipated sections of RE851D, Interest Rate, Beneficiary, and Maturity Date now resolve regardless of which token name the authored template uses — same behavior as the already-working Original Amount / Monthly Payment / Principal Balance cells.
+- CSR Occupancy dropdown lists exactly: Owner Occupied / Tenant / Other / Vacant / NA.
+- RE851D Owner Occupied YES is checked iff the property's occupancy is "Owner Occupied"; NO is checked otherwise. Never both. Works for every property index.
