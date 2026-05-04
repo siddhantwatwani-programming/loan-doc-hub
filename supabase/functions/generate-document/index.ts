@@ -2297,6 +2297,94 @@ async function generateSingleDocument(
           }
         }
         debugLog(`[generate-document] RE851D lien delinquency mapping published for ${orderedLiens.length} liens / ${Object.keys(perProp).length} properties`);
+
+        // ── RE851D Encumbrance Remaining / Anticipated per-property + per-slot mapping ──
+        // Each property has two sections: REMAINING (anticipated !== 'true') and
+        // ANTICIPATED (anticipated === 'true'). Within each section, lien rows are
+        // emitted per-slot (_S = 1..n in lien insertion order within that property).
+        // Tag conventions: pr_li_rem_<field>_<N>_<S>  and  pr_li_ant_<field>_<N>_<S>
+        // For backward compat we also emit unsuffixed _N (slot 1) and bare key for N=1,S=1.
+        {
+          const truthy2 = (v: unknown) => {
+            const s = String(v ?? "").trim().toLowerCase();
+            return s === "true" || s === "yes" || s === "1" || s === "on";
+          };
+
+          // Group liens by property index, preserving insertion order, split by anticipated flag
+          type LienRow = { prefix: string };
+          const perPropRem: Record<number, LienRow[]> = {};
+          const perPropAnt: Record<number, LienRow[]> = {};
+
+          orderedLiens.forEach((prefix) => {
+            const propRaw = String(fieldValues.get(`${prefix}.property`)?.rawValue ?? "").trim();
+            const pm = propRaw.match(/^property(\d+)$/);
+            if (!pm) return;
+            const pIdx = parseInt(pm[1], 10);
+            const isAnt = truthy2(fieldValues.get(`${prefix}.anticipated`)?.rawValue);
+            const bucket = isAnt ? perPropAnt : perPropRem;
+            if (!bucket[pIdx]) bucket[pIdx] = [];
+            bucket[pIdx].push({ prefix });
+          });
+
+          const setVal = (k: string, v: string, dt: string) =>
+            fieldValues.set(k, { rawValue: v, dataType: dt });
+          const setBoolV = (k: string, v: boolean) =>
+            fieldValues.set(k, { rawValue: v ? "true" : "", dataType: "boolean" });
+
+          const publishSection = (
+            tagPrefix: "pr_li_rem" | "pr_li_ant",
+            buckets: Record<number, LienRow[]>,
+          ) => {
+            for (const [pIdxStr, rows] of Object.entries(buckets)) {
+              const pIdx = parseInt(pIdxStr, 10);
+              rows.forEach((row, sIdx0) => {
+                const s = sIdx0 + 1;
+                const lp = row.prefix;
+                const get = (f: string) => String(fieldValues.get(`${lp}.${f}`)?.rawValue ?? "").trim();
+                const balloon = get("balloon").toLowerCase();
+                const isYes = balloon === "true" || balloon === "yes";
+                const isNo = balloon === "false" || balloon === "no";
+                const isUnknown = !isYes && !isNo;
+
+                const fields: Array<[string, string, string]> = [
+                  ["priority", get("lien_priority_now"), "text"],
+                  ["interestRate", get("interest_rate"), "percent"],
+                  ["beneficiary", get("holder"), "text"],
+                  ["originalAmount", get("original_balance"), "currency"],
+                  ["principalBalance", get("current_balance"), "currency"],
+                  ["monthlyPayment", get("regular_payment"), "currency"],
+                  ["maturityDate", get("maturity_date"), "date"],
+                  ["balloonAmount", get("balloon_amount"), "currency"],
+                ];
+
+                for (const [f, v, dt] of fields) {
+                  setVal(`${tagPrefix}_${f}_${pIdx}_${s}`, v, dt);
+                  if (s === 1) setVal(`${tagPrefix}_${f}_${pIdx}`, v, dt);
+                  if (pIdx === 1 && s === 1) setVal(`${tagPrefix}_${f}`, v, dt);
+                }
+
+                setBoolV(`${tagPrefix}_balloonYes_${pIdx}_${s}`, isYes);
+                setBoolV(`${tagPrefix}_balloonNo_${pIdx}_${s}`, isNo);
+                setBoolV(`${tagPrefix}_balloonUnknown_${pIdx}_${s}`, isUnknown);
+                if (s === 1) {
+                  setBoolV(`${tagPrefix}_balloonYes_${pIdx}`, isYes);
+                  setBoolV(`${tagPrefix}_balloonNo_${pIdx}`, isNo);
+                  setBoolV(`${tagPrefix}_balloonUnknown_${pIdx}`, isUnknown);
+                }
+                if (pIdx === 1 && s === 1) {
+                  setBoolV(`${tagPrefix}_balloonYes`, isYes);
+                  setBoolV(`${tagPrefix}_balloonNo`, isNo);
+                  setBoolV(`${tagPrefix}_balloonUnknown`, isUnknown);
+                }
+              });
+            }
+          };
+
+          publishSection("pr_li_rem", perPropRem);
+          publishSection("pr_li_ant", perPropAnt);
+
+          debugLog(`[generate-document] RE851D encumbrance mapping: rem props=${Object.keys(perPropRem).length}, ant props=${Object.keys(perPropAnt).length}`);
+        }
       }
 
       // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
