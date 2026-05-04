@@ -580,6 +580,7 @@ export const PROPERTY_DETAILS_KEYS = {
   protectiveEquity: 'property1.protective_equity',
   cltv: 'property1.cltv',
   informationProvidedBy: 'property1.info_provided_by',
+  propertyOwner: 'property1.property_owner',
 } as const;
 
 export const PROPERTY_LEGAL_KEYS = {

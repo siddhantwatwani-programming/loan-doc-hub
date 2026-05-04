@@ -16,8 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { FieldDefinition } from '@/hooks/useDealFields';
@@ -134,6 +135,27 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     }
     return null;
   }, [values]);
+
+  // Build a deduplicated, ordered list of borrower full names for the
+  // searchable Property Owner picker. Includes both numbered (borrower1.*)
+  // and base (borrower.*) records, plus any co-borrower entries.
+  const borrowerOptions = React.useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d*|coborrower\d*)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    const names: string[] = [];
+    Array.from(prefixes).sort().forEach(p => {
+      const full = (values[`${p}.full_name`] || '').trim();
+      const first = (values[`${p}.first_name`] || '').trim();
+      const last = (values[`${p}.last_name`] || '').trim();
+      const composed = full || [first, last].filter(Boolean).join(' ').trim();
+      if (composed && !names.includes(composed)) names.push(composed);
+    });
+    return names;
+  }, [values]);
+  const [ownerPickerOpen, setOwnerPickerOpen] = React.useState(false);
 
   const borrowerStreet = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.street`] || '') : '';
   const borrowerCity = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.city`] || '') : '';
@@ -283,6 +305,59 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderInlineSelect(FIELD_KEYS.informationProvidedBy, 'Information Provided By', INFO_PROVIDED_BY_OPTIONS, 'Select...')}
           {renderCheckboxField(FIELD_KEYS.primaryCollateral, 'Primary Property')}
           {renderInlineField(FIELD_KEYS.description, 'Description (Nickname)')}
+          <DirtyFieldWrapper fieldKey={FIELD_KEYS.propertyOwner}>
+            <div className="flex items-center gap-2">
+              <Label className="w-[110px] shrink-0 text-xs text-foreground">Property Owner</Label>
+              <Popover open={ownerPickerOpen} onOpenChange={setOwnerPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    disabled={disabled}
+                    className={cn(
+                      'h-7 flex-1 justify-between text-xs font-normal px-2',
+                      !getFieldValue(FIELD_KEYS.propertyOwner) && 'text-muted-foreground'
+                    )}
+                  >
+                    <span className="truncate">
+                      {getFieldValue(FIELD_KEYS.propertyOwner) || 'Search borrower...'}
+                    </span>
+                    <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="p-0 z-[9999] w-[var(--radix-popover-trigger-width)]" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search borrower or type a name..." className="h-8 text-xs" />
+                    <CommandList>
+                      <CommandEmpty className="py-2 px-2 text-xs text-muted-foreground">
+                        No borrower found.
+                      </CommandEmpty>
+                      <CommandGroup>
+                        {borrowerOptions.map((name) => {
+                          const selected = getFieldValue(FIELD_KEYS.propertyOwner) === name;
+                          return (
+                            <CommandItem
+                              key={name}
+                              value={name}
+                              onSelect={() => {
+                                onValueChange(FIELD_KEYS.propertyOwner, name);
+                                setOwnerPickerOpen(false);
+                              }}
+                              className="text-xs"
+                            >
+                              <Check className={cn('mr-2 h-3.5 w-3.5', selected ? 'opacity-100' : 'opacity-0')} />
+                              {name}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </DirtyFieldWrapper>
 
           <div className="pt-1">
             <span className="text-xs font-medium text-primary">Address</span>
