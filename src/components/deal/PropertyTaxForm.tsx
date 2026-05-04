@@ -35,12 +35,13 @@ interface PropertyTaxFormProps {
 }
 
 const FREQUENCY_OPTIONS = [
-  'Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly',
-  'Weekly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly',
+  'Once', 'Weekly', 'Bi-Weekly', 'Monthly', 'Bi-Monthly',
+  'Semi-Monthly', 'Semi-Yearly', 'Yearly',
 ];
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
-const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
+const SOURCE_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Escrow', 'Public Record'];
+const IMPOUNDED_OPTIONS = ['NA', 'Active', 'On Hold', 'Cancelled'];
 const TAX_CONFIDENCE_OPTIONS = ['Actual', 'Estimated'];
 
 const PREFIX = 'propertytax1';
@@ -183,7 +184,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.tax_confidence`}>
-              {renderDropdownField('tax_confidence', 'Tax Confidence', TAX_CONFIDENCE_OPTIONS)}
+              {renderDropdownField('tax_confidence', 'Confidence', TAX_CONFIDENCE_OPTIONS)}
             </DirtyFieldWrapper>
 
 
@@ -219,11 +220,18 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.escrow_impounds`}>
-              {renderDropdownField('escrow_impounds', 'Escrow Impounds', SOURCE_OPTIONS)}
+              {renderDropdownField('escrow_impounds', 'Impounded', IMPOUNDED_OPTIONS)}
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.pass_through`}>
-              {renderDropdownField('pass_through', 'Pass Through', SOURCE_OPTIONS)}
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={getBoolValue('pass_through')}
+                  onCheckedChange={(checked) => handleChange('pass_through', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap">Pass Through</Label>
+              </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.source_of_information`}>

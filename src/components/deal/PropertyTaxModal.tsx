@@ -32,13 +32,15 @@ interface PropertyTaxModalProps {
 }
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
-const FREQUENCY_OPTIONS = ['Once Only', 'Monthly', 'Quarterly', 'Bi-Monthly', 'Bi-Weekly', 'Weekly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly'];
-const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
+const FREQUENCY_OPTIONS = ['Once', 'Weekly', 'Bi-Weekly', 'Monthly', 'Bi-Monthly', 'Semi-Monthly', 'Semi-Yearly', 'Yearly'];
+const SOURCE_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Escrow', 'Public Record'];
+const IMPOUNDED_OPTIONS = ['NA', 'Active', 'On Hold', 'Cancelled'];
+const TAX_CONFIDENCE_OPTIONS = ['Actual', 'Estimated'];
 
 const getDefaultTax = (): PropertyTaxData => ({
   id: '', property: '', authority: '', address: '', type: '', apn: '', memo: '',
   annualPayment: '', amount: '', nextDue: '', frequency: '',
-  escrowImpounds: '', passThrough: '', sourceOfInformation: '',
+  escrowImpounds: '', passThrough: '', sourceOfInformation: '', taxConfidence: '',
   active: false, lastVerified: '', lenderNotified: '',
   current: false, delinquent: false, delinquentAmount: '',
   borrowerNotified: false, borrowerNotifiedDate: '', lenderNotifiedDate: '',
@@ -163,14 +165,24 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
 
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
 
+              {renderDropdownField('tax_confidence' as keyof PropertyTaxData, 'Confidence', TAX_CONFIDENCE_OPTIONS)}
+
               {renderCurrencyField('annualPayment', 'Annual Payment (est.)')}
               {renderCurrencyField('amount', 'Amount')}
               {renderDateField('nextDue', 'Next Due')}
 
               {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
 
-              {renderDropdownField('escrowImpounds', 'Escrow Impounds', SOURCE_OPTIONS)}
-              {renderDropdownField('passThrough', 'Pass Through', SOURCE_OPTIONS)}
+              {renderDropdownField('escrowImpounds', 'Impounded', IMPOUNDED_OPTIONS)}
+
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  checked={(formData as any).passThrough === true || (formData as any).passThrough === 'true'}
+                  onCheckedChange={(checked) => handleChange('passThrough' as keyof PropertyTaxData, checked === true)}
+                />
+                <Label className="text-xs text-foreground">Pass Through</Label>
+              </div>
+
               {renderDropdownField('sourceOfInformation', 'Source of Information', SOURCE_OPTIONS)}
             </div>
 
