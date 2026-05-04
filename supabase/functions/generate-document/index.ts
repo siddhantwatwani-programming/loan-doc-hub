@@ -3126,7 +3126,19 @@ async function generateSingleDocument(
             // (preserves previous behavior — partial rewrites are still better
             // than failing the whole document).
           }
-          // Re-check after normalization in case it stripped all `_N` markers.
+          // Normalize parenthesized index syntax used by some authored RE851D
+          // templates: pr_li_(rem|ant)_<field>_(N)_(S) -> _N_S, _(N) -> _N.
+          // Strictly scoped to encumbrance families so other prose with
+          // literal parens is never touched.
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\(N\)_\(S\)/g,
+            "$1_N_S",
+          );
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\(N\)/g,
+            "$1_N",
+          );
+
           if (!xml.includes("_N")) {
             out[filename] = encoder.encode(xml);
             continue;
