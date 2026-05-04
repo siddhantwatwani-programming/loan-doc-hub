@@ -942,9 +942,18 @@ async function generateSingleDocument(
         if (appraiseV?.rawValue && !fieldValues.has(`pr_p_appraiseValue_${idx}`)) {
           fieldValues.set(`pr_p_appraiseValue_${idx}`, { rawValue: appraiseV.rawValue, dataType: appraiseV.dataType || "currency" });
         }
-        const ownerV = fieldValues.get(`${prefix}.owner`) || fieldValues.get(`${prefix}.vesting`);
-        if (ownerV?.rawValue && !fieldValues.has(`pr_p_owner_${idx}`)) {
-          fieldValues.set(`pr_p_owner_${idx}`, { rawValue: ownerV.rawValue, dataType: ownerV.dataType || "text" });
+        // Property Owner: UI saves under property{N}.property_owner (FIELD_KEYS.propertyOwner).
+        // Also accept legacy `.owner`/`.vesting`. Publish pr_p_owner_N (legacy) and
+        // pr_p_ownerName_N (RE851D PROPERTY OWNER section) per-index, no cross-bleed.
+        const ownerV =
+          fieldValues.get(`${prefix}.property_owner`) ||
+          fieldValues.get(`${prefix}.owner`) ||
+          fieldValues.get(`${prefix}.vesting`);
+        if (ownerV?.rawValue) {
+          if (!fieldValues.has(`pr_p_owner_${idx}`)) {
+            fieldValues.set(`pr_p_owner_${idx}`, { rawValue: ownerV.rawValue, dataType: ownerV.dataType || "text" });
+          }
+          fieldValues.set(`pr_p_ownerName_${idx}`, { rawValue: ownerV.rawValue, dataType: "text" });
         }
 
         // Computed: per-property total senior encumbrances.
