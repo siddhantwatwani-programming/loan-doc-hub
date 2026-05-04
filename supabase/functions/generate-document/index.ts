@@ -942,9 +942,18 @@ async function generateSingleDocument(
         if (appraiseV?.rawValue && !fieldValues.has(`pr_p_appraiseValue_${idx}`)) {
           fieldValues.set(`pr_p_appraiseValue_${idx}`, { rawValue: appraiseV.rawValue, dataType: appraiseV.dataType || "currency" });
         }
-        const ownerV = fieldValues.get(`${prefix}.owner`) || fieldValues.get(`${prefix}.vesting`);
-        if (ownerV?.rawValue && !fieldValues.has(`pr_p_owner_${idx}`)) {
-          fieldValues.set(`pr_p_owner_${idx}`, { rawValue: ownerV.rawValue, dataType: ownerV.dataType || "text" });
+        // Property Owner: UI saves under property{N}.property_owner (FIELD_KEYS.propertyOwner).
+        // Also accept legacy `.owner`/`.vesting`. Publish pr_p_owner_N (legacy) and
+        // pr_p_ownerName_N (RE851D PROPERTY OWNER section) per-index, no cross-bleed.
+        const ownerV =
+          fieldValues.get(`${prefix}.property_owner`) ||
+          fieldValues.get(`${prefix}.owner`) ||
+          fieldValues.get(`${prefix}.vesting`);
+        if (ownerV?.rawValue) {
+          if (!fieldValues.has(`pr_p_owner_${idx}`)) {
+            fieldValues.set(`pr_p_owner_${idx}`, { rawValue: ownerV.rawValue, dataType: ownerV.dataType || "text" });
+          }
+          fieldValues.set(`pr_p_ownerName_${idx}`, { rawValue: ownerV.rawValue, dataType: "text" });
         }
 
         // Computed: per-property total senior encumbrances.
@@ -2806,7 +2815,7 @@ async function generateSingleDocument(
         const RE851D_INDEXED_TAGS = [
           "pr_p_address_N", "pr_p_street_N", "pr_p_city_N", "pr_p_state_N",
           "pr_p_zip_N", "pr_p_county_N", "pr_p_country_N", "pr_p_apn_N",
-          "pr_p_owner_N", "pr_p_marketValue_N", "pr_p_appraiseValue_N",
+          "pr_p_owner_N", "pr_p_ownerName_N", "pr_p_marketValue_N", "pr_p_appraiseValue_N",
           "pr_p_appraiseDate_N", "pr_p_appraiserStreet_N", "pr_p_appraiserCity_N",
           "pr_p_appraiserState_N", "pr_p_appraiserZip_N", "pr_p_appraiserPhone_N",
           "pr_p_appraiserEmail_N", "pr_p_legalDescri_N", "pr_p_yearBuilt_N",
@@ -2875,6 +2884,7 @@ async function generateSingleDocument(
         const PART2_TAGS = [
           "property_number_N",
           "pr_p_address_N",
+          "pr_p_ownerName_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
