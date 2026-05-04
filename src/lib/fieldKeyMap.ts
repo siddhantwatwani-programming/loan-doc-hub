@@ -581,6 +581,7 @@ export const PROPERTY_DETAILS_KEYS = {
   cltv: 'property1.cltv',
   informationProvidedBy: 'property1.info_provided_by',
   propertyOwner: 'property1.property_owner',
+  fireZone: 'property1.fire_zone',
 } as const;
 
 export const PROPERTY_LEGAL_KEYS = {

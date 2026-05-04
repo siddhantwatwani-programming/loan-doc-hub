@@ -39,12 +39,14 @@ interface PropertyDetailsFormProps {
 
 const PROPERTY_TYPE_OPTIONS = [
   'SFR 1-4', 'Multi-family', 'Condo / Townhouse', 'Mobile Home', 'Commercial',
-  'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
+  'Commercial Income', 'Mixed-use', 'Land SFR Residential', 'Land Residential',
+  'Land Commercial', 'Land Income Producing', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 
 const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Tenant / Other', 'Vacant', 'NA'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
-const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
+const CONSTRUCTION_TYPES = ['Wood Frame', 'Wood Frame / Stucco', 'Modular', 'Steel Frame', 'Brick / Block', 'NA'];
+const ZONING_OPTIONS = ['R1 SFR', 'R2 SFR', 'R3 Multi-family', 'R-M Multi-family', 'PUD', 'Residential Lot / Parcel', 'Mixed Use', 'C Commercial', 'Agriculture', 'NA'];
 const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Public Record', 'Other'];
 
@@ -435,18 +437,11 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           {renderDateField(FIELD_KEYS.yearBuilt, 'Year Built')}
           {renderInlineField(FIELD_KEYS.squareFeet, 'Square Feet')}
           {renderInlineSelect(FIELD_KEYS.constructionType, 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-          {renderInlineField(FIELD_KEYS.zoning, 'Zoning')}
+          {renderInlineSelect(FIELD_KEYS.zoning, 'Zoning', ZONING_OPTIONS, 'Select...')}
 
           {renderCheckboxField(FIELD_KEYS.floodZone, 'Flood Zone')}
-
-          {renderCheckboxField(FIELD_KEYS.propertyGeneratesIncome, 'Property Generates Income')}
-          {getFieldValue(FIELD_KEYS.propertyGeneratesIncome) === 'true' && (
-            <>
-              {renderCurrencyField(FIELD_KEYS.netMonthlyIncome, 'Net Monthly Income')}
-              {renderCurrencyField(FIELD_KEYS.fromRent, 'From Rent')}
-              {renderCurrencyField(FIELD_KEYS.fromOtherDescribe, 'From Other (Describe)')}
-            </>
-          )}
+          {renderCheckboxField(FIELD_KEYS.fireZone, 'Fire Zone')}
+          {renderCurrencyField(FIELD_KEYS.netMonthlyIncome, 'Net Monthly Income')}
         </div>
 
         {/* Column 3 — Valuation */}
@@ -486,6 +481,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
             </>
           )}
 
+          {renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')}
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.protectiveEquity}>
             <div className="flex items-center gap-2">
               <Label className="w-[110px] shrink-0 text-xs text-foreground">Protective Equity</Label>
