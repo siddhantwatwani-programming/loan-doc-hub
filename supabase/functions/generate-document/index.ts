@@ -2403,20 +2403,27 @@ async function generateSingleDocument(
                 const s = sIdx0 + 1;
                 const lp = row.prefix;
                 const get = (f: string) => String(fieldValues.get(`${lp}.${f}`)?.rawValue ?? "").trim();
+                const firstNonEmpty = (...sfx: string[]) => {
+                  for (const s of sfx) {
+                    const v = get(s);
+                    if (v) return v;
+                  }
+                  return "";
+                };
                 const balloon = get("balloon").toLowerCase();
                 const isYes = balloon === "true" || balloon === "yes";
                 const isNo = balloon === "false" || balloon === "no";
                 const isUnknown = !isYes && !isNo;
 
                 const fields: Array<[string, string, string]> = [
-                  ["priority", get("lien_priority_now"), "text"],
-                  ["interestRate", get("interest_rate"), "percent"],
-                  ["beneficiary", get("holder"), "text"],
-                  ["originalAmount", get("original_balance"), "currency"],
-                  ["principalBalance", get("current_balance"), "currency"],
-                  ["monthlyPayment", get("regular_payment"), "currency"],
-                  ["maturityDate", get("maturity_date"), "date"],
-                  ["balloonAmount", get("balloon_amount"), "currency"],
+                  ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "n"), "text"],
+                  ["interestRate", firstNonEmpty("interest_rate", "intRate"), "percent"],
+                  ["beneficiary", firstNonEmpty("holder", "lienHolder", "beneficiary"), "text"],
+                  ["originalAmount", firstNonEmpty("original_balance", "originalBalance"), "currency"],
+                  ["principalBalance", firstNonEmpty("current_balance", "currentBalance", "new_remaining_balance"), "currency"],
+                  ["monthlyPayment", firstNonEmpty("regular_payment", "regularPayment"), "currency"],
+                  ["maturityDate", firstNonEmpty("maturity_date", "matDate"), "date"],
+                  ["balloonAmount", firstNonEmpty("balloon_amount", "balloonAmount"), "currency"],
                 ];
 
                 const fieldAliases: Record<string, string[]> = {
