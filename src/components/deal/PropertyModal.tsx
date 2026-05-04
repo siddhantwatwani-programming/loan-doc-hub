@@ -36,11 +36,14 @@ interface PropertyModalProps {
 
 const PROPERTY_TYPE_OPTIONS = [
   'SFR 1-4', 'Multi-family', 'Condo / Townhouse', 'Mobile Home', 'Commercial',
-  'Mixed-use', 'Land', 'Farm', 'Restaurant / Bar', 'Group Housing'
+  'Commercial Income', 'Mixed-use', 'Land SFR Residential', 'Land Residential',
+  'Land Commercial', 'Land Income Producing', 'Farm', 'Restaurant / Bar', 'Group Housing'
 ];
 const OCCUPANCY_OPTIONS = ['Owner Occupied', 'Tenant / Other', 'Vacant', 'NA'];
 const PERFORMED_BY_OPTIONS = ['Broker', 'Third Party'];
-const CONSTRUCTION_TYPES = ['Wood/Stucco', 'Stick', 'Concrete Block'];
+const CONSTRUCTION_TYPES = ['Wood Frame', 'Wood Frame / Stucco', 'Modular', 'Steel Frame', 'Brick / Block', 'NA'];
+const ZONING_OPTIONS = ['R1 SFR', 'R2 SFR', 'R3 Multi-family', 'R-M Multi-family', 'PUD', 'Residential Lot / Parcel', 'Mixed Use', 'C Commercial', 'Agriculture', 'NA'];
+const LAND_CLASSIFICATION_OPTIONS = ['Land SFR Residential', 'Land Residential', 'Land Commercial', 'Land Income Producing'];
 const VALUATION_TYPE_OPTIONS = ['Appraisal', 'Broker Determined Value (BPO)'];
 const INFO_PROVIDED_BY_OPTIONS = ['Broker', 'Borrower', 'Public Record', 'Other'];
 
