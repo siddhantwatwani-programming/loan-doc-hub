@@ -297,6 +297,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 </div>
 
                 <div className="pt-1">
+                  <span className="text-xs font-medium text-primary">Land Classification</span>
+                </div>
+                {renderInlineSelect('landClassification', 'Land Classification', LAND_CLASSIFICATION_OPTIONS, 'Select...')}
+
+                <div className="pt-1">
                   <span className="text-xs font-medium text-primary">Address</span>
                 </div>
                 <div className="flex items-center gap-2">
