@@ -40,6 +40,7 @@ const FREQUENCY_OPTIONS = [
 
 const TYPE_OPTIONS = ['Current Property Tax', 'Delinquent Property Tax', 'Other'];
 const SOURCE_OPTIONS = ['Borrower', 'Title Report', 'Tax Records'];
+const TAX_CONFIDENCE_OPTIONS = ['Actual', 'Estimated'];
 
 const PREFIX = 'propertytax1';
 
