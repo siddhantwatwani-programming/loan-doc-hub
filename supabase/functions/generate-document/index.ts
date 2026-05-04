@@ -2256,6 +2256,11 @@ async function generateSingleDocument(
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
           setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
           setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
+          // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☒ NO)
+          setBool(`pr_li_currentDelinqu_${lienIdx}_yes`, currentDelinq);
+          setBool(`pr_li_currentDelinqu_${lienIdx}_no`, !currentDelinq);
+          setText(`pr_li_currentDelinqu_${lienIdx}_yes_glyph`, currentDelinq ? "☒" : "☐");
+          setText(`pr_li_currentDelinqu_${lienIdx}_no_glyph`, currentDelinq ? "☐" : "☒");
           setText(`pr_li_delinquHowMany_${lienIdx}`,
             Number.isFinite(howManyNum) && howManyNum > 0 ? String(howManyNum) : (howManyRaw || ""),
             "number");
