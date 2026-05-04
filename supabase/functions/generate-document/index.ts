@@ -3386,6 +3386,85 @@ async function generateSingleDocument(
             }
           }
 
+          // ── RE851D "Do any of these payments remain unpaid?" YES/NO safety pass ──
+          // The authored template uses two static ☐ glyph runs after this question
+          // and (depending on variant) either no conditional or a non-strict one,
+          // so both checkboxes can render checked. Anchor the next two glyph runs
+          // following the question text to the per-property pr_li_currentDelinqu_K
+          // boolean: YES = ☑ when true / ☐ when false; NO is the inverse.
+          // Strictly scoped to detected PROPERTY #K regions; bounded look-ahead.
+          if (regions.props.length > 0) {
+            const questionRe = /Do any of these payments remain unpaid/gi;
+            const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            let qm: RegExpExecArray | null;
+            while ((qm = questionRe.exec(xml)) !== null) {
+              const qStart = qm.index;
+              // Determine which PROPERTY #K block this question lives in.
+              let pIdx: number | null = null;
+              for (const p of regions.props) {
+                if (qStart >= p.range[0] && qStart < p.range[1]) {
+                  pIdx = p.k;
+                  break;
+                }
+              }
+              if (pIdx === null) continue;
+              // Bounded look-ahead window (4 KB) to find the two glyph runs.
+              const windowEnd = Math.min(xml.length, qStart + 4096);
+              glyphRunRe.lastIndex = qStart;
+              const glyphMatches: RegExpExecArray[] = [];
+              let gm: RegExpExecArray | null;
+              while ((gm = glyphRunRe.exec(xml)) !== null && gm.index < windowEnd) {
+                glyphMatches.push(gm);
+                if (glyphMatches.length >= 2) break;
+              }
+              if (glyphMatches.length < 2) continue;
+              // Skip if either glyph already overlaps a queued rewrite span.
+              const overlaps = (s: number, e: number) =>
+                rewrites.some((r) => s < r.end && e > r.start) ||
+                consumed.some(([cs, ce]) => s < ce && e > cs);
+              const yesM = glyphMatches[0];
+              const noM = glyphMatches[1];
+              const yesStart = yesM.index;
+              const yesEnd = yesStart + yesM[0].length;
+              const noStart = noM.index;
+              const noEnd = noStart + noM[0].length;
+              if (overlaps(yesStart, yesEnd) || overlaps(noStart, noEnd)) continue;
+              // Resolve the per-property boolean.
+              const truthy = (raw: unknown): boolean => {
+                if (raw === null || raw === undefined) return false;
+                if (typeof raw === "boolean") return raw;
+                if (typeof raw === "number") return raw !== 0;
+                const s = String(raw).trim().toLowerCase();
+                return ["true", "yes", "y", "1", "checked", "on"].includes(s);
+              };
+              const yesAlias = fieldValues.get(`pr_li_currentDelinqu_${pIdx}_yes`);
+              const bareAlias = fieldValues.get(`pr_li_currentDelinqu_${pIdx}`);
+              const isYes = yesAlias
+                ? truthy(yesAlias.rawValue)
+                : truthy(bareAlias?.rawValue);
+              const yesGlyph = isYes ? "☑" : "☐";
+              const noGlyph = isYes ? "☐" : "☑";
+              rewrites.push({
+                start: yesStart,
+                end: yesEnd,
+                replacement: `${yesM[1]}${yesGlyph}${yesM[3]}`,
+              });
+              rewrites.push({
+                start: noStart,
+                end: noEnd,
+                replacement: `${noM[1]}${noGlyph}${noM[3]}`,
+              });
+              consumed.push([yesStart, yesEnd]);
+              consumed.push([noStart, noEnd]);
+              totalRewrites += 2;
+              if (!regionRewriteCounts[`PROP#${pIdx}`]) regionRewriteCounts[`PROP#${pIdx}`] = 0;
+              regionRewriteCounts[`PROP#${pIdx}`] += 2;
+              debugLog(
+                `[generate-document] RE851D remain-unpaid YES/NO anchored: PROP#${pIdx} isYes=${isYes}`
+              );
+            }
+          }
+
           // Apply rewrites in reverse offset order so earlier offsets are stable.
           rewrites.sort((a, b) => b.start - a.start);
           for (const r of rewrites) {
