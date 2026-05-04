@@ -103,6 +103,7 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       protectiveEquity: values[`${prefix}.protective_equity`] || '',
       cltv: values[`${prefix}.cltv`] || '',
       informationProvidedBy: values[`${prefix}.info_provided_by`] || '',
+      propertyOwner: values[`${prefix}.property_owner`] || '',
     };
     properties.push(property);
   });
