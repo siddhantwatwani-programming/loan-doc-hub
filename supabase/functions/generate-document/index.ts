@@ -2296,6 +2296,11 @@ async function generateSingleDocument(
           setBoolP(`pr_li_delinquencyPaidByLoan_${pIdx}`, b.paidByLoan);
           setBoolP(`pr_li_delinqu60day_${pIdx}`, b.delinq60);
           setBoolP(`pr_li_currentDelinqu_${pIdx}`, b.currentDelinq);
+          // Yes/No + glyph aliases per-property index
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes`, { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no`, { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes_glyph`, { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no_glyph`, { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
           // Also fill pr_p_delinquHowMany_N if the property-tax block didn't set it
