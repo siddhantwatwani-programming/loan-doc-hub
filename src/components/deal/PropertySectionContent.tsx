@@ -644,6 +644,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
             showValidation={showValidation}
             disabled={disabled}
             calculationResults={calculationResults}
+            borrowerOptions={borrowerOptions}
+            borrowerAddress={primaryBorrowerAddress}
           />
         );
       case 'legal_description':
