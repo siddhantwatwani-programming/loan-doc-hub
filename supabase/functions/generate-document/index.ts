@@ -3139,6 +3139,22 @@ async function generateSingleDocument(
             "$1_N",
           );
 
+          // Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels
+          // that some authored RE851D templates place after each encumbrance
+          // field as a slot/property indicator. Step A above has already
+          // rewritten any suffix that belonged to a real pr_li_(rem|ant)_<field>
+          // identifier, so anything remaining is pure annotation prose.
+          // Restrict to <w:t> bodies so XML tag/attribute syntax can never be
+          // touched, and use [^<]*? so each strip stays inside one text run.
+          xml = xml.replace(
+            /(<w:t(?:\s[^>]*)?>)([^<]*?)_\(N\)_\(S\)([^<]*?)(<\/w:t>)/g,
+            "$1$2$3$4",
+          );
+          xml = xml.replace(
+            /(<w:t(?:\s[^>]*)?>)([^<]*?)_\(N\)([^<]*?)(<\/w:t>)/g,
+            "$1$2$3$4",
+          );
+
           if (!xml.includes("_N")) {
             out[filename] = encoder.encode(xml);
             continue;
