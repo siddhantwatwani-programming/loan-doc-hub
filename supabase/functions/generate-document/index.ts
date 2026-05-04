@@ -2884,6 +2884,7 @@ async function generateSingleDocument(
         const PART2_TAGS = [
           "property_number_N",
           "pr_p_address_N",
+          "pr_p_ownerName_N",
           "pr_p_appraiseValue_N",
           "ln_p_loanToValueRatio_N",
           "ln_p_remainingEncumbrance_N",
