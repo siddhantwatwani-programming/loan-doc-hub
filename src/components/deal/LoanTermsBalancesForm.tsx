@@ -629,20 +629,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
         <div className="space-y-3">
           <h3 className="font-semibold text-sm text-foreground border-b border-border pb-2">Payments</h3>
           <div className="space-y-2">
-            <DirtyFieldWrapper fieldKey={FIELD_KEYS.numberOfPayments}>
-              <div className="flex items-center gap-3">
-                <Label className={LABEL_CLASS}>No. of Payments</Label>
-                <Input
-                  value={getValue(FIELD_KEYS.numberOfPayments)}
-                  onChange={(e) => setValue(FIELD_KEYS.numberOfPayments, e.target.value.replace(/\D/g, ''))}
-                  onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
-                  disabled={disabled}
-                  className="h-8 text-sm flex-1"
-                  inputMode="numeric"
-                />
-              </div>
-            </DirtyFieldWrapper>
-
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Payment Frequency</Label>
               <Select

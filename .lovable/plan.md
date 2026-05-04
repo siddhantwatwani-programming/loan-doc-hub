@@ -1,48 +1,43 @@
-## Goal
+# RE851D Owner Occupied Yes/No — Per-Property Mapping Fix
 
-Add a numeric-only **No. of Payments** text input directly above **Payment Frequency** in:
-**Enter File Data → Loan Terms → Balances** (Payments column)
+## Problem
+The RE851D template uses `(eq pr_p_occupanc_N "Owner Occupied")` per property, but the edge function never publishes `pr_p_occupanc_${idx}`. Result: every property falls into the `else` branch → "No" is always checked across all properties.
 
-Persist the value via the existing save/update flow. No schema, API, or backend changes — everything is already wired end-to-end and only the UI input is missing.
+## Fix (single, surgical edge-function change)
 
-## Why no backend/schema work is needed
+In `supabase/functions/generate-document/index.ts`, inside the existing per-property occupancy alias block (around lines 1162–1176 — the same block that already publishes `pr_p_occupancySt_${idx}_yes/_no/_glyph`), also publish the exact key the template reads:
 
-Verified all infrastructure already exists:
+```ts
+// Per-property normalized occupancy string for template
+//   (eq pr_p_occupanc_N "Owner Occupied")
+// Owner Occupied  => "Owner Occupied"  (Yes ☒)
+// Tenant/Vacant/NA/empty => "" (else branch => No ☒)
+fieldValues.set(`pr_p_occupanc_${idx}`, {
+  rawValue: isYes ? "Owner Occupied" : "",
+  dataType: "text",
+});
+if (idx === 1) {
+  fieldValues.set("pr_p_occupanc", {
+    rawValue: isYes ? "Owner Occupied" : "",
+    dataType: "text",
+  });
+}
+```
 
-| Layer | Status |
-|---|---|
-| `field_dictionary` row | Exists — `ln_p_numberOfPaymen`, label "Number of Payments", section `loan_terms`, data_type `text` |
-| UI → dictionary mapping | Exists — `legacyKeyMap.ts`: `'loan_terms.number_of_payments' → 'ln_p_numberOfPaymen'` |
-| Field key constant | Exists — `LOAN_TERMS_BALANCES_KEYS.numberOfPayments = 'loan_terms.number_of_payments'` (`src/lib/fieldKeyMap.ts:417`) |
-| Doc-gen consumer | Exists — `generate-document/index.ts:1557` already reads `loan_terms.number_of_payments` and bridges it to `ln_p_months` |
-| Persistence | Goes through the same `onValueChange` → `deal_section_values` flow as every other field in this form |
+`isYes` is already computed in that block as `occRaw === "owner occupied"`, sourced strictly per-property from `pr_p_occupancySt_${idx}` / `pr_p_occupanc_${idx}` / `${prefix}.occupancyStatus` / `${prefix}.appraisal_occupancy` (no cross-index fallback — preserves the multi-property isolation rule).
 
-So saving the field uses the same save/update API as every other field on the form — nothing new to add.
+## Why this works
+- Template stays untouched (no Word/SDT/XML risk).
+- Each property index gets its own normalized value → checkboxes render independently per property.
+- All non-"Owner Occupied" values (Tenant / Other, Vacant, NA, empty, legacy values) yield `""`, so `(eq ... "Owner Occupied")` is false → "No" checked.
+- `_yes/_no/_glyph` aliases already published remain available for any future template variant.
 
-## Single change
+## What does NOT change
+- Field dictionary entries
+- UI dropdown key (`pr_p_occupancySt`) and the 4-value option list (already restricted earlier)
+- RE851D template
+- `legacyKeyMap.ts`
+- Any other section, form, or document
 
-**File:** `src/components/deal/LoanTermsBalancesForm.tsx`
-
-Insert a new field block immediately **before** the existing "Payment Frequency" row (around line 632, inside the `Payments` column) using the same row markup pattern already used in the file (label + numeric Input):
-
-- Label: `No. of Payments` (using existing `LABEL_CLASS`)
-- Input bound to `FIELD_KEYS.numberOfPayments` via `getValue` / `setValue`
-- Numeric-only: strip non-digits in `onChange` (`e.target.value.replace(/\D/g, '')`) and block non-digit keys in `onKeyDown` — identical pattern to the existing **Day Due** field two rows below it (line 654–661)
-- `inputMode="numeric"`, `disabled={disabled}`, `className="h-8 text-sm flex-1"`
-
-Approx. 12 lines added. No other files touched.
-
-## Behavior after change
-
-- Field appears above "Payment Frequency" in the Payments column.
-- Only digits accepted (typing/pasting non-digits is filtered).
-- Value saves through the existing form save flow into `deal_section_values` under key `loan_terms.number_of_payments`.
-- On reload, value re-populates from the same key.
-- Document generation continues to consume it via the already-existing bridge to `ln_p_months`.
-
-## Out of scope (explicitly not changed)
-
-- No DB migration, no `field_dictionary` insert (row already exists).
-- No edits to `fieldKeyMap.ts`, `legacyKeyMap.ts`, edge functions, or any save API.
-- No layout, ordering, or styling change to any other field.
-- No change to validation rules of other fields.
+## Files touched
+- `supabase/functions/generate-document/index.ts` — append ~12 lines inside one existing block.
