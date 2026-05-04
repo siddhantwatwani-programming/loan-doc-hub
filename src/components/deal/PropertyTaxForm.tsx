@@ -148,14 +148,30 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
       </div>
 
       <div className="w-full">
-        <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-          {/* Left column */}
+        <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+          {/* Left column — Property Tax core */}
           <div className="space-y-3">
             {propertyOptions.length > 0 && (
               <DirtyFieldWrapper fieldKey={`${PREFIX}.property`}>
                 {renderDropdownField('property', 'Property', propertyOptions)}
               </DirtyFieldWrapper>
             )}
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.source_of_information`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Source of<br />Information</Label>
+                <Select value={getValue('source_of_information')} onValueChange={(value) => handleChange('source_of_information', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {SOURCE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.type`}>
+              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
+            </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.authority`}>
               <div className="flex items-center gap-3">
@@ -168,9 +184,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                     size="sm"
                     className="h-7 text-xs whitespace-nowrap px-2 gap-1"
                     disabled={disabled}
-                    onClick={() => {
-                      /* Search / Add placeholder — opens inline search */
-                    }}
+                    onClick={() => { /* Search/Add placeholder */ }}
                   >
                     <Search className="h-3 w-3" />
                     Search / Add
@@ -179,44 +193,60 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.type`}>
-              {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_street`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Street</Label>
+                <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_city`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">City</Label>
+                <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_state`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">State</Label>
+                <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
+                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectContent className="bg-background z-50 max-h-[200px]">
+                    {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </DirtyFieldWrapper>
+
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_zip`}>
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">ZIP</Label>
+                <ZipInput value={getValue('pma_zip')} onValueChange={(v) => handleChange('pma_zip', v)} disabled={disabled} className="h-7 text-sm" />
+              </div>
+            </DirtyFieldWrapper>
+          </div>
+
+          {/* Middle column */}
+          <div className="space-y-3">
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
+              {renderCurrencyField('annual_payment', 'Annual Payment')}
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.tax_confidence`}>
               {renderDropdownField('tax_confidence', 'Confidence', TAX_CONFIDENCE_OPTIONS)}
             </DirtyFieldWrapper>
 
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Annual Payment<br /><span className="text-xs text-muted-foreground">(est.)</span></Label>
-                <div className="relative flex-1">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
-                  <Input
-                    value={getValue('annual_payment')}
-                    onChange={(e) => handleChange('annual_payment', e.target.value)}
-                    onKeyDown={numericKeyDown}
-                    onPaste={(e) => numericPaste(e, (v) => handleChange('annual_payment', v))}
-                    onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('annual_payment', v); }}
-                    onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('annual_payment', v); }}
-                    disabled={disabled}
-                    className="h-7 text-sm flex-1 pl-5"
-                  />
-                </div>
-              </div>
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.amount`}>
-              {renderCurrencyField('amount', 'Amount')}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.frequency`}>
+              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.next_due`}>
               {renderDateField('next_due', 'Next Due')}
             </DirtyFieldWrapper>
 
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.frequency`}>
-              {renderDropdownField('frequency', 'Frequency', FREQUENCY_OPTIONS)}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
+              {renderCurrencyField('delinquent_amount', 'Delinquent Amount')}
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.escrow_impounds`}>
@@ -233,69 +263,11 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 <Label className="text-sm text-foreground whitespace-nowrap">Pass Through</Label>
               </div>
             </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.source_of_information`}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Source of<br />Information</Label>
-                <Select value={getValue('source_of_information')} onValueChange={(value) => handleChange('source_of_information', value)} disabled={disabled}>
-                  <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {SOURCE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </DirtyFieldWrapper>
           </div>
 
-          {/* Right column */}
+          {/* Right column — Tax Tracking */}
           <div className="space-y-3">
-            {/* Payment Mailing Address sub-section */}
-            <div className="space-y-2.5">
-              <div className="border-b border-border pb-1 mb-2">
-                <span className="text-sm font-semibold text-foreground">Payment Mailing Address</span>
-              </div>
-
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_street`}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">Street</Label>
-                  <Input value={getValue('pma_street')} onChange={(e) => handleChange('pma_street', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-                </div>
-              </DirtyFieldWrapper>
-
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_city`}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">City</Label>
-                  <Input value={getValue('pma_city')} onChange={(e) => handleChange('pma_city', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-                </div>
-              </DirtyFieldWrapper>
-
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_state`}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">State</Label>
-                  <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
-                    <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
-                    <SelectContent className="bg-background z-50 max-h-[200px]">
-                      {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </DirtyFieldWrapper>
-
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.pma_zip`}>
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[70px]">ZIP</Label>
-                  <ZipInput
-                    value={getValue('pma_zip')}
-                    onValueChange={(v) => handleChange('pma_zip', v)}
-                    disabled={disabled}
-                    className="h-7 text-sm"
-                  />
-                </div>
-              </DirtyFieldWrapper>
-            </div>
-
-            {/* Tax Tracking */}
-            <div className="border-b border-border pb-1 mb-2 mt-2">
+            <div className="border-b border-border pb-1 mb-2">
               <span className="text-sm font-semibold text-foreground">Tax Tracking</span>
             </div>
 
@@ -310,7 +282,9 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            {renderDateField('last_verified', 'Last Verified')}
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.last_verified`}>
+              {renderDateField('last_verified', 'Last Verified')}
+            </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.current`}>
               <div className="flex items-center gap-3">
@@ -323,64 +297,62 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               </div>
             </DirtyFieldWrapper>
 
-            {/* Delinquent: derived from amount(s); no manual checkbox */}
-            {(() => {
-              const parseAmt = (s: string) => {
-                const n = parseFloat(String(s || '').replace(/[^0-9.\-]/g, ''));
-                return isNaN(n) ? 0 : n;
-              };
-              const isDelinquent =
-                parseAmt(getValue('delinquent_amount')) > 0 ||
-                parseAmt(getValue('bring_current_amount')) > 0;
-              return isDelinquent ? (
-                <div className="flex items-center gap-3">
-                  <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Status</Label>
-                  <Badge variant="destructive" className="text-xs">Delinquent</Badge>
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent`}>
+              <div className="flex items-center gap-3 flex-1">
+                <Checkbox
+                  checked={getBoolValue('delinquent')}
+                  onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[90px]">Delinquent</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                  <Input
+                    value={getValue('delinquent_amount')}
+                    onChange={(e) => handleChange('delinquent_amount', e.target.value)}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (v) => handleChange('delinquent_amount', v))}
+                    onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
+                    onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
+                    disabled={disabled}
+                    className="h-7 text-sm pl-5"
+                  />
                 </div>
-              ) : null;
-            })()}
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
-              {renderCurrencyField('delinquent_amount', 'Delinquent Amt')}
+              </div>
             </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.bring_current_amount`}>
-              {renderCurrencyField('bring_current_amount', 'Amt to Bring Current')}
-            </DirtyFieldWrapper>
-
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified`}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-1">
                 <Checkbox
                   checked={getBoolValue('borrower_notified')}
                   onCheckedChange={(checked) => handleChange('borrower_notified', checked === true ? 'true' : 'false')}
                   disabled={disabled}
                 />
-                <Label className="text-sm text-foreground whitespace-nowrap">Borrower Notified</Label>
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Borrower Notified</Label>
+                <div className="flex-1">
+                  {renderDateField('borrower_notified_date', '')}
+                </div>
               </div>
             </DirtyFieldWrapper>
 
-            {getBoolValue('borrower_notified') && (
-              <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified_date`}>
-                {renderDateField('borrower_notified_date', 'Borrower Notified')}
-              </DirtyFieldWrapper>
-            )}
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.lender_notified_date`}>
-              {renderDateField('lender_notified_date', 'Lender Notified')}
-            </DirtyFieldWrapper>
-
-            <DirtyFieldWrapper fieldKey={`${PREFIX}.apn`}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">APN</Label>
-                <Input value={getValue('apn')} onChange={(e) => handleChange('apn', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.lender_notified`}>
+              <div className="flex items-center gap-3 flex-1">
+                <Checkbox
+                  checked={getBoolValue('lender_notified')}
+                  onCheckedChange={(checked) => handleChange('lender_notified', checked === true ? 'true' : 'false')}
+                  disabled={disabled}
+                />
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Lender Notified</Label>
+                <div className="flex-1">
+                  {renderDateField('lender_notified_date', '')}
+                </div>
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.memo`}>
               <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] pt-1">Memo</Label>
-                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[50px]" />
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[60px] pt-1">Memo</Label>
+                <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[80px]" />
               </div>
             </DirtyFieldWrapper>
           </div>
