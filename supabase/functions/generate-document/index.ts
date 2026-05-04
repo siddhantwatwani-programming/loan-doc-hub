@@ -2195,6 +2195,110 @@ async function generateSingleDocument(
         }
       }
       debugLog(`[generate-document] Lien field bridging complete`);
+
+      // ── RE851D Delinquency mapping: publish pr_li_*_N aliases per lien index
+      // AND per-property index (aggregated when multiple liens belong to one property).
+      // Source UI fields live on each lienK.* record; template uses _N expansion.
+      {
+        // Collect liens in insertion order (lien1, lien2, ...)
+        const lienPrefixes = new Set<string>();
+        for (const key of fieldValues.keys()) {
+          const m = key.match(/^(lien\d+)\./);
+          if (m) lienPrefixes.add(m[1]);
+        }
+        const orderedLiens = [...lienPrefixes].sort((a, b) =>
+          parseInt(a.replace("lien", ""), 10) - parseInt(b.replace("lien", ""), 10)
+        );
+
+        // Per-property aggregation buckets (keyed by propertyN index)
+        const perProp: Record<number, {
+          paidByLoan: boolean;
+          delinq60: boolean;
+          howMany: number;
+          currentDelinq: boolean;
+          source: string[];
+        }> = {};
+
+        const truthy = (v: unknown) => {
+          const s = String(v ?? "").trim().toLowerCase();
+          return s === "true" || s === "yes" || s === "1" || s === "on";
+        };
+
+        orderedLiens.forEach((prefix, i) => {
+          const lienIdx = i + 1;
+          const paidByLoan = truthy(fieldValues.get(`${prefix}.paid_by_loan`)?.rawValue);
+          const howManyRaw = String(fieldValues.get(`${prefix}.delinquencies_how_many`)?.rawValue ?? "").trim();
+          const howManyNum = parseInt(howManyRaw, 10);
+          const has60 = truthy(fieldValues.get(`${prefix}.delinquencies_60day`)?.rawValue)
+            || (Number.isFinite(howManyNum) && howManyNum > 0);
+          const currentDelinq = truthy(fieldValues.get(`${prefix}.currently_delinquent`)?.rawValue);
+          const source = String(fieldValues.get(`${prefix}.source_of_payment`)?.rawValue ?? "").trim();
+
+          // Per-lien-index aliases
+          const setBool = (k: string, v: boolean) =>
+            fieldValues.set(k, { rawValue: v ? "true" : "", dataType: "boolean" });
+          const setText = (k: string, v: string, dt = "text") =>
+            fieldValues.set(k, { rawValue: v, dataType: dt });
+
+          setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
+          setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
+          setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
+          setText(`pr_li_delinquHowMany_${lienIdx}`,
+            Number.isFinite(howManyNum) && howManyNum > 0 ? String(howManyNum) : (howManyRaw || ""),
+            "number");
+          setText(`pr_li_sourceOfPayment_${lienIdx}`, source);
+
+          // Aggregate into the property the lien belongs to
+          const propRaw = String(fieldValues.get(`${prefix}.property`)?.rawValue ?? "").trim();
+          const pm = propRaw.match(/^property(\d+)$/);
+          if (pm) {
+            const pIdx = parseInt(pm[1], 10);
+            if (!perProp[pIdx]) {
+              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [] };
+            }
+            const b = perProp[pIdx];
+            if (paidByLoan) b.paidByLoan = true;
+            if (has60) b.delinq60 = true;
+            if (currentDelinq) b.currentDelinq = true;
+            if (Number.isFinite(howManyNum) && howManyNum > 0) b.howMany += howManyNum;
+            if (source) b.source.push(source);
+          }
+        });
+
+        // Publish per-property aliases (matches RE851D _N = property index pattern)
+        for (const [pIdxStr, b] of Object.entries(perProp)) {
+          const pIdx = parseInt(pIdxStr, 10);
+          const setBoolP = (k: string, v: boolean) => {
+            if (!fieldValues.has(k)) fieldValues.set(k, { rawValue: v ? "true" : "", dataType: "boolean" });
+            else fieldValues.set(k, { rawValue: v ? "true" : "", dataType: "boolean" });
+          };
+          const setTextP = (k: string, v: string, dt = "text") => {
+            fieldValues.set(k, { rawValue: v, dataType: dt });
+          };
+          setBoolP(`pr_li_delinquencyPaidByLoan_${pIdx}`, b.paidByLoan);
+          setBoolP(`pr_li_delinqu60day_${pIdx}`, b.delinq60);
+          setBoolP(`pr_li_currentDelinqu_${pIdx}`, b.currentDelinq);
+          setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
+          setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
+          // Also fill pr_p_delinquHowMany_N if the property-tax block didn't set it
+          const pPropKey = `pr_p_delinquHowMany_${pIdx}`;
+          const existing = fieldValues.get(pPropKey)?.rawValue;
+          if ((existing === undefined || String(existing).trim() === "") && b.howMany > 0) {
+            fieldValues.set(pPropKey, { rawValue: String(b.howMany), dataType: "number" });
+          }
+
+          if (pIdx === 1) {
+            // Bare aliases for templates referencing keys without _N
+            fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquHowMany", { rawValue: b.howMany > 0 ? String(b.howMany) : "", dataType: "number" });
+            fieldValues.set("pr_li_sourceOfPayment", { rawValue: b.source.join("\n"), dataType: "text" });
+          }
+        }
+        debugLog(`[generate-document] RE851D lien delinquency mapping published for ${orderedLiens.length} liens / ${Object.keys(perProp).length} properties`);
+      }
+
       // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
       const lienPosVal = fieldValues.get("ln_p_lienPositi");
       if (lienPosVal && !fieldValues.has("ln_p_lienPosit")) {
