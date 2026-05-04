@@ -159,18 +159,28 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
 
   const borrowerStreet = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.street`] || '') : '';
   const borrowerCity = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.city`] || '') : '';
-  const borrowerState = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.state`] || '') : '';
+  const borrowerState = primaryBorrowerPrefix
+    ? (values[`${primaryBorrowerPrefix}.address.state`] || values[`${primaryBorrowerPrefix}.state`] || '')
+    : '';
   const borrowerZip = primaryBorrowerPrefix ? (values[`${primaryBorrowerPrefix}.address.zip`] || '') : '';
 
-  // Track previous checkbox state so we only warn on a fresh check (not on every render).
+  // Track previous checkbox state: copy on check, clear on uncheck.
   const prevCopyRef = React.useRef<boolean>(isCopyBorrower);
   useEffect(() => {
     const justChecked = isCopyBorrower && !prevCopyRef.current;
+    const justUnchecked = !isCopyBorrower && prevCopyRef.current;
     prevCopyRef.current = isCopyBorrower;
+
+    if (justUnchecked) {
+      [FIELD_KEYS.street, FIELD_KEYS.city, FIELD_KEYS.state, FIELD_KEYS.zip].forEach((dst) => {
+        if (getFieldValue(dst) !== '') onValueChange(dst, '');
+      });
+      return;
+    }
 
     if (!isCopyBorrower) return;
 
-    if (informationProvidedBy === 'Borrower' && !primaryBorrowerPrefix) {
+    if (!primaryBorrowerPrefix) {
       if (justChecked) {
         toast.error('Primary Borrower not found in Participants');
       }
@@ -186,7 +196,7 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
     mappings.forEach(([dst, srcVal]) => {
       if (getFieldValue(dst) !== srcVal) onValueChange(dst, srcVal);
     });
-  }, [isCopyBorrower, informationProvidedBy, primaryBorrowerPrefix, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
+  }, [isCopyBorrower, primaryBorrowerPrefix, borrowerStreet, borrowerCity, borrowerState, borrowerZip]);
 
   const parseDate = (val: string): Date | undefined => {
     if (!val) return undefined;
