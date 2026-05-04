@@ -2315,6 +2315,10 @@ async function generateSingleDocument(
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_yes", { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_no", { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_currentDelinqu_yes_glyph", { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_currentDelinqu_no_glyph", { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_delinquHowMany", { rawValue: b.howMany > 0 ? String(b.howMany) : "", dataType: "number" });
             fieldValues.set("pr_li_sourceOfPayment", { rawValue: b.source.join("\n"), dataType: "text" });
           }
