@@ -333,18 +333,11 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineField('yearBuilt', 'Year Built', 'date')}
                 {renderInlineField('squareFeet', 'Square Feet')}
                 {renderInlineSelect('constructionType', 'Type of Construction', CONSTRUCTION_TYPES, 'Select...')}
-                {renderInlineField('zoning', 'Zoning')}
+                {renderInlineSelect('zoning', 'Zoning', ZONING_OPTIONS, 'Select...')}
 
                 {renderCheckboxField('floodZone', 'Flood Zone')}
-
-                {renderCheckboxField('propertyGeneratesIncome', 'Property Generates Income')}
-                {formData.propertyGeneratesIncome && (
-                  <>
-                    {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
-                    {renderCurrencyField('fromRent', 'From Rent')}
-                    {renderCurrencyField('fromOtherDescribe', 'From Other (Describe)')}
-                  </>
-                )}
+                {renderCheckboxField('fireZone', 'Fire Zone')}
+                {renderCurrencyField('netMonthlyIncome', 'Net Monthly Income')}
               </div>
 
               {/* Column 3 — Valuation */}
