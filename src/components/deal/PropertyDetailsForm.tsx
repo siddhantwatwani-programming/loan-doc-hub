@@ -142,7 +142,8 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
   const borrowerOptions = React.useMemo(() => {
     const prefixes = new Set<string>();
     Object.keys(values).forEach(key => {
-      const m = key.match(/^(borrower\d*|coborrower\d*)\./);
+      // Restrict to Borrower participant type only — exclude coborrower/* prefixes.
+      const m = key.match(/^(borrower\d*)\./);
       if (m) prefixes.add(m[1]);
     });
     const names: string[] = [];
