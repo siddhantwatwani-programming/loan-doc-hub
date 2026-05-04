@@ -164,6 +164,10 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
               {renderDropdownField('type', 'Type', TYPE_OPTIONS)}
             </DirtyFieldWrapper>
 
+            <DirtyFieldWrapper fieldKey={`${PREFIX}.tax_confidence`}>
+              {renderDropdownField('tax_confidence', 'Tax Confidence', TAX_CONFIDENCE_OPTIONS)}
+            </DirtyFieldWrapper>
+
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.annual_payment`}>
               <div className="flex items-center gap-3">
