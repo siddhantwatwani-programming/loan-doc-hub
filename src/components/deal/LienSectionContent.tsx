@@ -209,6 +209,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   onPersist,
   disabled = false,
   propertyOptions = [],
+  currentPropertyId,
   onBack,
   onRefresh,
 }) => {
@@ -226,6 +227,14 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
 
   const allLiens = extractLiensFromValues(values);
 
+  // Scope liens to the current property to prevent the bug where liens
+  // appeared under every property. When no current property is provided,
+  // fall back to showing all (legacy behavior).
+  const liensForProperty = useMemo(() => {
+    if (!currentPropertyId) return allLiens;
+    return allLiens.filter(l => l.property === currentPropertyId);
+  }, [allLiens, currentPropertyId]);
+
   // Auto-compute 10A: "yes" if any lien has an existing type checked
   const hasExistingLien = allLiens.some(l =>
     l.existingRemain === 'true' || l.existingPaydown === 'true' || l.existingPayoff === 'true'
@@ -237,10 +246,10 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       onValueChange('liens.answer_10a', expected10A);
     }
   }, [expected10A, current10A, onValueChange]);
-  const totalLiens = allLiens.length;
+  const totalLiens = liensForProperty.length;
   const totalPages = Math.max(1, Math.ceil(totalLiens / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedLiens = allLiens.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginatedLiens = liensForProperty.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Remap dirty field keys for the selected lien
   const remappedDirtyKeys = useMemo(() => {
