@@ -3269,6 +3269,50 @@ async function generateSingleDocument(
             }
           }
 
+          // ── RE851D bare encumbrance-token rewrite ──
+          // Some authored RE851D templates write encumbrance tags as bare text
+          // (no {{ }} braces), so the merge-tag parser cannot resolve them and
+          // they print verbatim. Substitute the resolved value directly inside
+          // PROPERTY #K regions. Strictly limited to the encumbrance field
+          // whitelist; nothing else in the document is touched.
+          if (regions.props.length > 0) {
+            const encFields = [
+              "priority", "interestRate", "beneficiary",
+              "originalAmount", "principalBalance",
+              "monthlyPayment", "maturityDate", "balloonAmount",
+              "balloonYes", "balloonNo", "balloonUnknown",
+            ];
+            const encTagRe = new RegExp(
+              "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?\\b",
+              "g",
+            );
+            let m2: RegExpExecArray | null;
+            while ((m2 = encTagRe.exec(xml)) !== null) {
+              const start = m2.index;
+              const end = start + m2[0].length;
+              if (isConsumed(start, end)) continue;
+              const region = resolveRegion(start);
+              if (region.forcedIndex === null) continue;
+              const pIdx = region.forcedIndex;
+              const family = `${m2[1]}_${m2[2]}`;
+              const slot = getRegionCounter(region.id, `__enc_${family}`);
+              const lookupKey = `pr_li_${family}_${pIdx}_${slot}`;
+              const v = fieldValues.get(lookupKey)
+                || fieldValues.get(`pr_li_${family}_${pIdx}`);
+              let rendered = "";
+              if (v && v.rawValue !== null && v.rawValue !== undefined) {
+                rendered = formatByDataType(v.rawValue, v.dataType);
+                if (v.dataType === "currency" && rendered.startsWith("$")) {
+                  rendered = rendered.substring(1);
+                }
+              }
+              rewrites.push({ start, end, replacement: escapeXmlValue(rendered) });
+              consumed.push([start, end]);
+              bumpRegion(region.id);
+              totalRewrites++;
+            }
+          }
+
           // ── RE851D contextual bare-tag rewrite ──
           // The uploaded RE851D template contains bare (non-_N) tags inside
           // some PROPERTY #K detail sections, e.g.
