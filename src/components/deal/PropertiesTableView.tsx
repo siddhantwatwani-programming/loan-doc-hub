@@ -31,7 +31,9 @@ export interface PropertyData {
   apn: string;
   loanPriority: string;
   floodZone?: string;
-  
+  fireZone?: string;
+  landClassification?: string;
+  pledgedEquity?: string;
   zoning?: string;
   performedBy?: string;
   copyBorrowerAddress?: boolean;
