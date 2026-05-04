@@ -381,6 +381,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.third_party_zip`, propertyData.thirdPartyZip || '');
     onValueChange(`${prefix}.protective_equity`, propertyData.protectiveEquity || '');
     onValueChange(`${prefix}.cltv`, propertyData.cltv || '');
+    onValueChange(`${prefix}.property_owner`, propertyData.propertyOwner || '');
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
