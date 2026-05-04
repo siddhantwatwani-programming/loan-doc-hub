@@ -1190,12 +1190,12 @@ async function generateSingleDocument(
           // Owner Occupied  => "Owner Occupied" (Yes ☒)
           // Tenant / Vacant / NA / empty => "" (else => No ☒)
           fieldValues.set(`pr_p_occupanc_${idx}`, {
-            rawValue: isYes ? "Owner Occupied" : "",
+            rawValue: isYes ? "Owner" : "",
             dataType: "text",
           });
           if (idx === 1) {
             fieldValues.set("pr_p_occupanc", {
-              rawValue: isYes ? "Owner Occupied" : "",
+              rawValue: isYes ? "Owner" : "",
               dataType: "text",
             });
           }
