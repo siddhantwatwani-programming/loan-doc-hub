@@ -75,8 +75,6 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
   const isFormFilled = hasModalFormData(formData, ['id', 'priority'], { anticipated: 'false', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false', thisLoan: 'false', estimate: 'false', recordingNumberFlag: 'false', seniorLienTracking: 'false' });
   const emailsValid = hasValidEmails(formData as any, ['email']);
-  // Liens must belong to exactly one property — propertyId is required
-  const propertyValid = !!formData.property && formData.property !== 'unassigned';
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = async () => {
@@ -229,13 +227,11 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
               <div className="flex items-center gap-2">
-                <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property <span className="text-destructive">*</span></Label>
-                 <Select value={formData.property && formData.property !== 'unassigned' ? formData.property : undefined} onValueChange={(val) => handleChange('property', val)}>
-                   <SelectTrigger className={`h-7 text-xs flex-1 ${!propertyValid ? 'border-destructive' : ''}`}><SelectValue placeholder="Select property" /></SelectTrigger>
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property</Label>
+                 <Select value={formData.property || undefined} onValueChange={(val) => handleChange('property', val)}>
+                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
                    <SelectContent className="bg-background border border-border z-[200]">
-                    {propertyOptions.length === 0 && (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No properties available</div>
-                    )}
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     {propertyOptions.map(opt => (
                       <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
                     ))}
@@ -377,7 +373,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
           <div className="flex justify-end gap-2 pt-3 border-t border-border shrink-0 mt-0">
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid || !propertyValid} title={!propertyValid ? 'A lien must be assigned to one property' : undefined}>OK</Button>
+            <Button size="sm" onClick={handleSaveClick} disabled={!isFormFilled || !emailsValid}>OK</Button>
           </div>
         </DialogContent>
       </Dialog>
