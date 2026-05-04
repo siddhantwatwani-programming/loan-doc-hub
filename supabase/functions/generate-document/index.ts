@@ -2777,6 +2777,12 @@ async function generateSingleDocument(
           "pr_p_protectiveEquity_N", "pr_p_descript_N", "pr_p_ltv_N", "pr_p_cltv_N",
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
+          // Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
+          "pr_li_delinquencyPaidByLoan_N",
+          "pr_li_delinqu60day_N",
+          "pr_li_currentDelinqu_N",
+          "pr_li_sourceOfPayment_N",
+          "pr_li_delinquHowMany_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
           // RE851D propertytax dotted-form _N tags. Order is critical: longer
           // matches FIRST so "delinquent_amount_N" wins before "delinquent_N".
