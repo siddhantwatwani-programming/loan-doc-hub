@@ -360,6 +360,14 @@ export const PropertyDetailsForm: React.FC<PropertyDetailsFormProps> = ({
           </DirtyFieldWrapper>
 
           <div className="pt-1">
+            <span className="text-xs font-medium text-primary">Land Classification</span>
+          </div>
+          {renderCheckboxField('property1.land_sfr_residential', 'Land SFR Residential')}
+          {renderCheckboxField('property1.land_residential', 'Land Residential')}
+          {renderCheckboxField('property1.land_commercial', 'Land Commercial')}
+          {renderCheckboxField('property1.land_income_producing', 'Land Income Producing')}
+
+          <div className="pt-1">
             <span className="text-xs font-medium text-primary">Address</span>
           </div>
           <div className="flex items-center gap-2">
