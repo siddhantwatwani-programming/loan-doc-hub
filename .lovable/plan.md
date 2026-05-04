@@ -1,51 +1,58 @@
-# Liens Delinquency Mapping for RE851D
+# Fix Delinquency Fields Not Populating in RE851D
 
-## Problem
-RE851D template references `pr_li_delinquencyPaidByLoan_N`, `pr_li_delinqu60day_N`, `pr_li_delinquHowMany_N` (and existing `pr_p_delinquHowMany_N`), `pr_li_currentDelinqu_N`, `pr_li_sourceOfPayment_N`. None of these are currently published by the edge function, so YES/NO checkboxes always fall to the `else` branch and the count/source text fields render blank.
+## Root Cause (verified)
 
-The Lien UI already persists the source data:
-- `lienK.paid_by_loan` (boolean string)
-- `lienK.delinquencies_60day` (boolean string) — currently unused
-- `lienK.delinquencies_how_many` (number string)
-- `lienK.currently_delinquent` (boolean string)
-- `lienK.source_of_payment` (text)
-- `lienK.property` (e.g. `property1`) — links lien → property
+The CSR values **are** already published correctly per-property by the existing publisher in `supabase/functions/generate-document/index.ts` (lines ~2199-2300):
 
-## Fix (single, surgical edit in `supabase/functions/generate-document/index.ts`)
+- `pr_li_delinquencyPaidByLoan_${pIdx}` (boolean: "true"/"")
+- `pr_li_delinqu60day_${pIdx}` (boolean — already true if `delinquencies_how_many > 0`)
+- `pr_li_currentDelinqu_${pIdx}` (boolean)
+- `pr_li_delinquHowMany_${pIdx}` (numeric string)
+- `pr_li_sourceOfPayment_${pIdx}` (text)
 
-Inside the existing Lien bridging block (around line 2167, right after the `for (const [field, entries] of Object.entries(lienFieldCollector))` loop), add a new dedicated publisher for the five delinquency fields. Two indexing schemes are published so the template works regardless of whether `_N` was authored as the lien ordinal or the property ordinal:
+The bug is that the RE851D template authors the placeholders with the literal token `_N` (e.g. `{{pr_li_delinqu60day_N}}`, `{{#if pr_li_currentDelinqu_N}}…`). For RE851D, an existing pre-pass rewrites `_N` → `_1`, `_2`, … per property, but **only for tag names listed in `RE851D_INDEXED_TAGS`** (around line 2763 of `generate-document/index.ts`). The `pr_li_*_N` family is missing from that allowlist, so:
 
-1. **Per-lien index** (`_1`, `_2`, `_3`, … by lien insertion order across the deal) — matches the user spec ("`pr_li_delinqu60day_1`, `_2`, `_3`").
-2. **Per-property index** (`_1`, `_2`, … using each lien's `property` prefix `propertyN`) — matches the existing RE851D per-property repetition pattern (same N as `pr_p_delinquHowMany_N`). When multiple liens belong to one property, aggregate: YES wins for booleans; counts sum; source-of-funds joined with newlines.
+- `{{pr_li_delinquHowMany_N}}` is looked up as the literal key `pr_li_delinquHowMany_N` → not found → renders blank.
+- `{{#if pr_li_currentDelinqu_N}}` evaluates an unknown key → falsy → always shows the NO checkbox.
+- `{{#if pr_li_delinqu60day_N}}` likewise → always NO.
+- `{{#if pr_li_delinquencyPaidByLoan_N}}` likewise → always NO.
+- `{{pr_li_sourceOfPayment_N}}` → blank.
 
-For `idx === 1`, also publish the unsuffixed alias (no `_1`) for templates that reference the bare key — mirrors the convention used by every other per-property publisher in the file.
+The boolean truthy logic in `tag-parser.ts > isConditionTruthy` already handles the published `"true"`/`""` values correctly — no change needed there. The current `pr_li_delinqu60day_N` boolean is already derived from `delinquencies_how_many > 0`, so we do **not** need a `(gt …)` helper; once the `_N` rewrite resolves to `_1`/`_2`/…, the existing `{{#if pr_li_delinqu60day_N}}` form will work.
 
-### Field derivation rules
+## Change (single, surgical edit)
 
-| Template tag | UI source | Value type |
-|---|---|---|
-| `pr_li_delinquencyPaidByLoan_N` | `lien.paid_by_loan === 'true'` | boolean |
-| `pr_li_delinqu60day_N` | `lien.delinquencies_60day === 'true'` OR `Number(lien.delinquencies_how_many) > 0` | boolean |
-| `pr_li_delinquHowMany_N` and `pr_p_delinquHowMany_N` | `lien.delinquencies_how_many` (raw number) | text/number |
-| `pr_li_currentDelinqu_N` | `lien.currently_delinquent === 'true'` | boolean |
-| `pr_li_sourceOfPayment_N` | `lien.source_of_payment` | text |
+Add the five `pr_li_*_N` tag names to the RE851D `RE851D_INDEXED_TAGS` allowlist immediately after `pr_p_delinquHowMany_N` so the existing per-property rewrite picks them up. No other section, allowlist (`PART1_TAGS`, `PART2_TAGS`), or logic is touched — these tags only appear in the per-property delinquency block, not in the PART 1 / PART 2 row tables.
 
-For per-property aggregation: any lien with the trigger checked makes the property-level boolean YES; `how_many` is summed across liens of that property; `sourceOfPayment` is newline-joined.
+```ts
+// supabase/functions/generate-document/index.ts (~line 2779)
+"pr_p_delinquHowMany_N",
+// Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
+"pr_li_delinquencyPaidByLoan_N",
+"pr_li_delinqu60day_N",
+"pr_li_currentDelinqu_N",
+"pr_li_sourceOfPayment_N",
+"pr_li_delinquHowMany_N",
+```
 
-Booleans are emitted as the literal string `"true"` / `""` so the template's `{{#if ...}}` evaluates correctly (this matches how `pr_p_occupanc_${idx}` is published elsewhere).
+## What is NOT changed
 
-### Why this works
-- Template, field dictionary, UI, and DB schema are untouched.
-- The existing `_N` expansion engine already iterates per index, so adding the alias keys is the only missing link.
-- Lien-property isolation is preserved (we only attribute a lien to the property identified by its own `property` prefix — no cross-property leakage).
-- Existing `pr_p_delinquHowMany_N` from the property-tax block is left intact; we publish it again only if a lien provides a count and the key is unset.
-
-## What does NOT change
-- `field_dictionary`
-- UI components (`LienDetailForm.tsx`, `LienSectionContent.tsx`)
-- RE851D template
-- `legacyKeyMap.ts`
-- Database schema, RLS, save/update APIs
+- Field dictionary, RLS, schema, save/update APIs.
+- UI components (`LienDetailForm.tsx`, `PropertySectionContent.tsx`, etc.).
+- The RE851D template `.docx`.
+- The publisher logic at lines 2199-2300 (already correct).
+- `tag-parser.ts` truthy/conditional logic (already correct for the published `"true"`/`""` strings).
+- PART 1 / PART 2 row-tag allowlists (delinquency tags do not appear there).
 
 ## Files touched
-- `supabase/functions/generate-document/index.ts` — append ~40 lines inside the existing Lien bridging block.
+
+- `supabase/functions/generate-document/index.ts` — add 5 lines to the existing `RE851D_INDEXED_TAGS` array.
+
+## Expected outcome
+
+After regenerating any RE851D, per-property the placeholders resolve to:
+- 60-day YES/NO → checkbox driven by `delinquencies_how_many > 0` from the matching lien(s)
+- "If YES, how many?" → numeric count
+- "Payments remain unpaid" YES/NO → driven by Currently Delinquent
+- "Proceeds used to cure" YES/NO → driven by Delinquency to be Paid by This Loan
+- "Source of funds" → newline-joined text from each lien
