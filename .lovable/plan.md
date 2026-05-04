@@ -1,68 +1,63 @@
-## Goal
-Bring Enter File Data → Property → **Property Details** screen in line with the attached reference image, without changing schema or save APIs. New fields persist through the existing field-dictionary–driven save flow.
+## Root cause (this is NOT an `_N` expansion bug)
 
-## Gap analysis vs. attached image
+The `_N → _1/_2/_3` per-property rewrite is already working correctly. The bug is a **literal mismatch** in the conditional comparison.
 
-Current `src/components/deal/PropertyDetailsForm.tsx` already has most layout. Missing / different from spec:
+Template (your screenshot) contains:
+```
+{{#if (eq pr_p_occupanc_N "Owner")}}☐{{else}}☑{{/if}} Yes
+{{#if (eq pr_p_occupanc_N "Owner")}}☑{{else}}☐{{/if}} No
+```
 
-1. **Fire Zone** checkbox — not present. Should sit in column 2 right after Flood Zone.
-2. **Pledged Equity** currency field — not present. Should sit in column 3 above Protective Equity.
-3. **Net Monthly Income** — currently hidden behind a "Property Generates Income" checkbox. Spec shows it as an always-visible currency field in column 2 directly under Fire Zone.
-4. **Zoning** — currently a free-text input. Spec shows it as a dropdown using the Zoning reference list.
-5. **Type of Construction options** — currently `['Wood/Stucco', 'Stick', 'Concrete Block']`. Spec list: `Wood Frame`, `Wood Frame / Stucco`, `Modular`, `Steel Frame`, `Brick / Block`, `NA`.
-6. **Property Type options** — currently missing `Commercial Income`, and has a single `Land` entry instead of the 4 land subtypes (`Land SFR Residential`, `Land Residential`, `Land Commercial`, `Land Income Producing`). Spec list: `SFR 1-4`, `Multi-family`, `Condo / Townhouse`, `Mobile Home`, `Commercial`, `Commercial Income`, `Mixed-use`, `Land SFR Residential`, `Land Residential`, `Land Commercial`, `Land Income Producing`, `Farm`, `Restaurant / Bar`, `Group Housing`.
-7. **Zoning options** (new dropdown): `R1 SFR`, `R2 SFR`, `R3 Multi-family`, `R-M Multi-family`, `PUD`, `Residential Lot / Parcel`, `Mixed Use`, `C Commercial`, `Agriculture`, `NA`.
-8. **Occupancy** — already corrected to spec values in prior task. Leave as-is.
-9. **Third Party panel** (Full Name / Street / City / State / ZIP / Phone / Email) — already present, conditionally rendered when Performed By = "Third Party". Leave as-is.
-10. **Land Classification** sub-row in column 1 — leave as-is (existing functionality, not removed by spec).
+Publisher (`generate-document/index.ts` line ~1192) sets:
+```ts
+pr_p_occupanc_${idx} = isYes ? "Owner Occupied" : ""
+```
 
-Everything else (Information Provided By, Primary Property, Description, Property Owner, Copy Borrower's Address + address fields, County, Purchase Date / Price / Down Payment, Estimate of Value, Valuation Date / Type, Performed By, Protective Equity, LTV, CLTV) already matches the spec.
+Because `"Owner Occupied" !== "Owner"` (and `"" !== "Owner"`), the `eq` always returns **false** for every property → the `else` branch always wins → **☑ Yes / ☐ No on every property**, exactly the symptom reported.
 
-## Changes
+Additionally, the existing "Owner-Occupied YES/NO safety pass" (line ~3479) anchors on the literal text `"Owner Occupied"` in the document. In the rendered PROPERTY #2 screenshot that anchor still appears, but the safety pass currently collides with the inline `{{#if}}` glyphs (overlap detection skips it), so it cannot correct the wrong result.
 
-### A. UI — `src/components/deal/PropertyDetailsForm.tsx` (single file)
+## Fix (minimal, scoped to RE851D occupancy only)
 
-1. Replace `CONSTRUCTION_TYPES` constant with the 6-value spec list.
-2. Replace `PROPERTY_TYPE_OPTIONS` with the 14-value spec list.
-3. Add new `ZONING_OPTIONS` constant with the 10-value spec list.
-4. In column 2 JSX:
-   - Change Zoning from `renderInlineField` to `renderInlineSelect(FIELD_KEYS.zoning, 'Zoning', ZONING_OPTIONS, 'Select...')`.
-   - Immediately after the Flood Zone checkbox, add `renderCheckboxField(FIELD_KEYS.fireZone, 'Fire Zone')`.
-   - Replace the conditional `Property Generates Income` block with an unconditional `renderCurrencyField(FIELD_KEYS.netMonthlyIncome, 'Net Monthly Income')` (per spec — only Net Monthly Income is shown; the From Rent / From Other sub-fields and the toggle checkbox are removed from this screen but their existing field keys are left untouched in `fieldKeyMap.ts` so any other consumers/templates continue to work).
-5. In column 3 JSX, insert `renderCurrencyField(FIELD_KEYS.pledgedEquity, 'Pledged Equity')` directly above the Protective Equity row.
+### 1. `supabase/functions/generate-document/index.ts` — publisher (~line 1192)
+Change the published value so it matches the template literal `"Owner"` exactly, while still per-property:
+```ts
+fieldValues.set(`pr_p_occupanc_${idx}`, {
+  rawValue: isYes ? "Owner" : "",
+  dataType: "text",
+});
+if (idx === 1) {
+  fieldValues.set("pr_p_occupanc", {
+    rawValue: isYes ? "Owner" : "",
+    dataType: "text",
+  });
+}
+```
+This makes `(eq pr_p_occupanc_1 "Owner")` evaluate true only for the property whose own occupancy is "Owner Occupied". Each property uses its own indexed value — Property 1 uses `_1`, Property 2 uses `_2`, etc.
 
-### B. Field key map — `src/lib/fieldKeyMap.ts`
+### 2. Safety pass (~line 3521) — same alignment
+Update the comparison so the safety pass agrees with the new published value:
+```ts
+const isOwner = occVal === "owner occupied" || occVal === "owner";
+```
+(Accept both so the pass works whether the value was published by the new code or read from a legacy alias.)
 
-Add two new entries to `PROPERTY_DETAILS_KEYS`:
-- `fireZone: 'property1.fire_zone'`
-- (Pledged Equity already mapped as `pledgedEquity: 'property1.pledged_equity'` — reuse.)
+### 3. No template change required
+You do **not** need to edit the RE851D Word template. Keep `(eq pr_p_occupanc_N "Owner")` as-is; the data layer now publishes the matching literal per property index.
 
-No removals.
+## Out of scope
+- No UI / dropdown changes (CSR keeps `Owner Occupied | Tenant / Other | Vacant | NA`).
+- No schema / database changes.
+- No changes to `_N` expansion logic (already correct).
+- No changes to other YES/NO checkboxes (Annual Property Taxes, Remain Unpaid, etc.).
 
-### C. Persistence — field_dictionary rows (data, not schema)
+## Expected result
 
-Per existing rule "Data persistence is strictly governed by field_dictionary entries; missing UI keys are skipped", insert the missing dictionary rows so the existing save/update API persists the new values. This is a data INSERT against the existing `field_dictionary` table — no schema change, no new table.
+| Property | CSR Occupancy   | YES | NO |
+|----------|-----------------|-----|----|
+| 1        | Owner Occupied  | ☑   | ☐  |
+| 2        | Vacant          | ☐   | ☑  |
+| 3        | NA              | ☐   | ☑  |
+| 4        | Tenant / Other  | ☐   | ☑  |
 
-Migration adds two rows:
-
-| field_key | canonical_key | section | form_type | data_type |
-|---|---|---|---|---|
-| `property1.fire_zone` | `pr_p_fireZone` | property | property_details | boolean |
-| `property1.net_monthly_income` | `pr_p_netMonthlyIncome` | property | property_details | currency |
-
-(`property1.pledged_equity` → `pr_p_pledgedEquity` already exists in the dictionary, confirmed via DB inspection.)
-
-No other DB changes. Existing deal save/update API (`deal_section_values` JSONB) already handles `property1.*` keys.
-
-### D. Out of scope
-
-- No changes to PropertySubNavigation, PropertyModal, PropertyTaxForm, PropertyLiensForm, or any document-generation code.
-- No changes to the Land Classification dropdown contents.
-- No changes to existing Occupancy options (already updated previously).
-- No refactor of save flow, dirty-tracking, or permission gating.
-
-## Expected outcome
-
-- Property Details screen renders Fire Zone (checkbox), Pledged Equity (currency), Net Monthly Income (currency, always visible), Zoning (dropdown), corrected Type of Construction and Property Type dropdowns.
-- Entering values and saving the deal persists Fire Zone, Pledged Equity and Net Monthly Income through the existing save API; values reload after refresh.
-- All previously working fields, Third-Party conditional panel, address-copy logic, and LTV/CLTV/Protective-Equity calculations behave exactly as before.
+Each property's checkbox is driven independently by its own `pr_p_occupanc_K` value with no cross-property bleed.
