@@ -3310,7 +3310,7 @@ async function generateSingleDocument(
               "balloonYes", "balloonNo", "balloonUnknown",
             ];
             const encTagRe = new RegExp(
-              "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?\\b",
+              "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?(?![A-Za-z0-9_])",
               "g",
             );
             let m2: RegExpExecArray | null;
