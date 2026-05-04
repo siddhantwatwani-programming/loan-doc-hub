@@ -27,8 +27,9 @@ export interface PropertyTaxData {
   nextDue: string;
   frequency: string;
   escrowImpounds: string;
-  passThrough: string;
+  passThrough: string | boolean;
   sourceOfInformation: string;
+  taxConfidence?: string;
   active: boolean;
   lastVerified: string;
   lenderNotified: string;
