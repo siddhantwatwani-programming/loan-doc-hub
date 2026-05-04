@@ -2442,6 +2442,7 @@ async function generateSingleDocument(
 
                 debugLog(`[generate-document] RE851D enc row ${tagPrefix} P${pIdx} S${s}: priority="${fields[0][1]}" beneficiary="${fields[2][1]}" interestRate="${fields[1][1]}" maturityDate="${fields[6][1]}"`);
 
+                setBoolV(`${tagPrefix}_balloonYes_${pIdx}_${s}`, isYes);
                 setBoolV(`${tagPrefix}_balloonNo_${pIdx}_${s}`, isNo);
                 setBoolV(`${tagPrefix}_balloonUnknown_${pIdx}_${s}`, isUnknown);
                 if (s === 1) {
