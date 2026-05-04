@@ -1908,14 +1908,22 @@ async function generateSingleDocument(
       }
     }
 
-    // Auto-compute bk_p_brokerLicens from broker section data
-    const existingLicense = fieldValues.get("bk_p_brokerLicens");
-    if (!existingLicense || !existingLicense.rawValue) {
-      const license = fieldValues.get("broker1.License")?.rawValue 
+    // Auto-compute bk_p_brokerLicens from broker section data.
+    // Force-publish (overwrite null/empty stored entries) since field_dictionary
+    // may carry data_type=number causing the dsv loader to set rawValue=null
+    // when the value is actually stored as text.
+    {
+      const existingLicense = fieldValues.get("bk_p_brokerLicens");
+      const license =
+        fieldValues.get("broker1.License")?.rawValue
         || fieldValues.get("broker1.license_number")?.rawValue
         || fieldValues.get("broker.License")?.rawValue
-        || fieldValues.get("broker.license_number")?.rawValue;
-      if (license) {
+        || fieldValues.get("broker.license_number")?.rawValue
+        || fieldValues.get("bk_p_license")?.rawValue;
+      const existingHasValue = existingLicense?.rawValue !== undefined
+        && existingLicense?.rawValue !== null
+        && String(existingLicense?.rawValue ?? "").trim() !== "";
+      if (!existingHasValue && license !== undefined && license !== null && String(license).trim() !== "") {
         fieldValues.set("bk_p_brokerLicens", { rawValue: String(license), dataType: "text" });
         debugLog(`[generate-document] Auto-computed bk_p_brokerLicens = "${license}"`);
       }
