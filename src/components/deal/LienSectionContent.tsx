@@ -16,6 +16,7 @@ interface LienSectionContentProps {
   onPersist?: () => Promise<boolean>;
   disabled?: boolean;
   propertyOptions?: { id: string; label: string }[];
+  currentPropertyId?: string;
   onBack?: () => void;
   onRefresh?: () => void;
 }
@@ -208,6 +209,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   onPersist,
   disabled = false,
   propertyOptions = [],
+  currentPropertyId,
   onBack,
   onRefresh,
 }) => {
@@ -225,6 +227,14 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
 
   const allLiens = extractLiensFromValues(values);
 
+  // Scope liens to the current property to prevent the bug where liens
+  // appeared under every property. When no current property is provided,
+  // fall back to showing all (legacy behavior).
+  const liensForProperty = useMemo(() => {
+    if (!currentPropertyId) return allLiens;
+    return allLiens.filter(l => l.property === currentPropertyId);
+  }, [allLiens, currentPropertyId]);
+
   // Auto-compute 10A: "yes" if any lien has an existing type checked
   const hasExistingLien = allLiens.some(l =>
     l.existingRemain === 'true' || l.existingPaydown === 'true' || l.existingPayoff === 'true'
@@ -236,10 +246,10 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       onValueChange('liens.answer_10a', expected10A);
     }
   }, [expected10A, current10A, onValueChange]);
-  const totalLiens = allLiens.length;
+  const totalLiens = liensForProperty.length;
   const totalPages = Math.max(1, Math.ceil(totalLiens / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
-  const paginatedLiens = allLiens.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const paginatedLiens = liensForProperty.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   // Remap dirty field keys for the selected lien
   const remappedDirtyKeys = useMemo(() => {
@@ -268,10 +278,17 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const handleSaveLien = useCallback(async (lienData: LienData) => {
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
 
+    // Bind the lien to the current property when adding a new lien and the
+    // user did not pick one explicitly. This is what isolates liens per property.
+    const boundLienData: LienData = {
+      ...lienData,
+      property: lienData.property || currentPropertyId || lienData.property,
+    };
+
     flushSync(() => {
       Object.entries(LIEN_FIELD_MAP).forEach(([lienKey, dbField]) => {
         if (lienKey === 'id') return;
-        const val = (lienData as any)[lienKey] || '';
+        const val = (boundLienData as any)[lienKey] || '';
         const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
         if (val !== defaultVal || editingLien) {
           onValueChange(`${prefix}.${dbField}`, val);
@@ -285,7 +302,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       setModalOpen(false);
     }
     return success;
-  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix]);
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
