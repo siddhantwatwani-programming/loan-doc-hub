@@ -2807,6 +2807,8 @@ async function generateSingleDocument(
           // Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
           "pr_li_delinquencyPaidByLoan_N",
           "pr_li_delinqu60day_N",
+          "pr_li_currentDelinqu_N_yes_glyph", "pr_li_currentDelinqu_N_no_glyph",
+          "pr_li_currentDelinqu_N_yes", "pr_li_currentDelinqu_N_no",
           "pr_li_currentDelinqu_N",
           "pr_li_sourceOfPayment_N",
           "pr_li_delinquHowMany_N",
