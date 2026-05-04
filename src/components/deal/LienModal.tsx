@@ -75,6 +75,8 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
   const isFormFilled = hasModalFormData(formData, ['id', 'priority'], { anticipated: 'false', existingRemain: 'false', existingPaydown: 'false', existingPayoff: 'false', thisLoan: 'false', estimate: 'false', recordingNumberFlag: 'false', seniorLienTracking: 'false' });
   const emailsValid = hasValidEmails(formData as any, ['email']);
+  // Liens must belong to exactly one property — propertyId is required
+  const propertyValid = !!formData.property && formData.property !== 'unassigned';
 
   const handleSaveClick = () => setShowConfirm(true);
   const handleConfirmSave = async () => {
