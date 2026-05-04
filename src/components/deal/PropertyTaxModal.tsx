@@ -127,7 +127,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
           onPaste={(e) => numericPaste(e, (v) => handleChange(field, v))}
           onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange(field, v); }}
           onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange(field, v); }}
-          className="h-7 text-xs pl-5"
+          className="h-7 text-xs pl-5 text-left"
         />
       </div>
     </div>
@@ -137,7 +137,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
     <div className="flex items-center gap-2">
       <Label className="w-[120px] shrink-0 text-xs text-foreground">{label}</Label>
       <Select value={String(formData[field] || '')} onValueChange={(v) => handleChange(field, v)}>
-        <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
+        <SelectTrigger className="h-7 text-xs flex-1 bg-background text-left"><SelectValue placeholder="Select" /></SelectTrigger>
         <SelectContent className="bg-background z-[9999]">
           {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
         </SelectContent>
@@ -164,23 +164,23 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Tax Authority</Label>
-                <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1" />
+                <Input value={formData.authority} onChange={(e) => handleChange('authority', e.target.value)} className="h-7 text-xs flex-1 text-left" />
               </div>
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">Street</Label>
-                <Input value={formData.pmaStreet} onChange={(e) => handleChange('pmaStreet', e.target.value)} className="h-7 text-xs flex-1" />
+                <Input value={formData.pmaStreet} onChange={(e) => handleChange('pmaStreet', e.target.value)} className="h-7 text-xs flex-1 text-left" />
               </div>
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">City</Label>
-                <Input value={formData.pmaCity} onChange={(e) => handleChange('pmaCity', e.target.value)} className="h-7 text-xs flex-1" />
+                <Input value={formData.pmaCity} onChange={(e) => handleChange('pmaCity', e.target.value)} className="h-7 text-xs flex-1 text-left" />
               </div>
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">State</Label>
                 <Select value={formData.pmaState} onValueChange={(v) => handleChange('pmaState', v)}>
-                  <SelectTrigger className="h-7 text-xs flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
+                  <SelectTrigger className="h-7 text-xs flex-1 bg-background text-left"><SelectValue placeholder="Select state" /></SelectTrigger>
                   <SelectContent className="bg-background z-[9999] max-h-[200px]">
                     {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
                   </SelectContent>
@@ -189,7 +189,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
 
               <div className="flex items-center gap-2">
                 <Label className="w-[120px] shrink-0 text-xs text-foreground">ZIP</Label>
-                <ZipInput value={formData.pmaZip} onValueChange={(v) => handleChange('pmaZip', v)} className="h-7 text-xs" />
+                <ZipInput value={formData.pmaZip} onValueChange={(v) => handleChange('pmaZip', v)} className="h-7 text-xs text-left" />
               </div>
 
               {renderCurrencyField('annualPayment', 'Annual Payment')}
@@ -247,7 +247,7 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                     onPaste={(e) => numericPaste(e, (v) => handleChange('delinquentAmount', v))}
                     onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('delinquentAmount', v); }}
                     onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('delinquentAmount', v); }}
-                    className="h-7 text-xs pl-5"
+                    className="h-7 text-xs pl-5 text-left"
                   />
                 </div>
               </div>
