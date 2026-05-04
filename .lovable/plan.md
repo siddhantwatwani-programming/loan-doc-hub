@@ -1,41 +1,57 @@
-## Root cause
+## Problem
 
-In the generated RE-851D, the encumbrance values are populating correctly (1st, 6.5, ABC Bank Ltd, $300,000.00, 01/01/2036, etc.). The trailing `_(N)_(S)` shown in the screenshot is **decorative annotation text** the template author placed in the docx as standalone `<w:t>` runs after each encumbrance field — it is not part of any merge tag.
+In the generated RE851D, the question **"Do any of these payments remain unpaid?"** renders both ☑ YES and ☑ NO together, regardless of the CSR "Currently Delinquent" checkbox state.
 
-Confirmed by unpacking `Re851d_v2.docx`: every encumbrance row contains a separate text run like `<w:r>...<w:t>_(N)_(S)</w:t></w:r>` (size 16) sitting next to the merge field. The merge-tag parser correctly leaves this alone (it isn't a tag), and the previous Step A normalization only touches `_(N)_(S)` when preceded by a `pr_li_(rem|ant)_<field>` identifier, so standalone annotations slip through and print verbatim.
+## Root Cause
 
-## Fix — single file
+The data layer in `supabase/functions/generate-document/index.ts` (lines 2280–2358) already publishes correct per-lien / per-property booleans and glyph aliases:
 
-**`supabase/functions/generate-document/index.ts`** — inside the existing `if (/851d/i.test(template.name || ""))` block, immediately after the Step A normalization (after line 3140), add a cleanup pass that strips any remaining `_(N)_(S)` and `_(N)` substrings that appear inside `<w:t>` text-run content.
+- `pr_li_currentDelinqu_N_yes` / `pr_li_currentDelinqu_N_no` (booleans)
+- `pr_li_currentDelinqu_N_yes_glyph` / `pr_li_currentDelinqu_N_no_glyph` (☒/☐)
 
-```ts
-// Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels that
-// some authored RE851D templates place after each encumbrance field as
-// a slot/property indicator. Step A above has already rewritten any
-// suffix that belonged to a real pr_li_(rem|ant)_<field> identifier,
-// so anything left is pure annotation prose. Restrict to <w:t> bodies
-// so XML tag/attribute syntax can never be touched.
-xml = xml.replace(
-  /(<w:t(?:\s[^>]*)?>)([^<]*?)_\(N\)_\(S\)([^<]*?)(<\/w:t>)/g,
-  "$1$2$3$4",
-);
-xml = xml.replace(
-  /(<w:t(?:\s[^>]*)?>)([^<]*?)_\(N\)([^<]*?)(<\/w:t>)/g,
-  "$1$2$3$4",
-);
-```
+However, the authored RE851D template at the "remain unpaid" line uses **two static ☐ glyphs** (or a non-strict conditional that does not negate properly across YES/NO), so neither glyph is being anchored to the boolean. The result is that both checkboxes pass through unchanged (both ☑ from the static template), or both flip to ☑ during the glyph→SDT pass.
 
-## Why this is safe
+## Fix (single, scoped change)
 
-- Scoped to RE851D templates only (inside the existing `851d` template-name guard).
-- Runs **after** Step A, so every legitimate `pr_li_(rem|ant)_<field>_(N)_(S)` has already been promoted to `_N_S` and cannot be matched here.
-- Match restricted to text inside `<w:t>...</w:t>`; element names, attributes, and structural XML are untouched.
-- `[^<]*?` cannot cross run boundaries — each strip stays within a single text run.
-- Idempotent and leaves all surrounding text/formatting intact.
+Add a **post-resolution safety pass** for RE851D — analogous to the existing RE851A Servicing/Amortization/Payable safety passes — that anchors the YES and NO checkbox glyphs immediately following the literal text **"Do any of these payments remain unpaid?"** to the property-indexed boolean.
 
-## Out of scope
+### Where
 
-- No template edits.
-- No UI, schema, field_dictionary, packet, or permissions changes.
-- No changes to the merge-tag parser or to the Step A/B encumbrance publishers.
-- No changes to any other document or section.
+`supabase/functions/generate-document/index.ts`, inside the existing `if (/851d/i.test(template.name || ""))` post-processing block (the same region that already contains the encumbrance and `_(N)_(S)` cleanup passes).
+
+### What the pass does
+
+For each occurrence of the question text in `word/document.xml`:
+
+1. Locate the question text run, then walk forward in the XML until it finds the first checkbox-glyph run (☐/☑/☒) followed (later) by `YES`, then the next glyph followed by `NO`, all within a bounded window (e.g. ≤ 4 KB ahead, single property block).
+2. Determine which property index this question belongs to by scanning back to the nearest `PROPERTY #K` anchor (using the same `findAnchorOffsets` helper already used for `_N` rewriting in this file).
+3. Read the resolved boolean from `fieldValues.get('pr_li_currentDelinqu_' + K + '_yes')` (falling back to `_no` and bare `pr_li_currentDelinqu_K`).
+4. Rewrite the two glyph text nodes:
+   - YES glyph → ☑ if true, ☐ if false
+   - NO glyph → ☐ if true, ☑ if false
+5. Increment a debug counter and log per occurrence.
+
+The pass runs **after** all merge-tag substitution and **before** `convertGlyphsToSdtCheckboxes`, so the ☑/☐ characters are then converted into native interactive Word SDT checkboxes by the existing post-processor — guaranteeing exactly one checked box.
+
+### Strict scoping
+
+- Only triggers for templates whose name matches `/851d/i`.
+- Only matches the literal anchor text "Do any of these payments remain unpaid".
+- Bounded look-ahead window prevents touching unrelated YES/NO checkboxes (e.g. "Will the proceeds…").
+- No template edits required and no schema or UI changes.
+
+## Files to change
+
+- `supabase/functions/generate-document/index.ts` — add the safety pass inside the existing RE851D `if` block.
+
+## Out of scope (per minimal-change policy)
+
+- No changes to `tag-parser.ts`, no new dictionary fields, no UI changes, no migrations, no edits to other templates.
+
+## Expected outcome
+
+For every property on RE851D:
+
+- CSR "Currently Delinquent" = ☑ → document shows ☑ YES ☐ NO
+- CSR "Currently Delinquent" = ☐ → document shows ☐ YES ☑ NO
+- Never both checked.
