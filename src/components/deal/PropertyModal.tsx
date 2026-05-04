@@ -15,6 +15,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -29,6 +31,7 @@ interface PropertyModalProps {
   onSave: (property: PropertyData) => void;
   isEdit?: boolean;
   borrowerAddress?: { street: string; city: string; state: string; zipCode: string };
+  borrowerOptions?: string[];
 }
 
 const PROPERTY_TYPE_OPTIONS = [
@@ -59,11 +62,13 @@ const getEmptyProperty = (): PropertyData => ({
   valuationDate: '', valuationType: '', thirdPartyFullName: '', thirdPartyStreet: '', thirdPartyCity: '',
   thirdPartyState: '', thirdPartyZip: '', protectiveEquity: '', cltv: '',
   informationProvidedBy: '',
+  propertyOwner: '',
 });
 
-export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress }) => {
+export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange, property, onSave, isEdit = false, borrowerAddress, borrowerOptions = [] }) => {
   const [formData, setFormData] = useState<PropertyData>(getEmptyProperty());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [ownerPickerOpen, setOwnerPickerOpen] = useState(false);
 
   const CURRENCY_MODAL_FIELDS: (keyof PropertyData)[] = ['purchasePrice', 'downPayment', 'delinquentTaxes', 'appraisedValue', 'monthlyIncome', 'lienProtectiveEquity', 'netMonthlyIncome', 'fromRent', 'fromOtherDescribe', 'protectiveEquity'];
   useEffect(() => {
@@ -81,11 +86,18 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
     const resolved = value === '__none__' ? '' : value;
     setFormData(prev => {
       const next = { ...prev, [field]: resolved } as PropertyData;
-      if (field === 'copyBorrowerAddress' && value === true && borrowerAddress) {
-        next.street = borrowerAddress.street || '';
-        next.city = borrowerAddress.city || '';
-        next.state = borrowerAddress.state || '';
-        next.zipCode = borrowerAddress.zipCode || '';
+      if (field === 'copyBorrowerAddress') {
+        if (value === true && borrowerAddress) {
+          next.street = borrowerAddress.street || '';
+          next.city = borrowerAddress.city || '';
+          next.state = borrowerAddress.state || '';
+          next.zipCode = borrowerAddress.zipCode || '';
+        } else if (value === false) {
+          next.street = '';
+          next.city = '';
+          next.state = '';
+          next.zipCode = '';
+        }
       }
       return next;
     });
@@ -239,6 +251,46 @@ export const PropertyModal: React.FC<PropertyModalProps> = ({ open, onOpenChange
                 {renderInlineSelect('informationProvidedBy', 'Information Provided By', INFO_PROVIDED_BY_OPTIONS, 'Select...')}
                 {renderCheckboxField('primaryCollateral', 'Primary Property')}
                 {renderInlineField('description', 'Description (Nickname)')}
+                <div className="flex items-center gap-2">
+                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Property Owner</Label>
+                  <Popover open={ownerPickerOpen} onOpenChange={setOwnerPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        role="combobox"
+                        className={cn('h-7 flex-1 justify-between text-xs font-normal px-2', !formData.propertyOwner && 'text-muted-foreground')}
+                      >
+                        <span className="truncate">{formData.propertyOwner || 'Search borrower...'}</span>
+                        <ChevronsUpDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0 z-[9999] w-[var(--radix-popover-trigger-width)]" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search borrower..." className="h-8 text-xs" />
+                        <CommandList>
+                          <CommandEmpty className="py-2 px-2 text-xs text-muted-foreground">No borrower found.</CommandEmpty>
+                          <CommandGroup>
+                            {borrowerOptions.map((name) => {
+                              const selected = formData.propertyOwner === name;
+                              return (
+                                <CommandItem
+                                  key={name}
+                                  value={name}
+                                  onSelect={() => { handleFieldChange('propertyOwner', name); setOwnerPickerOpen(false); }}
+                                  className="text-xs"
+                                >
+                                  <Check className={cn('mr-2 h-3.5 w-3.5', selected ? 'opacity-100' : 'opacity-0')} />
+                                  {name}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
 
                 <div className="pt-1">
                   <span className="text-xs font-medium text-primary">Address</span>

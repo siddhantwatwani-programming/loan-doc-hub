@@ -103,6 +103,7 @@ const extractPropertiesFromValues = (values: Record<string, string>): PropertyDa
       protectiveEquity: values[`${prefix}.protective_equity`] || '',
       cltv: values[`${prefix}.cltv`] || '',
       informationProvidedBy: values[`${prefix}.info_provided_by`] || '',
+      propertyOwner: values[`${prefix}.property_owner`] || '',
     };
     properties.push(property);
   });
@@ -274,6 +275,47 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     });
   }, [allProperties]);
 
+  // Borrower options + primary borrower address (mirrors PropertyDetailsForm logic)
+  const borrowerOptions = useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d*)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    const names: string[] = [];
+    Array.from(prefixes).sort().forEach(p => {
+      const full = (values[`${p}.full_name`] || '').trim();
+      const first = (values[`${p}.first_name`] || '').trim();
+      const last = (values[`${p}.last_name`] || '').trim();
+      const composed = full || [first, last].filter(Boolean).join(' ').trim();
+      if (composed && !names.includes(composed)) names.push(composed);
+    });
+    return names;
+  }, [values]);
+
+  const primaryBorrowerAddress = useMemo(() => {
+    const prefixes = new Set<string>();
+    Object.keys(values).forEach(key => {
+      const m = key.match(/^(borrower\d+)\./);
+      if (m) prefixes.add(m[1]);
+    });
+    let primary: string | null = null;
+    for (const p of prefixes) {
+      if (values[`${p}.is_primary`] === 'true') { primary = p; break; }
+    }
+    if (!primary) {
+      const hasBase = Object.keys(values).some(k => k.startsWith('borrower.') && !k.match(/^borrower\d+\./));
+      if (hasBase) primary = 'borrower';
+    }
+    if (!primary) return { street: '', city: '', state: '', zipCode: '' };
+    return {
+      street: values[`${primary}.address.street`] || '',
+      city: values[`${primary}.address.city`] || '',
+      state: values[`${primary}.address.state`] || values[`${primary}.state`] || '',
+      zipCode: values[`${primary}.address.zip`] || '',
+    };
+  }, [values]);
+
   // Get the selected property name for detail view header
   const selectedPropertyName = useMemo(() => {
     const property = allProperties.find(p => p.id === selectedPropertyPrefix);
@@ -380,6 +422,7 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
     onValueChange(`${prefix}.third_party_zip`, propertyData.thirdPartyZip || '');
     onValueChange(`${prefix}.protective_equity`, propertyData.protectiveEquity || '');
     onValueChange(`${prefix}.cltv`, propertyData.cltv || '');
+    onValueChange(`${prefix}.property_owner`, propertyData.propertyOwner || '');
     
     // If this is marked as primary, unset others
     if (propertyData.isPrimary) {
@@ -765,12 +808,8 @@ export const PropertySectionContent: React.FC<PropertySectionContentProps> = ({
         property={editingProperty}
         onSave={handleSaveProperty}
         isEdit={!!editingProperty}
-        borrowerAddress={{
-          street: values['borrower.address.street'] || '',
-          city: values['borrower.address.city'] || '',
-          state: values['borrower.state'] || '',
-          zipCode: values['borrower.address.zip'] || '',
-        }}
+        borrowerOptions={borrowerOptions}
+        borrowerAddress={primaryBorrowerAddress}
       />
 
       {/* Add/Edit Property Tax Modal */}
