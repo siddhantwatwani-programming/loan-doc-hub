@@ -1335,6 +1335,22 @@ async function generateSingleDocument(
             // uses {{ln_p_totalEncumbrance_N}} in the Total Senior Encumbrances
             // column. Force-set: this is the authoritative computed total.
             fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
+            // RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
+            // Publishes ln_p_totalWithLoan_N = ln_p_totalEncumbrance_N + ln_p_loanAmount.
+            // Null/missing values treated as 0; strings sanitized before parseFloat.
+            {
+              const loanAmtRaw =
+                fieldValues.get("ln_p_loanAmount")?.rawValue ??
+                fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
+              const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
+              const encNum = parseFloat(String(totalVal.rawValue).replace(/[^0-9.\-]/g, ""));
+              const sum = (Number.isFinite(encNum) ? encNum : 0)
+                        + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
+              fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
+                rawValue: sum.toFixed(2),
+                dataType: "currency" as const,
+              });
+            }
           }
         }
 

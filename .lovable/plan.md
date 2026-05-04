@@ -1,35 +1,57 @@
-## Problem
+## Goal
 
-In RE851D, the question **"Do any of these payments remain unpaid?"** renders both ☑ YES and ☑ NO. The RE851D template uses paired Yes/No checkbox tags (e.g. `pr_li_currentDelinqu_N_yes` / `pr_li_currentDelinqu_N_no`, plus `_glyph` variants — same pattern as `propertytax_delinquent_N_yes`/`_no` at index.ts:1387 and `pr_p_occupancySt_N_yes`/`_no` at index.ts:1172).
+Add a per-property derived currency tag `ln_p_totalWithLoan_N` for RE851D that equals `ln_p_totalEncumbrance_N + ln_p_loanAmount`. Template authors can then place `{{ln_p_totalWithLoan_N}}` in the "TOTAL (Total senior encumbrances + loan amount)" cell.
 
-The current generator (`supabase/functions/generate-document/index.ts` lines 2237–2311) only publishes the single boolean `pr_li_currentDelinqu_<N>` (and bare). It never emits the `_yes` / `_no` / `_yes_glyph` / `_no_glyph` aliases. As a result, the template's Yes and No checkbox SDTs are not flipped by the resolver, and both retain their static/default checked state — producing ☑ YES ☑ NO regardless of the CSR value.
+## Implementation (single file: `supabase/functions/generate-document/index.ts`)
 
-## Fix (single, minimal change)
+### 1. Publish per-property `ln_p_totalWithLoan_N` (inside the existing per-property loop, right after `ln_p_totalEncumbrance_${idx}` is set at line 1337)
 
-In `supabase/functions/generate-document/index.ts`, inside the existing RE851D lien-delinquency block (the same block that currently sets `pr_li_currentDelinqu_*`), additionally publish Yes/No aliases for the `currentDelinq` boolean — mirroring the established pattern used for `propertytax_delinquent` and `pr_p_occupancySt`.
-
-For each lien index `lienIdx` (after line 2258) and each property index `pIdx` (after line 2293), and for the bare alias (after line 2307), emit:
-
+```ts
+// RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
+{
+  const loanAmtRaw =
+    fieldValues.get("ln_p_loanAmount")?.rawValue ??
+    fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
+  const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
+  const encNum = parseFloat(String(totalVal.rawValue).replace(/[^0-9.\-]/g, ""));
+  const sum = (Number.isFinite(encNum) ? encNum : 0)
+            + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
+  fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
+    rawValue: sum.toFixed(2),
+    dataType: "currency",
+  });
+}
 ```
-pr_li_currentDelinqu_<i>_yes        = "true" if currentDelinq else "false"   (boolean)
-pr_li_currentDelinqu_<i>_no         = "true" if !currentDelinq else "false"  (boolean)
-pr_li_currentDelinqu_<i>_yes_glyph  = "☒" if currentDelinq else "☐"          (text)
-pr_li_currentDelinqu_<i>_no_glyph   = "☐" if currentDelinq else "☒"          (text)
-```
 
-Always publish (never conditional on truthiness) so an unchecked CSR value (`false`) explicitly resolves to ☐ YES / ☒ NO and overrides any default-checked SDT in the template.
+This runs inside the existing property loop, so each `_N` is computed in isolation. Null/missing encumbrance or loan amount is treated as 0. Output is currency-formatted by the existing currency renderer.
 
-Also add `pr_li_currentDelinqu_N_yes`, `pr_li_currentDelinqu_N_no`, `pr_li_currentDelinqu_N_yes_glyph`, `pr_li_currentDelinqu_N_no_glyph` to the `_N`-family expansion list near line 2796 so the rewrite/resolution layer expands them per property index.
+### 2. Register the new tag for `_N` expansion
 
-The existing `pr_li_currentDelinqu_<N>` boolean publisher is **unchanged** (kept for backward compatibility with any template variant that uses the single-boolean tag).
+Add `"ln_p_totalWithLoan_N"` to:
 
-## Out of scope (explicitly NOT changed)
+- The general `_N` expansion list near line 2792 (alongside `ln_p_totalEncumbrance_N`)
+- `PART1_TAGS` at line 2842 (LTV table — same row as the encumbrance columns)
+- `PART2_TAGS` at line 2858 (Securing Properties block — same row as the encumbrance columns)
 
-- No UI changes. Source field `pr_li_currentDelinqu_N` (Currently Delinquent checkbox) is unchanged.
-- No schema, no Admin Field Dictionary entries added.
-- No other delinquency fields, no other RE851D blocks, no other templates touched.
-- Existing save/update APIs untouched.
+### 3. Field Dictionary entry
 
-## Files
+Add one row to `field_dictionary` via migration:
 
-- `supabase/functions/generate-document/index.ts` — additive lines inside the existing RE851D lien-delinquency block (~lines 2237–2311) and one additive entry in the `_N` expansion list (~line 2796).
+| field_name | field_key | data_type | section |
+|---|---|---|---|
+| Total Encumbrance + Loan | `ln_p_totalWithLoan_N` | currency | document |
+
+This is a derived/document-only key (computed at generation time, not user-editable), matching the existing pattern of other `ln_p_total*_N` derived entries.
+
+## Edge cases handled
+
+- Encumbrance null → uses 0
+- Loan Amount null → uses 0
+- Strings with `$` / commas → stripped before `parseFloat`
+- Per-property isolation — uses the `idx` from the surrounding property loop, no cross-property bleed
+
+## Out of scope
+
+- No UI/form changes (purely a derived doc tag)
+- No changes to `ln_p_totalEncumbrance_N` or `ln_p_loanAmount` source publishers
+- No other templates touched
