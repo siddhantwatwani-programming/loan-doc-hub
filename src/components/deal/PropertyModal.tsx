@@ -15,6 +15,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
 import { EnhancedCalendar } from '@/components/ui/enhanced-calendar';
 import { format, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -29,6 +31,7 @@ interface PropertyModalProps {
   onSave: (property: PropertyData) => void;
   isEdit?: boolean;
   borrowerAddress?: { street: string; city: string; state: string; zipCode: string };
+  borrowerOptions?: string[];
 }
 
 const PROPERTY_TYPE_OPTIONS = [
