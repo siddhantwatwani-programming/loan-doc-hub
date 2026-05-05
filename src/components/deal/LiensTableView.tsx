@@ -184,11 +184,14 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       case 'holder': return lien.holder || '-';
       case 'loanTypeDropdown': return lien.loanTypeDropdown || '-';
       case 'lienPriorityNow': return lien.lienPriorityNow || '-';
+      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
       case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
+      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
       case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
+      case 'recordingNumber': return lien.recordingNumber || '-';
       case 'lastVerified': {
         if (!lien.lastVerified) return '-';
         try {
