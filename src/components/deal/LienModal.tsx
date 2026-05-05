@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ModalSaveConfirmation } from './ModalSaveConfirmation';
 import { hasModalFormData, hasValidEmails } from '@/lib/modalFormValidation';
 import type { LienData } from './LiensTableView';
+import { LienDetailForm } from './LienDetailForm';
 import { sanitizeInterestInput, normalizeInterestOnBlur } from '@/lib/interestValidation';
 
 interface LienModalProps {
