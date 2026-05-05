@@ -2559,8 +2559,12 @@ async function generateSingleDocument(
                 ];
 
                 const fieldAliases: Record<string, string[]> = {
+                  priority: ["lienPriori", "lienPriority", "lien_priority_now"],
                   interestRate: ["interest_rate", "intRate"],
                   beneficiary: ["lienHolder", "holder"],
+                  originalAmount: ["lienOriginBalanc", "lienOriginBalanc2", "original_balance"],
+                  principalBalance: ["lienCurrenBalanc", "lienCurrenBalanc2", "current_balance", "newRemainingBalance", "new_remaining_balance"],
+                  monthlyPayment: ["lienRegulaPaymen", "lienRegulaPaymen2", "regular_payment"],
                   maturityDate: ["maturity_date", "matDate"],
                 };
                 for (const [f, v, dt] of fields) {
