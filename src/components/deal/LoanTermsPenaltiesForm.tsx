@@ -132,6 +132,13 @@ const TRIGGERED_BY_OPTIONS = [
   { value: 'maturity_only', label: 'Maturity Only' },
 ];
 
+const PRINCIPAL_PAYDOWN_TYPE_OPTIONS = [
+  { value: 'None', label: 'None' },
+  { value: 'Partial', label: 'Partial' },
+  { value: 'Full', label: 'Full' },
+  { value: 'Other', label: 'Other' },
+];
+
 // Distribution fields component (always percent-based; Company is auto-calculated)
 const DistributionFields: React.FC<{
   prefix: string;
