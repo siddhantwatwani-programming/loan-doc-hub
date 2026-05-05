@@ -119,11 +119,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'holder', label: 'Lien Holder' },
   { id: 'loanTypeDropdown', label: 'Loan Type' },
   { id: 'lienPriorityNow', label: 'Lien Priority Now' },
-  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority' },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After' },
   { id: 'interestRate', label: 'Interest Rate' },
   { id: 'originalBalance', label: 'Original Balance' },
-  { id: 'currentBalance', label: 'Current Balance' },
+  { id: 'balanceAfter', label: 'Balance After' },
   { id: 'regularPayment', label: 'Regular Payment' },
+  { id: 'recordingNumber', label: 'Recording Number' },
   { id: 'lastVerified', label: 'Last Verified' },
 ];
 
@@ -132,11 +133,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'holder', label: 'Lien Holder', visible: true },
   { id: 'loanTypeDropdown', label: 'Loan Type', visible: true },
   { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
-  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority', visible: true },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'originalBalance', label: 'Original Balance', visible: true },
-  { id: 'currentBalance', label: 'Current Balance', visible: true },
+  { id: 'balanceAfter', label: 'Balance After', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'recordingNumber', label: 'Recording Number', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
 ];
 
