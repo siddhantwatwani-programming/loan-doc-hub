@@ -3202,6 +3202,16 @@ async function generateSingleDocument(
             /\(\s*eq\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
             '(eq $1 "Owner Occupied")',
           );
+          // Also normalize the (ne …) inverse used by the No checkbox in some
+          // RE851D template variants.
+          xml = xml.replace(
+            /\(\s*ne\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)\s*"\s*Owner\s*"\s*\)/gi,
+            '(ne $1 "Owner Occupied")',
+          );
+          xml = xml.replace(
+            /\(\s*ne\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
+            '(ne $1 "Owner Occupied")',
+          );
 
           // Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels
           // that some authored RE851D templates place after each encumbrance
