@@ -3515,7 +3515,20 @@ async function generateSingleDocument(
               }
 
               let replacement: string;
-              if (indexNum > 5) {
+              // Handle _N_S tags (per-property + per-slot, e.g. encumbrance rows).
+              // The base regex matches the literal tag including _N_S, but the
+              // _N$ replace below would leave it unchanged. Use a per-region,
+              // per-family slot counter so successive rows in the same property
+              // resolve to _K_1, _K_2, _K_3, ... in document order.
+              if (/_N_S$/.test(tag)) {
+                const family = tag.replace(/_N_S$/, "");
+                const slot = getRegionCounter(region.id, `__slot_${family}`);
+                if (indexNum > 5) {
+                  replacement = tag.replace(/_N_S$/, `_overflow${indexNum}_${slot}`);
+                } else {
+                  replacement = tag.replace(/_N_S$/, `_${indexNum}_${slot}`);
+                }
+              } else if (indexNum > 5) {
                 // Beyond Property #5: blank by mapping to a guaranteed-empty key.
                 replacement = tag.replace(/_N$/, `_overflow${indexNum}`);
               } else {
