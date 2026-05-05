@@ -2559,8 +2559,12 @@ async function generateSingleDocument(
                 ];
 
                 const fieldAliases: Record<string, string[]> = {
+                  priority: ["lienPriori", "lienPriority", "lien_priority_now"],
                   interestRate: ["interest_rate", "intRate"],
                   beneficiary: ["lienHolder", "holder"],
+                  originalAmount: ["lienOriginBalanc", "lienOriginBalanc2", "original_balance"],
+                  principalBalance: ["lienCurrenBalanc", "lienCurrenBalanc2", "current_balance", "newRemainingBalance", "new_remaining_balance"],
+                  monthlyPayment: ["lienRegulaPaymen", "lienRegulaPaymen2", "regular_payment"],
                   maturityDate: ["maturity_date", "matDate"],
                 };
                 for (const [f, v, dt] of fields) {
@@ -3019,6 +3023,9 @@ async function generateSingleDocument(
           // Both _N_S and _N forms listed; longest-first ordering ensures
           // _N_S is consumed first so the slot index survives the rewrite.
           "pr_li_rem_priority_N_S", "pr_li_rem_priority_N",
+          "pr_li_rem_lienPriori_N_S", "pr_li_rem_lienPriori_N",
+          "pr_li_rem_lienPriority_N_S", "pr_li_rem_lienPriority_N",
+          "pr_li_rem_lien_priority_now_N_S", "pr_li_rem_lien_priority_now_N",
           "pr_li_rem_interestRate_N_S", "pr_li_rem_interestRate_N",
           "pr_li_rem_interest_rate_N_S", "pr_li_rem_interest_rate_N",
           "pr_li_rem_intRate_N_S", "pr_li_rem_intRate_N",
@@ -3026,8 +3033,19 @@ async function generateSingleDocument(
           "pr_li_rem_lienHolder_N_S", "pr_li_rem_lienHolder_N",
           "pr_li_rem_holder_N_S", "pr_li_rem_holder_N",
           "pr_li_rem_originalAmount_N_S", "pr_li_rem_originalAmount_N",
+          "pr_li_rem_lienOriginBalanc_N_S", "pr_li_rem_lienOriginBalanc_N",
+          "pr_li_rem_lienOriginBalanc2_N_S", "pr_li_rem_lienOriginBalanc2_N",
+          "pr_li_rem_original_balance_N_S", "pr_li_rem_original_balance_N",
           "pr_li_rem_principalBalance_N_S", "pr_li_rem_principalBalance_N",
+          "pr_li_rem_lienCurrenBalanc_N_S", "pr_li_rem_lienCurrenBalanc_N",
+          "pr_li_rem_lienCurrenBalanc2_N_S", "pr_li_rem_lienCurrenBalanc2_N",
+          "pr_li_rem_current_balance_N_S", "pr_li_rem_current_balance_N",
+          "pr_li_rem_newRemainingBalance_N_S", "pr_li_rem_newRemainingBalance_N",
+          "pr_li_rem_new_remaining_balance_N_S", "pr_li_rem_new_remaining_balance_N",
           "pr_li_rem_monthlyPayment_N_S", "pr_li_rem_monthlyPayment_N",
+          "pr_li_rem_lienRegulaPaymen_N_S", "pr_li_rem_lienRegulaPaymen_N",
+          "pr_li_rem_lienRegulaPaymen2_N_S", "pr_li_rem_lienRegulaPaymen2_N",
+          "pr_li_rem_regular_payment_N_S", "pr_li_rem_regular_payment_N",
           "pr_li_rem_maturityDate_N_S", "pr_li_rem_maturityDate_N",
           "pr_li_rem_maturity_date_N_S", "pr_li_rem_maturity_date_N",
           "pr_li_rem_matDate_N_S", "pr_li_rem_matDate_N",
@@ -3036,6 +3054,9 @@ async function generateSingleDocument(
           "pr_li_rem_balloonNo_N_S", "pr_li_rem_balloonNo_N",
           "pr_li_rem_balloonUnknown_N_S", "pr_li_rem_balloonUnknown_N",
           "pr_li_ant_priority_N_S", "pr_li_ant_priority_N",
+          "pr_li_ant_lienPriori_N_S", "pr_li_ant_lienPriori_N",
+          "pr_li_ant_lienPriority_N_S", "pr_li_ant_lienPriority_N",
+          "pr_li_ant_lien_priority_now_N_S", "pr_li_ant_lien_priority_now_N",
           "pr_li_ant_interestRate_N_S", "pr_li_ant_interestRate_N",
           "pr_li_ant_interest_rate_N_S", "pr_li_ant_interest_rate_N",
           "pr_li_ant_intRate_N_S", "pr_li_ant_intRate_N",
@@ -3043,8 +3064,19 @@ async function generateSingleDocument(
           "pr_li_ant_lienHolder_N_S", "pr_li_ant_lienHolder_N",
           "pr_li_ant_holder_N_S", "pr_li_ant_holder_N",
           "pr_li_ant_originalAmount_N_S", "pr_li_ant_originalAmount_N",
+          "pr_li_ant_lienOriginBalanc_N_S", "pr_li_ant_lienOriginBalanc_N",
+          "pr_li_ant_lienOriginBalanc2_N_S", "pr_li_ant_lienOriginBalanc2_N",
+          "pr_li_ant_original_balance_N_S", "pr_li_ant_original_balance_N",
           "pr_li_ant_principalBalance_N_S", "pr_li_ant_principalBalance_N",
+          "pr_li_ant_lienCurrenBalanc_N_S", "pr_li_ant_lienCurrenBalanc_N",
+          "pr_li_ant_lienCurrenBalanc2_N_S", "pr_li_ant_lienCurrenBalanc2_N",
+          "pr_li_ant_current_balance_N_S", "pr_li_ant_current_balance_N",
+          "pr_li_ant_newRemainingBalance_N_S", "pr_li_ant_newRemainingBalance_N",
+          "pr_li_ant_new_remaining_balance_N_S", "pr_li_ant_new_remaining_balance_N",
           "pr_li_ant_monthlyPayment_N_S", "pr_li_ant_monthlyPayment_N",
+          "pr_li_ant_lienRegulaPaymen_N_S", "pr_li_ant_lienRegulaPaymen_N",
+          "pr_li_ant_lienRegulaPaymen2_N_S", "pr_li_ant_lienRegulaPaymen2_N",
+          "pr_li_ant_regular_payment_N_S", "pr_li_ant_regular_payment_N",
           "pr_li_ant_maturityDate_N_S", "pr_li_ant_maturityDate_N",
           "pr_li_ant_maturity_date_N_S", "pr_li_ant_maturity_date_N",
           "pr_li_ant_matDate_N_S", "pr_li_ant_matDate_N",
@@ -3894,9 +3926,13 @@ async function generateSingleDocument(
       // so the resolver's priority-1 direct match returns publisher-set values
       // (publisher emits these at lines ~2528–2592).
       const ENC_REM_BASES = [
-        "pr_li_rem_priority", "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
+        "pr_li_rem_priority", "pr_li_rem_lienPriori", "pr_li_rem_lienPriority", "pr_li_rem_lien_priority_now",
+        "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
         "pr_li_rem_beneficiary", "pr_li_rem_lienHolder", "pr_li_rem_holder",
-        "pr_li_rem_originalAmount", "pr_li_rem_principalBalance", "pr_li_rem_monthlyPayment",
+        "pr_li_rem_originalAmount", "pr_li_rem_lienOriginBalanc", "pr_li_rem_lienOriginBalanc2", "pr_li_rem_original_balance",
+        "pr_li_rem_principalBalance", "pr_li_rem_lienCurrenBalanc", "pr_li_rem_lienCurrenBalanc2", "pr_li_rem_current_balance",
+        "pr_li_rem_newRemainingBalance", "pr_li_rem_new_remaining_balance",
+        "pr_li_rem_monthlyPayment", "pr_li_rem_lienRegulaPaymen", "pr_li_rem_lienRegulaPaymen2", "pr_li_rem_regular_payment",
         "pr_li_rem_maturityDate", "pr_li_rem_maturity_date", "pr_li_rem_matDate",
         "pr_li_rem_balloonAmount", "pr_li_rem_balloonYes", "pr_li_rem_balloonNo", "pr_li_rem_balloonUnknown",
       ];
