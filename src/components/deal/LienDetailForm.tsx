@@ -386,6 +386,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderCheckbox('sltUnableToVerify', 'Unable to Verify')}
 
+          {renderCheckbox('sltBorrowerNotified', 'Borrower Notified')}
+          {renderField('sltBorrowerNotifiedDate', 'Borrower Notified Date', { type: 'date' }, lien.sltBorrowerNotified !== 'true')}
+
           {renderCheckbox('sltLenderNotified', 'Lender Notified')}
           {renderField('sltLenderNotifiedDate', 'Lender Notified Date', { type: 'date' }, lien.sltLenderNotified !== 'true')}
         </div>
