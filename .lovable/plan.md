@@ -1,88 +1,54 @@
-## Issue
+# RE851D – Fix OWNER OCCUPIED YES/NO Checkbox
 
-In RE-851D's "Encumbrance Remaining" rows, four fields render blank for every property:
-- PRIORITY (1ST, 2ND, ETC.)
-- INTEREST RATE
-- BENEFICIARY
-- MATURITY DATE
+## Root Cause
 
-## Findings
-
-The template encodes each cell as a bare token (no `{{ }}`) followed by an `_(N)_(S)` annotation in a separate Word run, e.g. `pr_li_rem_priority` then a separate text-run `_(N)_(S)`.
-
-After `normalizeWordXml` consolidates adjacent runs, the bare token becomes contiguous as `pr_li_rem_priority_(N)_(S)`. The existing parens-rewrite at `index.ts:3142–3149` then converts `_(N)_(S)` → `_N_S`, yielding `pr_li_rem_priority_N_S`.
-
-The bare-encumbrance rewrite at `index.ts:3297–3341` is supposed to substitute resolved values for these tokens, but **two issues prevent the four fields from rendering**:
-
-1. **Word-boundary mismatch.** The regex `\bpr_li_(rem|ant)_(<field>)(?:_N(?:_S)?)?\b` is anchored with `\b`. When the consolidated text reads `pr_li_rem_priority_N_S</w:t>`, the boundary at the `_S</` join works only if the trailing char after `_S` is non-word. In some run-merge cases an additional alphanumeric (e.g. another digit from a stray annotation) appears, defeating the boundary and skipping the match for that property's row.
-
-2. **Source field naming for `priority`.** The publisher (`index.ts:2412`) reads `get("lien_priority_now")` for the `priority` field. UI also writes `lien1.priority` and `lien1.remaining_new_lien_priority` for the same concept. When liens were saved through `LienModal` (which uses key `n` mapped via legacyKeyMap to `pr_li_lienPrioriNow`), the value lands under a different field key, so `lien_priority_now` is empty for some liens and `pr_li_rem_priority_K_S` is published as "".
-
-3. **Source field naming for `beneficiary`.** Publisher reads only `get("holder")`. Some lien saves use `beneficiary` or are stored only via the contact join (`account` → contact name). When `holder` is empty but the row clearly has a lender, the published value is "".
-
-`interest_rate` and `maturity_date` are genuinely empty in the current deal's stored data — the user must enter those values for them to render. We will not fabricate them.
-
-## Fix (minimal, RE-851D scoped)
-
-### File: `supabase/functions/generate-document/index.ts`
-
-**A. Strengthen the bare-encumbrance regex (~line 3312)**
-
-Replace the strict trailing `\b` with a negative lookahead so trailing `<`, `}`, whitespace, or end-of-string all qualify as a boundary, preventing missed matches when run-consolidation leaves residual chars adjacent:
-
-```ts
-const encTagRe = new RegExp(
-  "\\bpr_li_(rem|ant)_(" + encFields.join("|") + ")(?:_N(?:_S)?)?(?![A-Za-z0-9_])",
-  "g",
-);
+The RE851D template uses:
+```
+{{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}} Yes
+{{#if (eq pr_p_occupanc_N "Owner Occupied")}}☐{{else}}☒{{/if}} No
 ```
 
-**B. Broaden field aliases in the encumbrance publisher (~line 2411–2426)**
+But the per-property publisher in `supabase/functions/generate-document/index.ts` (lines 1217–1226) writes the literal value `"Owner"` (not `"Owner Occupied"`) for `pr_p_occupanc_${idx}` and `pr_p_occupanc`. The handlebars `eq` comparison therefore never matches, so YES never renders correctly through the template, and NO behaves inconsistently. CSR dropdown values are: `Owner Occupied`, `Tenant / Other`, `Vacant`, `NA`.
 
-Extend the field-source list so priority and beneficiary fall back to their UI alternates — strictly reading existing keys, no schema changes:
+(The downstream "safety pass" at lines 3527–3588 already correctly anchors the two glyph runs after an "Owner Occupied" label using a case-insensitive comparison that accepts `"owner occupied"` or `"owner"`. That path is not the bug — the bug is the template-resolved value.)
 
-```ts
-const firstNonEmpty = (...sfx: string[]) => {
-  for (const s of sfx) {
-    const v = String(fieldValues.get(`${lp}.${s}`)?.rawValue ?? "").trim();
-    if (v) return v;
-  }
-  return "";
-};
+## Fix (single edit, backend only)
 
-const fields: Array<[string, string, string]> = [
-  ["priority",         firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "n"), "text"],
-  ["interestRate",     firstNonEmpty("interest_rate", "intRate"),                                          "percent"],
-  ["beneficiary",      firstNonEmpty("holder", "lienHolder", "beneficiary"),                               "text"],
-  ["originalAmount",   firstNonEmpty("original_balance", "originalBalance"),                               "currency"],
-  ["principalBalance", firstNonEmpty("current_balance", "currentBalance", "new_remaining_balance"),        "currency"],
-  ["monthlyPayment",   firstNonEmpty("regular_payment", "regularPayment"),                                 "currency"],
-  ["maturityDate",     firstNonEmpty("maturity_date", "matDate"),                                          "date"],
-  ["balloonAmount",    firstNonEmpty("balloon_amount", "balloonAmount"),                                   "currency"],
-];
-```
-
-(Keep the existing `fieldAliases` block that publishes additional alias keys for backward compatibility.)
-
-**C. Diagnostic log (~line 2454)**
-
-Add a per-row debug line so future regressions are easy to trace:
+In `supabase/functions/generate-document/index.ts`, lines 1217–1226: change the `rawValue` written from `"Owner"` to `"Owner Occupied"` so the template `eq` comparison matches exactly.
 
 ```ts
-debugLog(`[generate-document] RE851D enc row ${tagPrefix} P${pIdx} S${s}: priority="${fields[0][1]}" beneficiary="${fields[2][1]}" interestRate="${fields[1][1]}" maturityDate="${fields[6][1]}"`);
+fieldValues.set(`pr_p_occupanc_${idx}`, {
+  rawValue: isYes ? "Owner Occupied" : "",
+  dataType: "text",
+});
+if (idx === 1) {
+  fieldValues.set("pr_p_occupanc", {
+    rawValue: isYes ? "Owner Occupied" : "",
+    dataType: "text",
+  });
+}
 ```
 
-## Out of scope
+`isYes` is already computed correctly (true only when normalized value equals `"owner occupied"`; `Tenant / Other`, `Vacant`, `NA`, and empty all yield `false`). No other logic changes needed.
 
-- No template change.
-- No UI / schema changes.
-- No change to ANTICIPATED-section logic beyond the same publisher (it already shares the publisher).
-- No change to `_N` indexed-tag rewriter, region detection, or Owner-Occupied logic.
-- Does not invent values for liens whose `interest_rate` / `maturity_date` are genuinely blank — the user must enter those in CSR for them to print.
+## Why this is sufficient for all 5 properties
 
-## Expected outcome
+The publisher loops per property index (`_1` … `_5`), so updating the emitted string fixes PROPERTY #1–#5 simultaneously. The safety-pass fallback already handles both `"owner occupied"` and `"owner"`, so it remains compatible.
 
-- PRIORITY column renders the lien's "Lien Priority Now" (e.g. "1st"), regardless of whether the lien was saved via `LienDetailForm` or `LienModal`.
-- BENEFICIARY column renders the lien holder name when present.
-- INTEREST RATE and MATURITY DATE render whenever those fields have values in CSR; remain blank otherwise (data-driven, not a generator bug).
-- Per-property, per-slot indexing remains correct — no cross-property bleed.
+## Out of scope (per minimal-change policy)
+
+- No template/document file edits.
+- No UI, schema, dictionary, or API changes.
+- No changes to `pr_p_occupancySt_${idx}_yes/no/_glyph` aliases (already correct).
+- Safety-pass logic at lines 3527–3588 left unchanged (still works).
+
+## Acceptance
+
+- Selecting **Owner Occupied** → YES ☑, NO ☐ for that property.
+- Selecting **Tenant / Other**, **Vacant**, **NA**, or leaving empty → YES ☐, NO ☑.
+- Works for PROPERTY #1 through #5.
+- No regression in other RE851D mappings.
+
+## Files To Change
+
+- `supabase/functions/generate-document/index.ts` (lines 1217–1226 only)
