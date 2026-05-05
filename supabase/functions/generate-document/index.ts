@@ -1784,6 +1784,27 @@ async function generateSingleDocument(
     fieldValues.set("ln_p_otherGlyph", { rawValue: isAmortOther ? "☑" : "☐", dataType: "text" });
     debugLog(`[generate-document] Derived amortization checkboxes from "${amortVal}": amortized=${isFullyAmortized}, amortizedPartially=${isPartiallyAmortized}, interestOnly=${isInterestOnly}, constantAmortization=${isConstantAmortization}, addOnInterest=${isAddOnInterest}, other=${isAmortOther}`);
 
+    // Principal Paydown Type dropdown → boolean checkbox + glyph aliases
+    // Template uses {{ln_pn_principalPaydownType_original}} / _unpaid (or _none / _partial / _full / _other).
+    {
+      const ppdRaw = (
+        fieldValues.get("ln_pn_principalPaydownType")?.rawValue ??
+        fieldValues.get("loan_terms.penalties.prepayment.principal_paydown_type")?.rawValue ??
+        ""
+      ).toString().trim();
+      const ppdNorm = ppdRaw.toLowerCase().replace(/\s+/g, "_");
+      const variants = ["original", "unpaid", "none", "partial", "full", "other"];
+      for (const v of variants) {
+        const isMatch = ppdNorm === v;
+        fieldValues.set(`ln_pn_principalPaydownType_${v}`, { rawValue: isMatch ? "true" : "false", dataType: "boolean" });
+        fieldValues.set(`ln_pn_principalPaydownType_${v}Glyph`, { rawValue: isMatch ? "☑" : "☐", dataType: "text" });
+      }
+      // Republish canonical normalized label (Title Case) for direct display
+      const titleCase = ppdRaw ? ppdRaw.charAt(0).toUpperCase() + ppdRaw.slice(1).toLowerCase() : "";
+      fieldValues.set("ln_pn_principalPaydownType", { rawValue: titleCase, dataType: "text" });
+      debugLog(`[generate-document] Derived ln_pn_principalPaydownType checkboxes from "${ppdRaw}" (norm="${ppdNorm}")`);
+    }
+
     // Payment Frequency dropdown → boolean checkbox keys
     const payFreqVal = (fieldValues.get("ln_p_paymentFreque")?.rawValue || fieldValues.get("loan_terms.payment_frequency")?.rawValue || "").toString().trim().toLowerCase();
     fieldValues.set("ln_p_paymentMonthly", { rawValue: payFreqVal === "monthly" ? "true" : "false", dataType: "boolean" });
