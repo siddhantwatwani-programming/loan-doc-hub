@@ -62,6 +62,7 @@ const extractInsurancesFromValues = (values: Record<string, string>): InsuranceD
       lastVerified: values[`${prefix}.last_verified`] || '',
       trackingStatus: values[`${prefix}.tracking_status`] || '',
       impoundsActive: values[`${prefix}.impounds_active`] === 'true',
+      impoundedStatus: values[`${prefix}.impounded_status`] || '',
       redFlagTrigger: values[`${prefix}.red_flag_trigger`] || '',
       attemptAgent: values[`${prefix}.attempt_agent`] === 'true',
       attemptBorrower: values[`${prefix}.attempt_borrower`] === 'true',
