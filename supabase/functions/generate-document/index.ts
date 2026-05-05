@@ -780,6 +780,16 @@ async function generateSingleDocument(
       const isPP = toBool(ppRaw);
       fieldValues.set("ln_pn_prepaymePenalt", { rawValue: isPP ? "true" : "false", dataType: "boolean" });
       console.log(`[generate-document] RE885 prepayment penalty checkbox: enabled=${isPP} (raw="${ppRaw}")`);
+
+      // RE885 Interest Guarantee enabled -> boolean checkbox.
+      // UI persists `loan_terms.penalties.interest_guarantee.enabled` as 'true'/'false' string.
+      // Template references nested dot path which some engines mishandle; publish a strict
+      // boolean under the same key plus a flat alias for safety.
+      const igRaw = fieldValues.get("loan_terms.penalties.interest_guarantee.enabled")?.rawValue;
+      const isIG = toBool(igRaw);
+      fieldValues.set("loan_terms.penalties.interest_guarantee.enabled", { rawValue: isIG ? "true" : "false", dataType: "boolean" });
+      fieldValues.set("loan_terms_penalties_interest_guarantee_enabled", { rawValue: isIG ? "true" : "false", dataType: "boolean" });
+      console.log(`[generate-document] RE885 interest guarantee checkbox: enabled=${isIG} (raw="${igRaw}")`);
     }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
