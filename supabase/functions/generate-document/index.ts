@@ -2258,19 +2258,12 @@ async function generateSingleDocument(
       for (const [field, entries] of Object.entries(lienFieldCollector)) {
         // Sort by lien index for consistent ordering
         entries.sort((a, b) => a.index - b.index);
-        // Dedupe: legacy `lien.X` (index 0) often mirrors canonical `lien1.X`,
-        // which would otherwise emit the same value twice in the output.
-        // Drop index-0 entries when an indexed equivalent with the same value
-        // already exists. Also drop exact value duplicates across indices.
-        const seenValues = new Set<string>();
-        const dedupedEntries: typeof entries = [];
-        for (const e of entries) {
-          const norm = String(e.value).trim();
-          if (!norm) continue;
-          if (seenValues.has(norm)) continue;
-          seenValues.add(norm);
-          dedupedEntries.push(e);
-        }
+        // Dedupe: legacy `lien.X` (index 0) is a mirror of the first indexed
+        // lien (`lien1.X`) — emitting both would duplicate the value (e.g.
+        // "2nd\n2nd" for pr_li_lienPrioriNow). Drop the index-0 entry whenever
+        // any indexed lien (>=1) is present, regardless of value match.
+        const hasIndexed = entries.some(e => e.index >= 1);
+        const dedupedEntries = hasIndexed ? entries.filter(e => e.index >= 1) : entries;
         const aggregated = dedupedEntries.map(e => e.value).join("\n");
         const dataType = (field === "current_balance" || field === "original_balance" || 
                           field === "regular_payment" || field === "balance_after") ? "currency" : "text";
