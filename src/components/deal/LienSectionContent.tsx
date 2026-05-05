@@ -74,6 +74,8 @@ const DEFAULT_LIEN: LienData = {
   sltUnableToVerify: 'false',
   sltLenderNotified: 'false',
   sltLenderNotifiedDate: '',
+  sltBorrowerNotified: 'false',
+  sltBorrowerNotifiedDate: '',
   note: '',
   thisLoan: 'false',
   estimate: 'false',
