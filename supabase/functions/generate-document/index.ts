@@ -1209,18 +1209,24 @@ async function generateSingleDocument(
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
-          // Per-property normalized occupancy string for RE851D template
-          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}} Yes
-          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☐{{else}}☒{{/if}} No
-          // Owner Occupied  => "Owner Occupied" (Yes ☒)
-          // Tenant / Vacant / NA / empty => "" (else => No ☒)
+          // Per-property normalized occupancy string for RE851D template.
+          // Preserve the actual CSR value so downstream safety passes and
+          // template conditionals can distinguish all 4 cases:
+          //   Owner Occupied | Tenant / Other | Vacant | NA | "" (unknown)
+          // Only "Owner Occupied" maps to YES; every other value maps to NO.
+          let normalizedOcc = "";
+          if (occRawNorm === "owner occupied") normalizedOcc = "Owner Occupied";
+          else if (occRawNorm === "tenant / other" || occRawNorm === "tenant/other" || occRawNorm === "tenant") normalizedOcc = "Tenant / Other";
+          else if (occRawNorm === "vacant") normalizedOcc = "Vacant";
+          else if (occRawNorm === "na") normalizedOcc = "NA";
+          else if (occRaw) normalizedOcc = occRaw; // preserve raw label as-is for unknown values
           fieldValues.set(`pr_p_occupanc_${idx}`, {
-            rawValue: isYes ? "Owner Occupied" : "",
+            rawValue: normalizedOcc,
             dataType: "text",
           });
           if (idx === 1) {
             fieldValues.set("pr_p_occupanc", {
-              rawValue: isYes ? "Owner Occupied" : "",
+              rawValue: normalizedOcc,
               dataType: "text",
             });
           }

@@ -1,34 +1,77 @@
-## RE851D – Fix YES/NO "Remain Unpaid" Double-Check (Post-Render SDT Safety Pass)
+I’ll fix this with a targeted RE851D document-generation change only. No UI, schema, permissions, or field-dictionary changes.
 
-### Root Cause
+Deep analysis findings:
 
-The "Do any of these payments remain unpaid?" YES/NO pair currently has only a **pre-render** safety pass (lines 3479–3556) that flips raw `☐/☑` glyphs in the template before rendering. After that, `processDocx → convertGlyphsToSdtCheckboxes` wraps each standalone glyph in a `<w:sdt>` block with its own `<w14:checked w14:val="0|1">` state. Word renders the SDT's intrinsic checked state, so any SDT whose internal state ends up `1` shows ☑ — producing the "both checked" symptom even when the visible glyph was rewritten.
+1. The per-property data publisher is currently destructive for non-owner values:
+   - It reads each property occupancy value.
+   - It computes `isYes = occRawNorm === "owner occupied"`.
+   - But then it stores `pr_p_occupanc_N` as:
+     - `"Owner Occupied"` when owner occupied
+     - `""` for Tenant / Other, Vacant, NA, and blank
+   - This means the downstream post-render safety pass can only distinguish owner vs not-owner, but loses the actual CSR value. It also makes template conditionals brittle when variants expect the literal non-owner values.
 
-The Owner Occupied pair already solved this same problem with a **post-render SDT-aware** safety pass (lines 3732–3943). We will mirror that for Remain Unpaid.
+2. There are two owner-occupied safety passes:
+   - A pre-render glyph-only pass around the template rewrite stage.
+   - A post-render SDT-aware pass after `processDocx` converts glyphs into native Word checkboxes.
+   - The post-render pass is the right place to fix the “both checked” Word behavior because Word renders native SDT checkbox state from `<w14:checked w14:val>`, not just the visible glyph.
 
-### Fix
+3. The current post-render owner-occupied pass has two likely gaps causing the persistent issue:
+   - It builds property regions using only `PROPERTY INFORMATION` anchors, unlike the earlier robust `findAnchorOffsets` helper that also supports `PROPERTY #K` fallback. If the generated XML structure varies, the pass may miss some or all property sections.
+   - `findControlBefore()` searches backward from the Yes/No labels and returns the last SDT if present, before checking bare glyphs. In a local window containing both controls, this can choose the wrong checkbox when SDT blocks and labels are arranged differently or fragmented by Word.
 
-Add a single post-render safety pass strictly scoped to RE851D, mirroring the existing Owner Occupied post-render pass, but anchored to the question text "Do any of these payments remain unpaid?" and bound to the per-property boolean `pr_li_currentDelinqu_K`.
+Implementation plan:
 
-For each PROPERTY #1–#5 region:
-1. Locate the question anchor "Do any of these payments remain unpaid".
-2. Find the next `<w:t>YES</w:t>` and `<w:t>NO</w:t>` label runs (case-insensitive, bounded look-ahead within the property region).
-3. For each label, find the immediately preceding control — either an `<w:sdt>` checkbox block or a bare glyph run — using the same `findControlBefore` helper pattern.
-4. Resolve `isYes` from `pr_li_currentDelinqu_K` (true → YES ☑ / NO ☐; false/missing → YES ☐ / NO ☑).
-5. Rewrite each control:
-   - SDT: update both `<w14:checked w14:val>` and the inner glyph in `<w:sdtContent>` via the existing `rewriteSdtChecked` helper.
-   - Bare glyph run: direct ☐/☑ replacement preserving `<w:rPr>`.
+1. Preserve the actual normalized CSR occupancy value per property.
+   - For `pr_p_occupanc_1` through `pr_p_occupanc_5`, store one of:
+     - `Owner Occupied`
+     - `Tenant / Other`
+     - `Vacant`
+     - `NA`
+     - empty only when truly missing/unknown
+   - Keep the existing boolean/glyph aliases:
+     - `pr_p_occupancySt_N_yes`
+     - `pr_p_occupancySt_N_no`
+     - `pr_p_occupancySt_N_yes_glyph`
+     - `pr_p_occupancySt_N_no_glyph`
+   - YES remains true only for exact `Owner Occupied`; NO remains true for every other value.
 
-### Acceptance
+2. Strengthen the post-render RE851D owner-occupied safety pass.
+   - Reuse the same robust property-boundary approach as the template preprocessor:
+     - Prefer `PROPERTY INFORMATION` anchors.
+     - Fall back to `PROPERTY #1` … `PROPERTY #5` headings when needed.
+     - Cap to properties 1–5.
+   - This ensures property #1 through #5 are independently scoped.
 
-- Only one of YES / NO is checked per property.
-- YES ☑ when `pr_li_currentDelinqu_K === true`; NO ☑ otherwise.
-- Works for properties #1–#5.
-- No changes to UI, schema, API, dictionary, or any other field/template logic.
-- Owner Occupied pass remains unchanged.
+3. Replace the owner-occupied control finder with a local pair-based resolver.
+   - For each `OWNER OCCUPIED` anchor inside a property region:
+     - Find the local Yes label and No label only within that property block.
+     - Locate the checkbox control closest to each label, supporting both:
+       - native Word SDT checkbox blocks (`<w:sdt>...<w14:checkbox>...`)
+       - bare glyph runs (`☐`, `☑`, `☒`)
+     - Prefer the nearest control to each label instead of blindly choosing the last SDT in a large backward window.
+     - Ensure the selected Yes and No controls are different before rewriting.
 
-### Files
+4. Rewrite both the visible glyph and native Word checkbox state.
+   - For SDT checkbox controls, update:
+     - `<w14:checked w14:val="1|0">`
+     - the inner `<w:sdtContent>` glyph
+   - For bare glyph runs, update the glyph directly.
+   - Use one mutually-exclusive branch per property:
+     - if `pr_p_occupanc_N === "Owner Occupied"`: YES checked, NO unchecked
+     - else: YES unchecked, NO checked
 
-- `supabase/functions/generate-document/index.ts` — add post-render Remain-Unpaid SDT-aware safety pass alongside the existing Owner Occupied one.
+5. Add targeted diagnostics for future verification.
+   - Log how many owner-occupied YES/NO pairs were forced per document part.
+   - Include property index and resolved occupancy in debug logging where useful.
 
-After the change the `generate-document` edge function will be redeployed.
+Expected result:
+
+- Property #1 uses `pr_p_occupanc_1` only.
+- Property #2 uses `pr_p_occupanc_2` only.
+- Property #3 uses `pr_p_occupanc_3` only.
+- Property #4 uses `pr_p_occupanc_4` only.
+- Property #5 uses `pr_p_occupanc_5` only.
+- Only one checkbox is selected per property.
+- YES is checked only for `Owner Occupied`.
+- NO is checked for `Tenant / Other`, `Vacant`, `NA`, empty, or any other non-owner value.
+- No double selection in the generated Word output.
