@@ -58,7 +58,7 @@ const getDefaultInsurance = (): InsuranceData => ({
   phoneNumber: '', faxNumber: '', email: '', note: '',
   paymentMailingStreet: '', paymentMailingCity: '', paymentMailingState: '', paymentMailingZip: '',
   insuranceTracking: false, lastVerified: '', trackingStatus: '',
-  impoundsActive: false, redFlagTrigger: '', attemptAgent: false, attemptBorrower: false,
+  impoundsActive: false, impoundedStatus: '', redFlagTrigger: '', attemptAgent: false, attemptBorrower: false,
   lenderNotified: false, lenderNotifiedDate: '',
 });
 
