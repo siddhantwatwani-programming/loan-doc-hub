@@ -215,29 +215,55 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
               </div>
 
               <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={formData.active}
-                  onCheckedChange={(checked) => handleChange('active', checked === true)}
-                />
-                <Label className="text-xs text-foreground">Active</Label>
+                <div className="w-[140px] shrink-0 flex items-center gap-2">
+                  <Checkbox
+                    checked={formData.active}
+                    onCheckedChange={(checked) => handleChange('active', checked === true)}
+                  />
+                  <Label className="text-xs text-foreground">Active</Label>
+                </div>
               </div>
-
-              {renderDateField('lastVerified', 'Last Verified')}
 
               <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={formData.current}
-                  onCheckedChange={(checked) => handleChange('current', checked === true)}
-                />
-                <Label className="text-xs text-foreground">Current</Label>
+                <Label className="w-[140px] shrink-0 text-xs text-foreground">Last Verified</Label>
+                <Popover open={datePickerStates['lastVerified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lastVerified: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !String(formData.lastVerified || '') && 'text-muted-foreground')}>
+                      {String(formData.lastVerified || '') && safeParseDateStr(String(formData.lastVerified)) ? format(safeParseDateStr(String(formData.lastVerified))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(String(formData.lastVerified || ''))}
+                      onSelect={(date) => { if (date) handleChange('lastVerified', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                      onClear={() => { handleChange('lastVerified', ''); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                      onToday={() => { handleChange('lastVerified', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lastVerified: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="flex items-center gap-2 flex-1">
-                <Checkbox
-                  checked={formData.delinquent}
-                  onCheckedChange={(checked) => handleChange('delinquent', checked === true)}
-                />
-                <Label className="text-xs text-foreground min-w-[80px]">Delinquent</Label>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0 flex items-center gap-2">
+                  <Checkbox
+                    checked={formData.current}
+                    onCheckedChange={(checked) => handleChange('current', checked === true)}
+                  />
+                  <Label className="text-xs text-foreground">Current</Label>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0 flex items-center gap-2">
+                  <Checkbox
+                    checked={formData.delinquent}
+                    onCheckedChange={(checked) => handleChange('delinquent', checked === true)}
+                  />
+                  <Label className="text-xs text-foreground">Delinquent</Label>
+                </div>
                 <div className="relative flex-1">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                   <Input
@@ -252,26 +278,64 @@ export const PropertyTaxModal: React.FC<PropertyTaxModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 flex-1">
-                <Checkbox
-                  checked={formData.borrowerNotified}
-                  onCheckedChange={(checked) => handleChange('borrowerNotified', checked === true)}
-                />
-                <Label className="text-xs text-foreground min-w-[110px]">Borrower Notified</Label>
-                <div className="flex-1">{renderDateField('borrowerNotifiedDate', '')}</div>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0 flex items-center gap-2">
+                  <Checkbox
+                    checked={formData.borrowerNotified}
+                    onCheckedChange={(checked) => handleChange('borrowerNotified', checked === true)}
+                  />
+                  <Label className="text-xs text-foreground">Borrower Notified</Label>
+                </div>
+                <Popover open={datePickerStates['borrowerNotifiedDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, borrowerNotifiedDate: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !String(formData.borrowerNotifiedDate || '') && 'text-muted-foreground')}>
+                      {String(formData.borrowerNotifiedDate || '') && safeParseDateStr(String(formData.borrowerNotifiedDate)) ? format(safeParseDateStr(String(formData.borrowerNotifiedDate))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(String(formData.borrowerNotifiedDate || ''))}
+                      onSelect={(date) => { if (date) handleChange('borrowerNotifiedDate', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, borrowerNotifiedDate: false })); }}
+                      onClear={() => { handleChange('borrowerNotifiedDate', ''); setDatePickerStates(prev => ({ ...prev, borrowerNotifiedDate: false })); }}
+                      onToday={() => { handleChange('borrowerNotifiedDate', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, borrowerNotifiedDate: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
-              <div className="flex items-center gap-2 flex-1">
-                <Checkbox
-                  checked={(formData as any).lenderNotified === true || (formData as any).lenderNotified === 'true'}
-                  onCheckedChange={(checked) => handleChange('lenderNotified' as keyof PropertyTaxData, checked === true ? 'true' : 'false')}
-                />
-                <Label className="text-xs text-foreground min-w-[110px]">Lender Notified</Label>
-                <div className="flex-1">{renderDateField('lenderNotifiedDate', '')}</div>
+              <div className="flex items-center gap-2">
+                <div className="w-[140px] shrink-0 flex items-center gap-2">
+                  <Checkbox
+                    checked={(formData as any).lenderNotified === true || (formData as any).lenderNotified === 'true'}
+                    onCheckedChange={(checked) => handleChange('lenderNotified' as keyof PropertyTaxData, checked === true ? 'true' : 'false')}
+                  />
+                  <Label className="text-xs text-foreground">Lender Notified</Label>
+                </div>
+                <Popover open={datePickerStates['lenderNotifiedDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lenderNotifiedDate: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-xs flex-1 justify-start text-left font-normal', !String((formData as any).lenderNotifiedDate || '') && 'text-muted-foreground')}>
+                      {String((formData as any).lenderNotifiedDate || '') && safeParseDateStr(String((formData as any).lenderNotifiedDate)) ? format(safeParseDateStr(String((formData as any).lenderNotifiedDate))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(String((formData as any).lenderNotifiedDate || ''))}
+                      onSelect={(date) => { if (date) handleChange('lenderNotifiedDate' as keyof PropertyTaxData, format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lenderNotifiedDate: false })); }}
+                      onClear={() => { handleChange('lenderNotifiedDate' as keyof PropertyTaxData, ''); setDatePickerStates(prev => ({ ...prev, lenderNotifiedDate: false })); }}
+                      onToday={() => { handleChange('lenderNotifiedDate' as keyof PropertyTaxData, format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lenderNotifiedDate: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="flex items-start gap-2">
-                <Label className="w-[60px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
+                <Label className="w-[140px] shrink-0 text-xs text-foreground pt-1">Memo</Label>
                 <Textarea value={formData.memo} onChange={(e) => handleChange('memo', e.target.value)} className="text-xs flex-1 min-h-[80px]" />
               </div>
             </div>
