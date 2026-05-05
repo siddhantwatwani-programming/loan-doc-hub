@@ -3525,47 +3525,88 @@ async function generateSingleDocument(
           }
 
           // ── RE851D Owner-Occupied YES/NO safety pass ──
-          // Anchor the next two glyph runs that follow an "Owner Occupied"
-          // question label (containing both Yes and No labels in window) to the
-          // per-property pr_p_occupanc_K string. "Owner Occupied" => YES ☑/NO ☐;
-          // anything else (Tenant / Other, Vacant, NA, empty) => YES ☐/NO ☑.
+          // Anchor each glyph rewrite to the actual "Yes" / "No" label run that
+          // follows the "OWNER OCCUPIED" question. We pick the checkbox glyph
+          // run immediately PRECEDING each label so an unrelated glyph (e.g.
+          // already-rendered conditional output, or a sibling property-type
+          // checkbox) cannot be flipped. Strictly per PROPERTY #K region.
+          // "Owner Occupied" => YES ☑ / NO ☐; anything else (Tenant / Other,
+          // Vacant, NA, empty) => YES ☐ / NO ☑.
           if (regions.props.length > 0) {
             const ownerOccRe = /Owner[\s\u00A0\-]?Occupied/gi;
             const glyphRunRe2 = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            // Match a "Yes" or "No" label sitting alone (or with surrounding
+            // whitespace) inside a single <w:t>…</w:t> run. We anchor on these
+            // text runs to find the immediately-preceding glyph run.
+            const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
+            const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
             const stripTags = (s: string) => s.replace(/<[^>]+>/g, "");
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start) ||
+              consumed.some(([cs, ce]) => s < ce && e > cs);
+
+            // For a given label position, find the nearest preceding glyph run
+            // start within `maxBack` chars. Returns null if none found.
+            const findGlyphBefore = (
+              labelStart: number,
+              regionStart: number,
+            ): RegExpExecArray | null => {
+              const maxBack = 1024;
+              const scanStart = Math.max(regionStart, labelStart - maxBack);
+              const slice = xml.slice(scanStart, labelStart);
+              let last: RegExpExecArray | null = null;
+              const re = new RegExp(glyphRunRe2.source, "g");
+              let gm: RegExpExecArray | null;
+              while ((gm = re.exec(slice)) !== null) last = gm;
+              if (!last) return null;
+              // Re-anchor offsets back to the full xml.
+              const absIndex = scanStart + last.index;
+              const fake: RegExpExecArray = Object.assign(
+                [last[0], last[1], last[2], last[3]] as unknown as RegExpExecArray,
+                { index: absIndex, input: xml, groups: undefined },
+              );
+              return fake;
+            };
+
             let om: RegExpExecArray | null;
             while ((om = ownerOccRe.exec(xml)) !== null) {
               const qStart = om.index;
+              let pRange: [number, number] | null = null;
               let pIdx: number | null = null;
               for (const p of regions.props) {
                 if (qStart >= p.range[0] && qStart < p.range[1]) {
                   pIdx = p.k;
+                  pRange = p.range;
                   break;
                 }
               }
-              if (pIdx === null) continue;
-              const windowEnd = Math.min(xml.length, qStart + 1024);
+              if (pIdx === null || pRange === null) continue;
+
+              // Bounded look-ahead window for the Yes / No labels.
+              const windowEnd = Math.min(pRange[1], qStart + 2048);
               const windowText = stripTags(xml.slice(qStart, windowEnd));
-              // Require both Yes and No labels in window to filter out property-type lists.
-              if (!/\bYes\b/i.test(windowText) || !/\bNo\b/i.test(windowText)) continue;
-              glyphRunRe2.lastIndex = qStart;
-              const glyphMatches: RegExpExecArray[] = [];
-              let gm: RegExpExecArray | null;
-              while ((gm = glyphRunRe2.exec(xml)) !== null && gm.index < windowEnd) {
-                glyphMatches.push(gm);
-                if (glyphMatches.length >= 2) break;
-              }
-              if (glyphMatches.length < 2) continue;
-              const overlaps = (s: number, e: number) =>
-                rewrites.some((r) => s < r.end && e > r.start) ||
-                consumed.some(([cs, ce]) => s < ce && e > cs);
-              const yesM = glyphMatches[0];
-              const noM = glyphMatches[1];
+              if (!/\bYes\b/.test(windowText) || !/\bNo\b/.test(windowText)) continue;
+
+              // Find the first standalone "Yes" / "No" label runs after the
+              // OWNER OCCUPIED label, capped at the property region.
+              yesLabelRe.lastIndex = qStart;
+              noLabelRe.lastIndex = qStart;
+              const yesLabel = yesLabelRe.exec(xml);
+              const noLabel = noLabelRe.exec(xml);
+              if (!yesLabel || !noLabel) continue;
+              if (yesLabel.index >= windowEnd || noLabel.index >= windowEnd) continue;
+
+              const yesM = findGlyphBefore(yesLabel.index, qStart);
+              const noM = findGlyphBefore(noLabel.index, qStart);
+              if (!yesM || !noM) continue;
+              if (yesM.index === noM.index) continue;
+
               const yesStart = yesM.index;
               const yesEnd = yesStart + yesM[0].length;
               const noStart = noM.index;
               const noEnd = noStart + noM[0].length;
               if (overlaps(yesStart, yesEnd) || overlaps(noStart, noEnd)) continue;
+
               const occVal = String(
                 fieldValues.get(`pr_p_occupanc_${pIdx}`)?.rawValue ??
                   (pIdx === 1 ? fieldValues.get("pr_p_occupanc")?.rawValue : "") ??
@@ -3582,7 +3623,7 @@ async function generateSingleDocument(
               if (!regionRewriteCounts[`PROP#${pIdx}`]) regionRewriteCounts[`PROP#${pIdx}`] = 0;
               regionRewriteCounts[`PROP#${pIdx}`] += 2;
               debugLog(
-                `[generate-document] RE851D owner-occupied YES/NO anchored: PROP#${pIdx} isOwner=${isOwner}`
+                `[generate-document] RE851D owner-occupied YES/NO label-anchored: PROP#${pIdx} isOwner=${isOwner}`
               );
             }
           }
