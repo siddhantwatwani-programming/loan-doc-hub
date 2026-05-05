@@ -225,7 +225,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.property}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Related Property</Label>
-              <Select value={lien.property} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
+              <Select value={lien.property || 'unassigned'} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-[9999]">
                   <SelectItem value="unassigned">Unassigned</SelectItem>
