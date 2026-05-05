@@ -188,7 +188,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
-      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
+      case 'balanceAfter': return lien.lienPriorityAfter || '-';
       case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
       case 'recordingNumber': return lien.recordingNumber || '-';
