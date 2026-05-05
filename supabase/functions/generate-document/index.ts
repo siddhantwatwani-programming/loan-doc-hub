@@ -3811,20 +3811,68 @@ async function generateSingleDocument(
           const ownerRe = /OWNER\s+OCCUPIED/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          // Bare glyph run (not yet wrapped in an SDT).
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          // SDT checkbox block containing a single glyph in its sdtContent.
+          // After processDocx → convertGlyphsToSdtCheckboxes, every standalone
+          // glyph is wrapped in this structure. We must rewrite the WHOLE
+          // SDT (both <w14:checked> and the inner display glyph) — flipping
+          // only the visible glyph leaves Word rendering the SDT's intrinsic
+          // checked/unchecked state, producing the "both checked" symptom.
+          const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
           const rewrites: Rewrite[] = [];
 
-          const findGlyphBefore = (labelStart: number, regionStart: number) => {
-            const maxBack = 1500;
+          // Build a replacement SDT block with the desired checked state,
+          // preserving the original block's <w:rPr> and <w14:*State> defs.
+          const rewriteSdtChecked = (block: string, checked: boolean): string => {
+            const val = checked ? "1" : "0";
+            const glyph = checked ? "\u2611" : "\u2610";
+            // Update w14:checked w14:val (handles both '...val="0"' and val="1")
+            let next = block.replace(
+              /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
+              `$1${val}$2`,
+            );
+            // Replace the visible glyph inside the <w:sdtContent>'s <w:t>.
+            next = next.replace(
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              `$1${glyph}$3`,
+            );
+            return next;
+          };
+
+          // Find the nearest preceding control (SDT checkbox or bare glyph run)
+          // before `labelStart`, anchored within the property region.
+          const findControlBefore = (labelStart: number, regionStart: number):
+            | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+            | null => {
+            const maxBack = 2500;
             const scanStart = Math.max(regionStart, labelStart - maxBack);
             const slice = xml.slice(scanStart, labelStart);
-            let last: { idx: number; m: string[] } | null = null;
-            const re = new RegExp(glyphRunRe.source, "g");
+            let last:
+              | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+              | null = null;
+            const sdtRe = new RegExp(sdtCheckboxRe.source, "g");
+            let sm: RegExpExecArray | null;
+            while ((sm = sdtRe.exec(slice)) !== null) {
+              last = {
+                idx: scanStart + sm.index,
+                end: scanStart + sm.index + sm[0].length,
+                kind: "sdt",
+                m: [sm[0]],
+              };
+            }
+            if (last) return last;
+            const gRe = new RegExp(glyphRunRe.source, "g");
             let gm: RegExpExecArray | null;
-            while ((gm = re.exec(slice)) !== null) {
-              last = { idx: scanStart + gm.index, m: [gm[0], gm[1], gm[2], gm[3]] };
+            while ((gm = gRe.exec(slice)) !== null) {
+              last = {
+                idx: scanStart + gm.index,
+                end: scanStart + gm.index + gm[0].length,
+                kind: "glyph",
+                m: [gm[0], gm[1], gm[2], gm[3]],
+              };
             }
             return last;
           };
@@ -3843,22 +3891,29 @@ async function generateSingleDocument(
             if (!yL || !nL) continue;
             if (yL.index >= winEnd || nL.index >= winEnd) continue;
 
-            const yG = findGlyphBefore(yL.index, qStart);
-            const nG = findGlyphBefore(nL.index, qStart);
-            if (!yG || !nG || yG.idx === nG.idx) continue;
+            const yC = findControlBefore(yL.index, qStart);
+            const nC = findControlBefore(nL.index, qStart);
+            if (!yC || !nC || yC.idx === nC.idx) continue;
 
             const isOwner = occByIdx[region.k] === "owner occupied";
-            const yesGlyph = isOwner ? "☑" : "☐";
-            const noGlyph = isOwner ? "☐" : "☑";
+            const yesChecked = isOwner;
+            const noChecked = !isOwner;
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            const yS = yG.idx, yE = yG.idx + yG.m[0].length;
-            const nS = nG.idx, nE = nG.idx + nG.m[0].length;
-            if (overlaps(yS, yE) || overlaps(nS, nE)) continue;
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
 
-            rewrites.push({ start: yS, end: yE, replacement: `${yG.m[1]}${yesGlyph}${yG.m[3]}` });
-            rewrites.push({ start: nS, end: nE, replacement: `${nG.m[1]}${noGlyph}${nG.m[3]}` });
+            const yesReplacement =
+              yC.kind === "sdt"
+                ? rewriteSdtChecked(yC.m[0], yesChecked)
+                : `${yC.m[1]}${yesChecked ? "\u2611" : "\u2610"}${yC.m[3]}`;
+            const noReplacement =
+              nC.kind === "sdt"
+                ? rewriteSdtChecked(nC.m[0], noChecked)
+                : `${nC.m[1]}${noChecked ? "\u2611" : "\u2610"}${nC.m[3]}`;
+
+            rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
+            rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
           }
 
           if (rewrites.length > 0) {
