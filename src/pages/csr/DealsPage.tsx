@@ -99,6 +99,8 @@ export const DealsPage: React.FC = () => {
   const refreshKey = searchParams.get('_r');
   const { toast } = useToast();
   const workspace = useWorkspaceOptional();
+  const { user } = useAuth();
+  const [creating, setCreating] = useState(false);
   const [deals, setDeals] = useState<Deal[]>(cachedState?.deals || []);
   const [loading, setLoading] = useState(!cachedState);
   const [searchQuery, setSearchQuery] = useState('');
