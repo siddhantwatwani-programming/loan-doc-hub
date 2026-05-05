@@ -3202,6 +3202,16 @@ async function generateSingleDocument(
             /\(\s*eq\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
             '(eq $1 "Owner Occupied")',
           );
+          // Also normalize the (ne …) inverse used by the No checkbox in some
+          // RE851D template variants.
+          xml = xml.replace(
+            /\(\s*ne\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)\s*"\s*Owner\s*"\s*\)/gi,
+            '(ne $1 "Owner Occupied")',
+          );
+          xml = xml.replace(
+            /\(\s*ne\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
+            '(ne $1 "Owner Occupied")',
+          );
 
           // Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels
           // that some authored RE851D templates place after each encumbrance
@@ -3717,6 +3727,164 @@ async function generateSingleDocument(
     }
     if (isTemplate885) {
       console.log(`[RE885] DOCX Render: ${Math.round(performance.now() - tRenderStart)} ms (output=${processedDocx.length} bytes)`);
+    }
+
+    // ── RE851D POST-RENDER OWNER OCCUPIED safety pass ──
+    // Some authored RE851D templates carry inline conditional checkbox glyphs
+    // (e.g. {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}})
+    // that, depending on template variants and run fragmentation, may leave
+    // both Yes ☑/☒ and No ☑/☒ checked. After full template rendering, walk
+    // each PROPERTY block and force exactly one mutually-exclusive pair
+    // anchored to the literal "Yes" / "No" labels following "OWNER OCCUPIED",
+    // using pr_p_occupanc_K as the source of truth. Strictly RE851D-scoped.
+    if (/851d/i.test(template.name || "")) {
+      try {
+        const occByIdx: Record<number, string> = {};
+        for (let k = 1; k <= 5; k++) {
+          const v = fieldValues.get(`pr_p_occupanc_${k}`);
+          occByIdx[k] = String(v?.rawValue ?? "").trim().toLowerCase();
+        }
+        if (occByIdx[1] === "" && fieldValues.get("pr_p_occupanc")) {
+          occByIdx[1] = String(fieldValues.get("pr_p_occupanc")?.rawValue ?? "").trim().toLowerCase();
+        }
+
+        const decoder2 = new TextDecoder("utf-8");
+        const encoder2 = new TextEncoder();
+        const unzipped = fflate.unzipSync(processedDocx);
+        const rezip: fflate.Zippable = {};
+        let didMutate = false;
+
+        for (const [filename, bytes] of Object.entries(unzipped)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = decoder2.decode(bytes);
+          if (xml.indexOf("OWNER OCCUPIED") === -1 && xml.indexOf("Owner Occupied") === -1) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+
+          // Build "PROPERTY INFORMATION" anchors -> property indices 1..5.
+          const propAnchors: number[] = [];
+          {
+            const stripped = xml.replace(/<[^>]+>/g, " ");
+            // Walk both stripped and xml in parallel via offset map.
+            const map: number[] = [];
+            const buf: string[] = [];
+            let i = 0;
+            while (i < xml.length) {
+              if (xml[i] === "<") {
+                const e = xml.indexOf(">", i);
+                if (e === -1) break;
+                const prev = buf.length ? buf[buf.length - 1] : "";
+                if (prev !== " ") { buf.push(" "); map.push(i); }
+                i = e + 1; continue;
+              }
+              buf.push(xml[i]); map.push(i); i++;
+            }
+            const txt = buf.join("");
+            const re = /\bPROPERTY\s+INFORMATION\b/gi;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(txt)) !== null) {
+              propAnchors.push(map[m.index] ?? 0);
+              if (propAnchors.length >= 5) break;
+            }
+          }
+          if (propAnchors.length === 0) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          const propRanges: Array<{ k: number; start: number; end: number }> = [];
+          for (let pi = 0; pi < propAnchors.length; pi++) {
+            propRanges.push({
+              k: pi + 1,
+              start: propAnchors[pi],
+              end: pi + 1 < propAnchors.length ? propAnchors[pi + 1] : xml.length,
+            });
+          }
+
+          const ownerRe = /OWNER\s+OCCUPIED/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+
+          type Rewrite = { start: number; end: number; replacement: string };
+          const rewrites: Rewrite[] = [];
+
+          const findGlyphBefore = (labelStart: number, regionStart: number) => {
+            const maxBack = 1500;
+            const scanStart = Math.max(regionStart, labelStart - maxBack);
+            const slice = xml.slice(scanStart, labelStart);
+            let last: { idx: number; m: string[] } | null = null;
+            const re = new RegExp(glyphRunRe.source, "g");
+            let gm: RegExpExecArray | null;
+            while ((gm = re.exec(slice)) !== null) {
+              last = { idx: scanStart + gm.index, m: [gm[0], gm[1], gm[2], gm[3]] };
+            }
+            return last;
+          };
+
+          let om: RegExpExecArray | null;
+          while ((om = ownerRe.exec(xml)) !== null) {
+            const qStart = om.index;
+            const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
+            if (!region) continue;
+            const winEnd = Math.min(region.end, qStart + 3000);
+
+            yesLabelRe.lastIndex = qStart;
+            noLabelRe.lastIndex = qStart;
+            const yL = yesLabelRe.exec(xml);
+            const nL = noLabelRe.exec(xml);
+            if (!yL || !nL) continue;
+            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+
+            const yG = findGlyphBefore(yL.index, qStart);
+            const nG = findGlyphBefore(nL.index, qStart);
+            if (!yG || !nG || yG.idx === nG.idx) continue;
+
+            const isOwner = occByIdx[region.k] === "owner occupied";
+            const yesGlyph = isOwner ? "☑" : "☐";
+            const noGlyph = isOwner ? "☐" : "☑";
+
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start);
+            const yS = yG.idx, yE = yG.idx + yG.m[0].length;
+            const nS = nG.idx, nE = nG.idx + nG.m[0].length;
+            if (overlaps(yS, yE) || overlaps(nS, nE)) continue;
+
+            rewrites.push({ start: yS, end: yE, replacement: `${yG.m[1]}${yesGlyph}${yG.m[3]}` });
+            rewrites.push({ start: nS, end: nE, replacement: `${nG.m[1]}${noGlyph}${nG.m[3]}` });
+          }
+
+          if (rewrites.length > 0) {
+            rewrites.sort((a, b) => b.start - a.start);
+            for (const r of rewrites) {
+              xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+            }
+            rezip[filename] = [encoder2.encode(xml), { level: 0 }];
+            didMutate = true;
+            console.log(
+              `[generate-document] RE851D post-render owner-occupied safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
+            );
+          } else {
+            rezip[filename] = [bytes, { level: 0 }];
+          }
+        }
+
+        if (didMutate) {
+          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+        }
+      } catch (postErr) {
+        console.error(
+          `[generate-document] RE851D post-render owner-occupied pass failed (continuing):`,
+          postErr instanceof Error ? postErr.message : String(postErr)
+        );
+      }
     }
 
     debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
