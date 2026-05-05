@@ -1209,18 +1209,24 @@ async function generateSingleDocument(
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
-          // Per-property normalized occupancy string for RE851D template
-          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}} Yes
-          //   {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☐{{else}}☒{{/if}} No
-          // Owner Occupied  => "Owner Occupied" (Yes ☒)
-          // Tenant / Vacant / NA / empty => "" (else => No ☒)
+          // Per-property normalized occupancy string for RE851D template.
+          // Preserve the actual CSR value so downstream safety passes and
+          // template conditionals can distinguish all 4 cases:
+          //   Owner Occupied | Tenant / Other | Vacant | NA | "" (unknown)
+          // Only "Owner Occupied" maps to YES; every other value maps to NO.
+          let normalizedOcc = "";
+          if (occRawNorm === "owner occupied") normalizedOcc = "Owner Occupied";
+          else if (occRawNorm === "tenant / other" || occRawNorm === "tenant/other" || occRawNorm === "tenant") normalizedOcc = "Tenant / Other";
+          else if (occRawNorm === "vacant") normalizedOcc = "Vacant";
+          else if (occRawNorm === "na") normalizedOcc = "NA";
+          else if (occRaw) normalizedOcc = occRaw; // preserve raw label as-is for unknown values
           fieldValues.set(`pr_p_occupanc_${idx}`, {
-            rawValue: isYes ? "Owner Occupied" : "",
+            rawValue: normalizedOcc,
             dataType: "text",
           });
           if (idx === 1) {
             fieldValues.set("pr_p_occupanc", {
-              rawValue: isYes ? "Owner Occupied" : "",
+              rawValue: normalizedOcc,
               dataType: "text",
             });
           }
@@ -3769,11 +3775,11 @@ async function generateSingleDocument(
             continue;
           }
 
-          // Build "PROPERTY INFORMATION" anchors -> property indices 1..5.
-          const propAnchors: number[] = [];
+          // Build property-section anchors. Prefer "PROPERTY INFORMATION"
+          // gray-bar headings (RE851D standard); fall back to "PROPERTY #K"
+          // headings when the gray bar is absent. Cap at 5 properties.
+          const propAnchors: Array<{ k: number; orig: number }> = [];
           {
-            const stripped = xml.replace(/<[^>]+>/g, " ");
-            // Walk both stripped and xml in parallel via offset map.
             const map: number[] = [];
             const buf: string[] = [];
             let i = 0;
@@ -3788,11 +3794,28 @@ async function generateSingleDocument(
               buf.push(xml[i]); map.push(i); i++;
             }
             const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
+            // Primary: PROPERTY INFORMATION headings.
+            const reInfo = /\bPROPERTY\s+INFORMATION\b/gi;
             let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
+            const infoHits: number[] = [];
+            while ((m = reInfo.exec(txt)) !== null) {
+              infoHits.push(map[m.index] ?? 0);
+              if (infoHits.length >= 5) break;
+            }
+            if (infoHits.length > 0) {
+              infoHits.forEach((orig, i) => propAnchors.push({ k: i + 1, orig }));
+            } else {
+              // Fallback: PROPERTY #K detail headings.
+              const rePk = /\bPROPERTY\s*#\s*([1-5])\b/gi;
+              const seen = new Set<number>();
+              while ((m = rePk.exec(txt)) !== null) {
+                const k = parseInt(m[1], 10);
+                if (k >= 1 && k <= 5 && !seen.has(k)) {
+                  seen.add(k);
+                  propAnchors.push({ k, orig: map[m.index] ?? 0 });
+                }
+              }
+              propAnchors.sort((a, b) => a.orig - b.orig);
             }
           }
           if (propAnchors.length === 0) {
@@ -3802,39 +3825,28 @@ async function generateSingleDocument(
           const propRanges: Array<{ k: number; start: number; end: number }> = [];
           for (let pi = 0; pi < propAnchors.length; pi++) {
             propRanges.push({
-              k: pi + 1,
-              start: propAnchors[pi],
-              end: pi + 1 < propAnchors.length ? propAnchors[pi + 1] : xml.length,
+              k: propAnchors[pi].k,
+              start: propAnchors[pi].orig,
+              end: pi + 1 < propAnchors.length ? propAnchors[pi + 1].orig : xml.length,
             });
           }
 
           const ownerRe = /OWNER\s+OCCUPIED/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
-          // Bare glyph run (not yet wrapped in an SDT).
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
-          // SDT checkbox block containing a single glyph in its sdtContent.
-          // After processDocx → convertGlyphsToSdtCheckboxes, every standalone
-          // glyph is wrapped in this structure. We must rewrite the WHOLE
-          // SDT (both <w14:checked> and the inner display glyph) — flipping
-          // only the visible glyph leaves Word rendering the SDT's intrinsic
-          // checked/unchecked state, producing the "both checked" symptom.
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
           const rewrites: Rewrite[] = [];
 
-          // Build a replacement SDT block with the desired checked state,
-          // preserving the original block's <w:rPr> and <w14:*State> defs.
           const rewriteSdtChecked = (block: string, checked: boolean): string => {
             const val = checked ? "1" : "0";
             const glyph = checked ? "\u2611" : "\u2610";
-            // Update w14:checked w14:val (handles both '...val="0"' and val="1")
             let next = block.replace(
               /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
               `$1${val}$2`,
             );
-            // Replace the visible glyph inside the <w:sdtContent>'s <w:t>.
             next = next.replace(
               /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
               `$1${glyph}$3`,
@@ -3842,39 +3854,32 @@ async function generateSingleDocument(
             return next;
           };
 
-          // Find the nearest preceding control (SDT checkbox or bare glyph run)
-          // before `labelStart`, anchored within the property region.
-          const findControlBefore = (labelStart: number, regionStart: number):
-            | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
-            | null => {
-            const maxBack = 2500;
-            const scanStart = Math.max(regionStart, labelStart - maxBack);
-            const slice = xml.slice(scanStart, labelStart);
-            let last:
-              | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
-              | null = null;
+          // Collect every checkbox control (SDT or bare glyph) inside [winStart, winEnd).
+          type Ctrl = { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] };
+          const collectControls = (winStart: number, winEnd: number): Ctrl[] => {
+            const ctrls: Ctrl[] = [];
+            const slice = xml.slice(winStart, winEnd);
             const sdtRe = new RegExp(sdtCheckboxRe.source, "g");
             let sm: RegExpExecArray | null;
             while ((sm = sdtRe.exec(slice)) !== null) {
-              last = {
-                idx: scanStart + sm.index,
-                end: scanStart + sm.index + sm[0].length,
+              ctrls.push({
+                idx: winStart + sm.index,
+                end: winStart + sm.index + sm[0].length,
                 kind: "sdt",
                 m: [sm[0]],
-              };
+              });
             }
-            if (last) return last;
             const gRe = new RegExp(glyphRunRe.source, "g");
             let gm: RegExpExecArray | null;
             while ((gm = gRe.exec(slice)) !== null) {
-              last = {
-                idx: scanStart + gm.index,
-                end: scanStart + gm.index + gm[0].length,
-                kind: "glyph",
-                m: [gm[0], gm[1], gm[2], gm[3]],
-              };
+              const s = winStart + gm.index;
+              const e = winStart + gm.index + gm[0].length;
+              // Skip glyphs that fall inside an SDT block we already captured.
+              if (ctrls.some((c) => c.kind === "sdt" && s >= c.idx && e <= c.end)) continue;
+              ctrls.push({ idx: s, end: e, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] });
             }
-            return last;
+            ctrls.sort((a, b) => a.idx - b.idx);
+            return ctrls;
           };
 
           let om: RegExpExecArray | null;
@@ -3891,17 +3896,37 @@ async function generateSingleDocument(
             if (!yL || !nL) continue;
             if (yL.index >= winEnd || nL.index >= winEnd) continue;
 
-            const yC = findControlBefore(yL.index, qStart);
-            const nC = findControlBefore(nL.index, qStart);
-            if (!yC || !nC || yC.idx === nC.idx) continue;
+            // Collect every checkbox control between the OWNER OCCUPIED anchor
+            // and the end of the local window. Pick the control nearest to
+            // each label (search both sides), ensuring the Yes and No
+            // controls are distinct.
+            const ctrls = collectControls(qStart, winEnd);
+            if (ctrls.length < 2) continue;
+            const distance = (c: Ctrl, labelIdx: number) =>
+              labelIdx >= c.end ? labelIdx - c.end : c.idx - labelIdx;
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start);
+
+            // Sort candidates by absolute distance to the label.
+            const sortByDist = (labelIdx: number) =>
+              ctrls
+                .filter((c) => !overlaps(c.idx, c.end))
+                .map((c) => ({ c, d: Math.abs(distance(c, labelIdx)) }))
+                .sort((a, b) => a.d - b.d);
+
+            const yesCands = sortByDist(yL.index);
+            const noCands = sortByDist(nL.index);
+            if (yesCands.length === 0 || noCands.length === 0) continue;
+
+            const yC = yesCands[0].c;
+            // Pick a No control distinct from the chosen Yes control.
+            const nCSel = noCands.find((x) => x.c.idx !== yC.idx);
+            if (!nCSel) continue;
+            const nC = nCSel.c;
 
             const isOwner = occByIdx[region.k] === "owner occupied";
             const yesChecked = isOwner;
             const noChecked = !isOwner;
-
-            const overlaps = (s: number, e: number) =>
-              rewrites.some((r) => s < r.end && e > r.start);
-            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
 
             const yesReplacement =
               yC.kind === "sdt"
@@ -3914,6 +3939,9 @@ async function generateSingleDocument(
 
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(
+              `[generate-document] RE851D owner-occupied PROP#${region.k} occ="${occByIdx[region.k]}" => YES=${yesChecked ? "☑" : "☐"} NO=${noChecked ? "☑" : "☐"}`,
+            );
           }
 
           if (rewrites.length > 0) {
