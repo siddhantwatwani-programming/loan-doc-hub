@@ -1883,8 +1883,8 @@ export function processConditionalBlocks(
       (result.indexOf('(ne') !== -1 && result.indexOf('(ne ') !== -1)
     );
     // Match either `eq` or `ne` heads. `ne` is treated as the negation of `eq`.
-    const eqIfPattern = /\{\{#if\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
-    const eqUnlessPattern = /\{\{#unless\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
+    const eqIfPattern = /\{\{#if\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:&quot;[^"<]*?&quot;|"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
+    const eqUnlessPattern = /\{\{#unless\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:&quot;[^"<]*?&quot;|"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
     const eqIfMatch = hasEqSexp ? eqIfPattern.exec(result) : null;
     const eqUnlessMatch = hasEqSexp ? eqUnlessPattern.exec(result) : null;
     if (eqIfMatch || eqUnlessMatch) {
