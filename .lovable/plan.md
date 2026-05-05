@@ -1,54 +1,57 @@
-# RE851D – Fix OWNER OCCUPIED YES/NO Checkbox
+## Plan: RE851D Owner Occupied Checkbox Fix
 
-## Root Cause
+### Goal
+Ensure the RE851D generated document never checks both OWNER OCCUPIED Yes and No. The output should be:
 
-The RE851D template uses:
-```
-{{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}} Yes
-{{#if (eq pr_p_occupanc_N "Owner Occupied")}}☐{{else}}☒{{/if}} No
-```
+- `Owner Occupied` -> Yes checked, No unchecked
+- `Tenant / Other`, `Vacant`, `NA`, or blank -> Yes unchecked, No checked
+- Applies to PROPERTY #1 through PROPERTY #5
 
-But the per-property publisher in `supabase/functions/generate-document/index.ts` (lines 1217–1226) writes the literal value `"Owner"` (not `"Owner Occupied"`) for `pr_p_occupanc_${idx}` and `pr_p_occupanc`. The handlebars `eq` comparison therefore never matches, so YES never renders correctly through the template, and NO behaves inconsistently. CSR dropdown values are: `Owner Occupied`, `Tenant / Other`, `Vacant`, `NA`.
+### Scope
+Only update the RE851D document-generation logic. No UI changes, no schema changes, no new APIs, and no broad refactoring.
 
-(The downstream "safety pass" at lines 3527–3588 already correctly anchors the two glyph runs after an "Owner Occupied" label using a case-insensitive comparison that accepts `"owner occupied"` or `"owner"`. That path is not the bug — the bug is the template-resolved value.)
+### Findings
+The current generated-document function already publishes `pr_p_occupanc_1` through `pr_p_occupanc_5` as `"Owner Occupied"` only when the CSR value is exactly Owner Occupied, otherwise blank.
 
-## Fix (single edit, backend only)
+The remaining issue is in the RE851D safety pass that rewrites the two static checkbox glyphs near the `OWNER OCCUPIED` label. Its current logic grabs the first two checkbox glyphs after the label. In some template layouts, the first glyph can be an unrelated checkbox or a glyph already produced by a template conditional, causing both visible Yes and No to end up checked.
 
-In `supabase/functions/generate-document/index.ts`, lines 1217–1226: change the `rawValue` written from `"Owner"` to `"Owner Occupied"` so the template `eq` comparison matches exactly.
+### Implementation Steps
+1. Update the RE851D Owner Occupied safety pass in `supabase/functions/generate-document/index.ts` only.
+2. Make the glyph targeting stricter:
+   - Locate the `OWNER OCCUPIED` label inside each detected PROPERTY #N region.
+   - Find the actual `Yes` and `No` label positions after that label.
+   - Rewrite only the nearest checkbox glyph immediately associated with `Yes` and the nearest checkbox glyph immediately associated with `No`.
+   - Keep the rewrite bounded to the current property region so one property cannot affect another.
+3. Keep the existing condition source:
+   - Use `pr_p_occupanc_N` for the matching property.
+   - Treat only `"Owner Occupied"` as true.
+   - Treat all other values as false.
+4. Preserve the existing normalized field publisher for `pr_p_occupanc_N`; no field names or template placeholders will be changed.
+
+### Technical Detail
+The current code has this safe normalized source:
 
 ```ts
 fieldValues.set(`pr_p_occupanc_${idx}`, {
   rawValue: isYes ? "Owner Occupied" : "",
   dataType: "text",
 });
-if (idx === 1) {
-  fieldValues.set("pr_p_occupanc", {
-    rawValue: isYes ? "Owner Occupied" : "",
-    dataType: "text",
-  });
-}
 ```
 
-`isYes` is already computed correctly (true only when normalized value equals `"owner occupied"`; `Tenant / Other`, `Vacant`, `NA`, and empty all yield `false`). No other logic changes needed.
+The planned change is only in the later XML safety pass. Instead of assuming the first two glyphs after `OWNER OCCUPIED` are Yes and No, it will anchor each rewrite to the actual adjacent labels:
 
-## Why this is sufficient for all 5 properties
+```text
+OWNER OCCUPIED
+[checkbox glyph] Yes
+[checkbox glyph] No
+```
 
-The publisher loops per property index (`_1` … `_5`), so updating the emitted string fixes PROPERTY #1–#5 simultaneously. The safety-pass fallback already handles both `"owner occupied"` and `"owner"`, so it remains compatible.
+This prevents an unrelated or already-rendered checkbox glyph from being rewritten and eliminates the both-checked result.
 
-## Out of scope (per minimal-change policy)
-
-- No template/document file edits.
-- No UI, schema, dictionary, or API changes.
-- No changes to `pr_p_occupancySt_${idx}_yes/no/_glyph` aliases (already correct).
-- Safety-pass logic at lines 3527–3588 left unchanged (still works).
-
-## Acceptance
-
-- Selecting **Owner Occupied** → YES ☑, NO ☐ for that property.
-- Selecting **Tenant / Other**, **Vacant**, **NA**, or leaving empty → YES ☐, NO ☑.
-- Works for PROPERTY #1 through #5.
-- No regression in other RE851D mappings.
-
-## Files To Change
-
-- `supabase/functions/generate-document/index.ts` (lines 1217–1226 only)
+### Acceptance Criteria
+- Owner Occupied: only Yes is checked.
+- Tenant / Other: only No is checked.
+- Vacant: only No is checked.
+- NA: only No is checked.
+- Works for PROPERTY #1 through PROPERTY #5.
+- No changes to UI behavior, database schema, save/update APIs, or other document-generation mappings.
