@@ -224,7 +224,50 @@ export const DealsPage: React.FC = () => {
     navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
   };
 
-  const handleDelete = async (deal: Deal) => {
+  const handleCreateDeal = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const { data: dealNumber, error: numErr } = await supabase.rpc('generate_deal_number');
+      if (numErr) throw numErr;
+
+      const { data, error } = await supabase
+        .from('deals')
+        .insert({
+          deal_number: dealNumber,
+          state: 'TBD',
+          product_type: 'TBD',
+          mode: 'doc_prep',
+          status: 'draft',
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await logDealCreated(data.id, {
+        dealNumber,
+        state: 'TBD',
+        productType: 'TBD',
+        mode: 'doc_prep',
+      });
+
+      toast({ title: 'File created successfully' });
+      navigate(`/deals/${data.id}`);
+    } catch (error: any) {
+      console.error('Error creating deal:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create file',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+
     if (!confirm(`Delete file ${deal.deal_number}?`)) return;
 
     try {
