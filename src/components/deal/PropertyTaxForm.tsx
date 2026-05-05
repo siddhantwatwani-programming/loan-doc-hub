@@ -243,7 +243,22 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent_amount`}>
-              {renderCurrencyField('delinquent_amount', 'Delinquent Amount')}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px] leading-tight">Delinquent<br />Amount</Label>
+                <div className="relative flex-1">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                  <Input
+                    value={getValue('delinquent_amount')}
+                    onChange={(e) => handleChange('delinquent_amount', e.target.value)}
+                    onKeyDown={numericKeyDown}
+                    onPaste={(e) => numericPaste(e, (v) => handleChange('delinquent_amount', v))}
+                    onFocus={(e) => { const v = unformatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
+                    onBlur={(e) => { const v = formatCurrencyDisplay(e.target.value); handleChange('delinquent_amount', v); }}
+                    disabled={disabled}
+                    className="h-7 text-sm flex-1 pl-5"
+                  />
+                </div>
+              </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.escrow_impounds`}>
