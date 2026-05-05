@@ -57,6 +57,7 @@ const getDefaultLien = (): LienData => ({
   sltLastPaymentMade: '', sltNextPaymentDue: '', sltCurrentBalance: '',
   sltRequestSubmitted: '', sltResponseReceived: '', sltUnableToVerify: 'false',
   sltLenderNotified: 'false', sltLenderNotifiedDate: '',
+  sltBorrowerNotified: 'false', sltBorrowerNotifiedDate: '',
   note: '', thisLoan: 'false', estimate: 'false', status: '',
   delinquencies60day: 'false', delinquenciesHowMany: '', currentlyDelinquent: 'false', currentlyDelinquentAmount: '',
   paidByLoan: 'false', sourceOfPayment: '',
