@@ -134,7 +134,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
       <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
       <Select value={getValue(field)} onValueChange={(value) => handleChange(field, value)} disabled={disabled}>
         <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-        <SelectContent className="bg-background z-50">
+        <SelectContent className="bg-background border border-border z-[9999]">
           {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
         </SelectContent>
       </Select>
