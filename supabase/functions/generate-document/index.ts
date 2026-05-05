@@ -998,6 +998,29 @@ async function generateSingleDocument(
           }
         }
 
+        // Per-property Current Balance alias: collect lienK.current_balance whose
+        // lienK.property matches this property by index name or address.
+        {
+          const matched: { lienIdx: number; value: string }[] = [];
+          for (const [k, v] of fieldValues.entries()) {
+            const m = k.match(/^lien(\d*)\.current_balance$/);
+            if (!m || !v.rawValue) continue;
+            const lienIdx = m[1] ? parseInt(m[1], 10) : 0;
+            const propKey = lienIdx > 0 ? `lien${lienIdx}.property` : "lien.property";
+            const propName = String(fieldValues.get(propKey)?.rawValue || "").trim().toLowerCase();
+            if (!propName) continue;
+            if (propName === prefix.toLowerCase() || (propAddrLower && propName === propAddrLower)) {
+              matched.push({ lienIdx, value: String(v.rawValue) });
+            }
+          }
+          if (matched.length > 0) {
+            matched.sort((a, b) => a.lienIdx - b.lienIdx);
+            const joined = matched.map(e => e.value).join("\n");
+            fieldValues.set(`pr_p_currentBalanc_${idx}`, { rawValue: joined, dataType: "currency" });
+            debugLog(`[generate-document] Published pr_p_currentBalanc_${idx} (${matched.length} liens)`);
+          }
+        }
+
         // Computed: per-property LTV ratio = loan_amount / property{N}.appraised_value
         const appraiseNum = parseFloat(
           String(
@@ -2244,6 +2267,12 @@ async function generateSingleDocument(
         if (prLiKey) {
           fieldValues.set(prLiKey, { rawValue: aggregated, dataType });
           debugLog(`[generate-document] Multi-lien bridged ${field} -> ${prLiKey} (${entries.length} liens)`);
+        }
+
+        // Also publish pr_p_currentBalanc alias (template tag for Property -> Liens Current Balance)
+        if (field === "current_balance") {
+          fieldValues.set("pr_p_currentBalanc", { rawValue: aggregated, dataType: "currency" });
+          debugLog(`[generate-document] Published pr_p_currentBalanc (${entries.length} liens)`);
         }
 
         // Set li_* key with aggregated value
