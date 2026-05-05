@@ -1,63 +1,102 @@
-## Goal
+## Root cause (deep analysis)
 
-Fix the intermittent issue under **File Data → Property → Liens**, where a newly added Lien sometimes saves without its **Related Property** value (the lien shows as "Unassigned" in the grid even though the user was inside a specific Property when adding it). After save, the Related Property must always be populated and persisted.
+I unzipped the uploaded template (`Re851d_v1_1_2_4-2.docx`) and the generated output (`Re851d_v4.docx`) and compared the OWNER OCCUPIED region per property.
 
-Strictly follow the minimal-change rule: no schema changes, no new APIs, no UI/layout/refactor work outside what is listed.
+**Template authoring (correct):** each of the 5 OWNER OCCUPIED blocks contains:
+```
+{{#if (eq pr_p_occupanc_N "Owner Occupied")}}
+☑ Yes
+☐ No
+{{else}}
+☐ Yes
+☑ No
+{{/if}}
+```
+…where the literal in the XML is actually `&quot;Owner Occupied&quot;` (DOCX entity-encoded quotes).
 
-## Root cause
+**Generated output (broken):** every property prints all four glyphs:
+```
+☑ Yes   ☐ No   ☐ Yes   ☑ No
+```
+i.e. **both branches survive verbatim**, regardless of CSR occupancy. Two compounding bugs cause this:
 
-In `src/components/deal/LienSectionContent.tsx` → `handleSaveLien`:
+### Bug 1 — `(eq …)` sub-expression doesn't match when quotes are XML-entity-encoded
+`processConditionalBlocks` in `supabase/functions/_shared/tag-parser.ts` (lines 1886–1912) uses:
+```
+/\{\{#if\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}/
+```
+This only accepts raw `"…"` or `'…'`, not `&quot;…&quot;`. Because the template stores `&quot;Owner Occupied&quot;`, the eq regex never matches, the block is **not** evaluated, and the post-loop safety net at lines 1990–2002 strips `{{#if (...)}}`, `{{else}}`, and `{{/if}}` **markers only** while leaving both branches' content. Result: both `☑ Yes ☐ No` and `☐ Yes ☑ No` render, side by side.
 
-1. New liens are persisted field-by-field with the guard:
-   ```
-   if (val !== defaultVal || editingLien) onValueChange(`${prefix}.${dbField}`, val);
-   ```
-   The `property` field's default is `''`. If the lien is "unbound" (user never picked a property in the modal) AND `currentPropertyId` is missing/empty for any reason, `boundLienData.property` stays `''` (or `'unassigned'`), which equals the default → the `lienN.property` key is **never written**. The lien still saves (other fields write), but with no Related Property → grid shows it as "Unassigned" and the per-property scoping in `liensForProperty` filters it out of the current property's grid.
+### Bug 2 — Owner-Occupied post-render safety pass cannot find the labels
+`supabase/functions/generate-document/index.ts` lines 3885–3886 use:
+```
+yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi
+noLabelRe  = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi
+```
+But in this template each Yes/No label sits in the same `<w:t>` as its glyph: `<w:t>☑ Yes</w:t>` and `<w:t>☐ No</w:t>`. The label regex never matches, the safety pass aborts at `if (!yL || !nL) continue;` (line 3962), and the corrupt double-checked output is never repaired.
 
-2. When the modal is opened and the user explicitly chooses `Unassigned`, the same path produces `'unassigned'`, which also never gets written through to the saved record.
+### Bug 3 (latent) — `pr_p_occupanc_N` index expansion still required
+The RE851D `_N` rewrite at lines 3376–3416 already rewrites `pr_p_occupanc_N` → `pr_p_occupanc_K` per PROPERTY #K region. This is working today, but bug 1 makes it irrelevant. Once bug 1 is fixed, the per-property eq evaluation will fire correctly.
 
-3. `extractLiensFromValues` requires `hasData` to include a lien — when only `property` would have been written but it's skipped, the rest of the fields still cause inclusion, but on the **wrong** property scope.
+## Fix (minimal, scoped, no schema/UI/API changes)
 
-This is why the behavior is intermittent: it works when `currentPropertyId` is set AND the user changes another field; it fails when `currentPropertyId` resolves blank or when the modal's bound property happens to equal the default.
+All changes are in the two existing edge function files. No new templates, no new fields, no new dictionary entries.
 
-## Changes (scoped, no API/schema changes)
+### File 1 — `supabase/functions/_shared/tag-parser.ts`
 
-All edits use the **existing** `onValueChange` / `onPersist` plumbing — no new endpoints, tables, or columns.
+In `processConditionalBlocks` (around lines 1886–1887), extend the eq/ne sub-expression regexes so the literal can be `"…"`, `'…'`, **or** `&quot;…&quot;`:
 
-### 1. `src/components/deal/LienSectionContent.tsx`
+```
+const eqIfPattern = /\{\{#if\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:&quot;[^"<]*?&quot;|"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
+const eqUnlessPattern = /\{\{#unless\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:&quot;[^"<]*?&quot;|"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
+```
 
-- In `handleSaveLien`, **always persist `lienN.property`** for both new and edit flows, bypassing the `val !== defaultVal` guard for this single field. Resolution order for the value to write:
-  1. `lienData.property` if it's a real property id (not empty, not `'unassigned'`).
-  2. `currentPropertyId` (the active property prefix in the Property section).
-  3. Fall back to the first id from `propertyOptions` if available.
-  4. Otherwise write `'unassigned'` explicitly so the field exists and the lien is recoverable.
-- Keep all other fields handled exactly as today.
-- After `onPersist` resolves successfully, keep the existing `setSelectedLienPrefix(prefix)` behavior so the saved lien is selectable.
+Then, immediately before calling `evaluateEqExpression`, decode `&quot;` → `"` on the captured expression:
+```
+const eqExpr = (head === 'ne' ? m[1].replace(/^\s*ne\b/i, 'eq') : m[1])
+                 .replace(/&quot;/g, '"');
+```
+Also extend the cheap pre-check `hasEqSexp` so it triggers when `(eq ` or `(ne ` is present even with `&quot;` quoting (no functional change beyond not skipping the regex pass).
 
-### 2. `src/components/deal/LienModal.tsx`
+### File 2 — `supabase/functions/generate-document/index.ts`
 
-- When the modal opens for **Add** and `formData.property` is empty, pre-seed it with `currentPropertyId` (passed through from `LienSectionContent`) so the dropdown visibly shows the current Related Property by default. This makes the saved value match what the user sees and removes the silent unbound case.
-- Add a new optional prop `currentPropertyId?: string` to `LienModalProps` and thread it from `LienSectionContent` → `LienModal` (no other modal behavior changes).
+Two small reinforcements so even older/variant templates self-heal:
 
-### 3. `src/components/deal/LienDetailForm.tsx`
+**(a)** In the RE851D pre-rewrite block (around lines 3253–3270 — the existing "Owner Occupied condition normalizer"), additionally decode `&quot;` → `"` **only inside `{{#if (eq pr_p_occupanc… )}}` and `{{#unless (ne pr_p_occupanc… )}}` openers** so the tag-parser's eq matcher always sees raw quotes. Strictly limited to the `pr_p_occupanc` field family. Pattern:
+```
+/(\{\{#(?:if|unless)\s+\(\s*(?:eq|ne)\s+pr_p_occupanc(?:_(?:N|[1-5]))?\s+)&quot;([^"<]*?)&quot;(\s*\)\s*\}\})/g
+```
+→ `$1"$2"$3`
 
-- For the Related Property `<Select>`, when `lien.property` is empty, render the value as `'unassigned'` so the dropdown always reflects a defined state. No layout or option changes.
+**(b)** Loosen the Owner-Occupied post-render safety pass label regexes (lines 3885–3886) so they match `Yes`/`No` even when preceded by a leading glyph (`☐`, `☑`, `☒`) and optional whitespace inside the same `<w:t>` run:
+```
+const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*Yes\s*<\/w:t>/gi;
+const noLabelRe  = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*No\s*<\/w:t>/gi;
+```
+The downstream "nearest glyph control" picker already handles glyph-or-SDT controls correctly, so once the labels are found the existing per-property mutually-exclusive enforcement does the rest.
 
-### 4. `src/components/deal/LienSectionContent.tsx` — read-side resilience
+### Why this is safe
 
-- In `extractLiensFromValues`, treat a lien as present if **any** mapped field has a stored value, including `property` — the existing logic already does this; just confirm and leave intact.
-- In `liensForProperty`, additionally include liens whose stored `property` is missing/`'unassigned'` **only when** `currentPropertyId` matches the prefix the lien was created under (i.e., never lose a lien from the grid even if the property write was previously skipped before this fix). This is a backward-compatibility guard for already-saved data and does not change the storage model.
-
-## Out of scope (explicitly NOT changed)
-
-- No changes to `deal_section_values`, `field_dictionary`, or any Supabase tables/policies.
-- No changes to `useDealFields` save/update APIs.
-- No changes to the document generation flow (`supabase/functions/generate-document/...`).
-- No edits to other property sub-sections, no UI restyling, no new components.
+- Bug 1's fix is the single source-of-truth change: the eq evaluator now handles entity-encoded quotes — the same fix benefits every other RE851D `(eq …)` checkbox (e.g. property type, lien priority) without touching them individually.
+- The two `index.ts` reinforcements are belt-and-suspenders: even if a future template is authored with already-evaluated content or odd run fragmentation, the safety pass will repair it.
+- All other conditional flows (raw-quote literals, bare-key `{{#if KEY}}`, unless blocks) keep working unchanged — the regexes only **add** an alternation branch.
+- No changes to: `field_dictionary`, `deal_section_values`, RLS, the UI, the Property/Liens/Occupancy forms, or the document generation pipeline ordering.
 
 ## Acceptance criteria
 
-- Adding a new Lien from inside Property #N always saves with `lienK.property = "propertyN"` (or the user's explicit selection).
-- After save, the new Lien appears in Property #N's Liens grid with the correct Related Property value populated.
-- Editing an existing Lien preserves and persists the chosen Related Property.
-- No regression for existing liens; previously-saved liens without a `property` value still appear in their original property's grid (via the read-side guard).
+- For DL-2026-0235 (Property 1 = Owner Occupied, Property 2 = Tenant/Other), the regenerated RE851D shows:
+  - Property 1 OWNER OCCUPIED → ☑ Yes / ☐ No
+  - Property 2 OWNER OCCUPIED → ☐ Yes / ☑ No
+- Properties 3–5 reflect their own `pr_p_occupanc_K` value, with exactly one box checked per property.
+- No regression for any other `(eq …)` / `(ne …)` conditional in any template.
+
+## Files touched
+
+- `supabase/functions/_shared/tag-parser.ts` — extend eq/ne regex + decode `&quot;` before evaluation.
+- `supabase/functions/generate-document/index.ts` — entity-decode quotes inside `pr_p_occupanc` eq/ne openers; loosen post-render label regex to allow leading glyph in same `<w:t>`.
+
+## Out of scope
+
+- No template re-authoring required.
+- No new field dictionary keys, no new aliases, no schema migrations.
+- No changes to the Lien/Property persistence flows from prior turns.

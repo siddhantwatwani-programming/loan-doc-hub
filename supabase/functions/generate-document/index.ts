@@ -3268,6 +3268,13 @@ async function generateSingleDocument(
             /\(\s*ne\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
             '(ne $1 "Owner Occupied")',
           );
+          // Decode XML-entity-encoded quotes inside pr_p_occupanc eq/ne openers
+          // so the downstream tag-parser eq evaluator (which expects raw " quotes)
+          // can match. Strictly limited to the pr_p_occupanc field family.
+          xml = xml.replace(
+            /(\{\{#(?:if|unless)\s+\(\s*(?:eq|ne)\s+pr_p_occupanc(?:_(?:N|[1-5]))?\s+)&quot;([^"<]*?)&quot;(\s*\)\s*\}\})/g,
+            '$1"$2"$3',
+          );
 
           // Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels
           // that some authored RE851D templates place after each encumbrance
@@ -3882,8 +3889,8 @@ async function generateSingleDocument(
           }
 
           const ownerRe = /OWNER\s+OCCUPIED/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*Yes\s*<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*No\s*<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
