@@ -31,6 +31,7 @@ interface LienDetailFormProps {
 
 const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
+const EXISTING_DROPDOWN_OPTIONS = ['Payoff', 'Paydown', 'Will Remain'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
