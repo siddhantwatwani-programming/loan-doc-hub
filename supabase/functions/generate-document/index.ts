@@ -254,6 +254,7 @@ async function generateSingleDocument(
       'pr_p_zoning': 'zoning',
       'pr_p_floodZone': 'flood_zone',
       'pr_p_pledgedEquity': 'pledged_equity',
+      'pr_p_performedBy': 'appraisal_performed_by',
     };
 
     if (isTemplate885) {
@@ -997,6 +998,15 @@ async function generateSingleDocument(
           const v = fieldValues.get(`${prefix}.${sfx}`);
           if (v && v.rawValue !== undefined && v.rawValue !== null && v.rawValue !== "") {
             fieldValues.set(`${prKey}_${idx}`, { rawValue: v.rawValue, dataType: v.dataType });
+          }
+        }
+        // Legacy alias mirror: template uses misspelled `pr_p_performeBy_N`.
+        // Mirror the canonical `pr_p_performedBy_N` value so existing tags resolve
+        // without requiring a template edit. Per-index, no cross-bleed.
+        {
+          const pb = fieldValues.get(`pr_p_performedBy_${idx}`);
+          if (pb && pb.rawValue) {
+            fieldValues.set(`pr_p_performeBy_${idx}`, { rawValue: pb.rawValue, dataType: pb.dataType || "text" });
           }
         }
         // Annual property tax (UI: propertytax.annual_payment) per property
