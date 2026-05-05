@@ -13,6 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkspaceOptional } from '@/contexts/WorkspaceContext';
 import { MaxFilesDialog } from '@/components/workspace/MaxFilesDialog';
+import { useAuth } from '@/contexts/AuthContext';
+import { logDealCreated } from '@/hooks/useActivityLog';
 import { 
   Plus, 
   Search, 
@@ -97,6 +99,8 @@ export const DealsPage: React.FC = () => {
   const refreshKey = searchParams.get('_r');
   const { toast } = useToast();
   const workspace = useWorkspaceOptional();
+  const { user } = useAuth();
+  const [creating, setCreating] = useState(false);
   const [deals, setDeals] = useState<Deal[]>(cachedState?.deals || []);
   const [loading, setLoading] = useState(!cachedState);
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,6 +224,48 @@ export const DealsPage: React.FC = () => {
     navigate(`/deals/${deal.id}/edit`, { state: { resetToLoanTerms: true } });
   };
 
+  const handleCreateDeal = async () => {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const { data: dealNumber, error: numErr } = await supabase.rpc('generate_deal_number');
+      if (numErr) throw numErr;
+
+      const { data, error } = await supabase
+        .from('deals')
+        .insert({
+          deal_number: dealNumber,
+          state: 'TBD',
+          product_type: 'TBD',
+          mode: 'doc_prep',
+          status: 'draft',
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      await logDealCreated(data.id, {
+        dealNumber,
+        state: 'TBD',
+        productType: 'TBD',
+        mode: 'doc_prep',
+      });
+
+      toast({ title: 'File created successfully' });
+      navigate(`/deals/${data.id}`);
+    } catch (error: any) {
+      console.error('Error creating deal:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create file',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
   const handleDelete = async (deal: Deal) => {
     if (!confirm(`Delete file ${deal.deal_number}?`)) return;
 
@@ -287,8 +333,8 @@ export const DealsPage: React.FC = () => {
           <Button variant="outline" size="icon" onClick={() => fetchDeals(currentPage)} title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => navigate('/deals/new')} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleCreateDeal} disabled={creating} className="gap-2">
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Create File
           </Button>
         </div>
@@ -376,8 +422,8 @@ export const DealsPage: React.FC = () => {
               : 'Create your first file to get started'}
           </p>
           {!hasActiveFilters && !searchQuery && (
-            <Button onClick={() => navigate('/deals/new')}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={handleCreateDeal} disabled={creating}>
+              {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
               Create File
             </Button>
           )}
