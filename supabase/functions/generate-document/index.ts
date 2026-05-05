@@ -734,6 +734,21 @@ async function generateSingleDocument(
         }
       }
       console.log(`[generate-document] RE885 alias publisher: of_re_estimatedClosing="${fieldValues.get("of_re_estimatedClosing")?.rawValue ?? ""}" of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}"`);
+
+      // RE885 Proposed Loan Term unit -> mutually exclusive boolean checkboxes.
+      // UI persists single text value `of_re_loanTermUnit` ('years'|'months').
+      // Template uses `{{#if of_re_proposedLoanTerm.years}}` / `.months`.
+      const rawUnit = (
+        fieldValues.get("of_re_loanTermUnit")?.rawValue ??
+        fieldValues.get("origination_fees.re885_loan_term_unit")?.rawValue ??
+        ""
+      );
+      const unit = String(rawUnit ?? "").trim().toLowerCase();
+      const isYears = unit === "years" || unit === "year" || unit === "y";
+      const isMonths = unit === "months" || unit === "month" || unit === "m";
+      fieldValues.set("of_re_proposedLoanTerm.years", { rawValue: isYears ? "true" : "false", dataType: "boolean" });
+      fieldValues.set("of_re_proposedLoanTerm.months", { rawValue: isMonths ? "true" : "false", dataType: "boolean" });
+      console.log(`[generate-document] RE885 loan term checkboxes: unit="${unit}" years=${isYears} months=${isMonths}`);
     }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
