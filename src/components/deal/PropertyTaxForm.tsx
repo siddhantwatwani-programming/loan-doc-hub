@@ -270,38 +270,64 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.active`}>
               <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={getBoolValue('active')}
-                  onCheckedChange={(checked) => handleChange('active', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap">Active</Label>
+                <div className="min-w-[150px] flex items-center gap-3">
+                  <Checkbox
+                    checked={getBoolValue('active')}
+                    onCheckedChange={(checked) => handleChange('active', checked === true ? 'true' : 'false')}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-foreground whitespace-nowrap">Active</Label>
+                </div>
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.last_verified`}>
-              {renderDateField('last_verified', 'Last Verified')}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[150px]">Last Verified</Label>
+                <Popover open={datePickerStates['last_verified'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, last_verified: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('last_verified') && 'text-muted-foreground')} disabled={disabled}>
+                      {getValue('last_verified') && safeParseDateStr(getValue('last_verified')) ? format(safeParseDateStr(getValue('last_verified'))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(getValue('last_verified'))}
+                      onSelect={(date) => { if (date) handleChange('last_verified', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, last_verified: false })); }}
+                      onClear={() => { handleChange('last_verified', ''); setDatePickerStates(prev => ({ ...prev, last_verified: false })); }}
+                      onToday={() => { handleChange('last_verified', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, last_verified: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.current`}>
               <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={getBoolValue('current')}
-                  onCheckedChange={(checked) => handleChange('current', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap">Current</Label>
+                <div className="min-w-[150px] flex items-center gap-3">
+                  <Checkbox
+                    checked={getBoolValue('current')}
+                    onCheckedChange={(checked) => handleChange('current', checked === true ? 'true' : 'false')}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-foreground whitespace-nowrap">Current</Label>
+                </div>
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.delinquent`}>
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox
-                  checked={getBoolValue('delinquent')}
-                  onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[90px]">Delinquent</Label>
+              <div className="flex items-center gap-3">
+                <div className="min-w-[150px] flex items-center gap-3">
+                  <Checkbox
+                    checked={getBoolValue('delinquent')}
+                    onCheckedChange={(checked) => handleChange('delinquent', checked === true ? 'true' : 'false')}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-foreground whitespace-nowrap">Delinquent</Label>
+                </div>
                 <div className="relative flex-1">
                   <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
                   <Input
@@ -319,36 +345,70 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.borrower_notified`}>
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox
-                  checked={getBoolValue('borrower_notified')}
-                  onCheckedChange={(checked) => handleChange('borrower_notified', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Borrower Notified</Label>
-                <div className="flex-1">
-                  {renderDateField('borrower_notified_date', '')}
+              <div className="flex items-center gap-3">
+                <div className="min-w-[150px] flex items-center gap-3">
+                  <Checkbox
+                    checked={getBoolValue('borrower_notified')}
+                    onCheckedChange={(checked) => handleChange('borrower_notified', checked === true ? 'true' : 'false')}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-foreground whitespace-nowrap">Borrower Notified</Label>
                 </div>
+                <Popover open={datePickerStates['borrower_notified_date'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, borrower_notified_date: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('borrower_notified_date') && 'text-muted-foreground')} disabled={disabled}>
+                      {getValue('borrower_notified_date') && safeParseDateStr(getValue('borrower_notified_date')) ? format(safeParseDateStr(getValue('borrower_notified_date'))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(getValue('borrower_notified_date'))}
+                      onSelect={(date) => { if (date) handleChange('borrower_notified_date', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, borrower_notified_date: false })); }}
+                      onClear={() => { handleChange('borrower_notified_date', ''); setDatePickerStates(prev => ({ ...prev, borrower_notified_date: false })); }}
+                      onToday={() => { handleChange('borrower_notified_date', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, borrower_notified_date: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.lender_notified`}>
-              <div className="flex items-center gap-3 flex-1">
-                <Checkbox
-                  checked={getBoolValue('lender_notified')}
-                  onCheckedChange={(checked) => handleChange('lender_notified', checked === true ? 'true' : 'false')}
-                  disabled={disabled}
-                />
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[120px]">Lender Notified</Label>
-                <div className="flex-1">
-                  {renderDateField('lender_notified_date', '')}
+              <div className="flex items-center gap-3">
+                <div className="min-w-[150px] flex items-center gap-3">
+                  <Checkbox
+                    checked={getBoolValue('lender_notified')}
+                    onCheckedChange={(checked) => handleChange('lender_notified', checked === true ? 'true' : 'false')}
+                    disabled={disabled}
+                  />
+                  <Label className="text-sm text-foreground whitespace-nowrap">Lender Notified</Label>
                 </div>
+                <Popover open={datePickerStates['lender_notified_date'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, lender_notified_date: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-sm flex-1 justify-start text-left font-normal', !getValue('lender_notified_date') && 'text-muted-foreground')} disabled={disabled}>
+                      {getValue('lender_notified_date') && safeParseDateStr(getValue('lender_notified_date')) ? format(safeParseDateStr(getValue('lender_notified_date'))!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar
+                      mode="single"
+                      selected={safeParseDateStr(getValue('lender_notified_date'))}
+                      onSelect={(date) => { if (date) handleChange('lender_notified_date', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lender_notified_date: false })); }}
+                      onClear={() => { handleChange('lender_notified_date', ''); setDatePickerStates(prev => ({ ...prev, lender_notified_date: false })); }}
+                      onToday={() => { handleChange('lender_notified_date', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, lender_notified_date: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </DirtyFieldWrapper>
 
             <DirtyFieldWrapper fieldKey={`${PREFIX}.memo`}>
               <div className="flex items-start gap-3">
-                <Label className="text-sm text-foreground whitespace-nowrap min-w-[60px] pt-1">Memo</Label>
+                <Label className="text-sm text-foreground whitespace-nowrap min-w-[150px] pt-1">Memo</Label>
                 <Textarea value={getValue('memo')} onChange={(e) => handleChange('memo', e.target.value)} disabled={disabled} className="text-sm flex-1 min-h-[80px]" />
               </div>
             </DirtyFieldWrapper>
