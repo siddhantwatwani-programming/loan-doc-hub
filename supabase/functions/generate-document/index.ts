@@ -3182,6 +3182,27 @@ async function generateSingleDocument(
             "$1_N",
           );
 
+          // RE851D Owner Occupied condition normalizer.
+          // Some authored RE851D templates write the (eq ...) sub-expression
+          // with missing whitespace before the literal, or with the wrong
+          // literal value ("Owner" instead of "Owner Occupied"), e.g.
+          //   (eq pr_p_occupanc_N"Owner")
+          //   (eq pr_p_occupanc_N "Owner")
+          //   (eq pr_p_occupanc_1 "Owner")
+          // Both variants make the conditional silently fail to evaluate or
+          // evaluate against the wrong literal, leaving the static Yes/No
+          // glyphs untouched (=> both checked). Normalize to:
+          //   (eq pr_p_occupanc_N "Owner Occupied")
+          // Strictly scoped to the pr_p_occupanc field family.
+          xml = xml.replace(
+            /\(\s*eq\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)\s*"\s*Owner\s*"\s*\)/gi,
+            '(eq $1 "Owner Occupied")',
+          );
+          xml = xml.replace(
+            /\(\s*eq\s+(pr_p_occupanc(?:_(?:N|[1-5]))?)"\s*Owner(?:\s+Occupied)?\s*"\s*\)/gi,
+            '(eq $1 "Owner Occupied")',
+          );
+
           // Strip leftover decorative "_(N)_(S)" / "_(N)" annotation labels
           // that some authored RE851D templates place after each encumbrance
           // field as a slot/property indicator. Step A above has already
@@ -3612,7 +3633,9 @@ async function generateSingleDocument(
                   (pIdx === 1 ? fieldValues.get("pr_p_occupanc")?.rawValue : "") ??
                   "",
               ).trim().toLowerCase();
-              const isOwner = occVal === "owner occupied" || occVal === "owner";
+              // Strict match: only the exact CSR value "Owner Occupied" maps to YES.
+              // Tenant / Other, Vacant, NA, blank, or any other value -> NO.
+              const isOwner = occVal === "owner occupied";
               const yesGlyph = isOwner ? "☑" : "☐";
               const noGlyph = isOwner ? "☐" : "☑";
               rewrites.push({ start: yesStart, end: yesEnd, replacement: `${yesM[1]}${yesGlyph}${yesM[3]}` });

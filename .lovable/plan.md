@@ -1,57 +1,79 @@
-## Plan: RE851D Owner Occupied Checkbox Fix
+## Plan: RE851D Owner Occupied Checkbox Deep Fix
 
 ### Goal
-Ensure the RE851D generated document never checks both OWNER OCCUPIED Yes and No. The output should be:
+Ensure the RE851D generated document can never show both `OWNER OCCUPIED` checkboxes selected.
 
-- `Owner Occupied` -> Yes checked, No unchecked
-- `Tenant / Other`, `Vacant`, `NA`, or blank -> Yes unchecked, No checked
-- Applies to PROPERTY #1 through PROPERTY #5
-
-### Scope
-Only update the RE851D document-generation logic. No UI changes, no schema changes, no new APIs, and no broad refactoring.
-
-### Findings
-The current generated-document function already publishes `pr_p_occupanc_1` through `pr_p_occupanc_5` as `"Owner Occupied"` only when the CSR value is exactly Owner Occupied, otherwise blank.
-
-The remaining issue is in the RE851D safety pass that rewrites the two static checkbox glyphs near the `OWNER OCCUPIED` label. Its current logic grabs the first two checkbox glyphs after the label. In some template layouts, the first glyph can be an unrelated checkbox or a glyph already produced by a template conditional, causing both visible Yes and No to end up checked.
-
-### Implementation Steps
-1. Update the RE851D Owner Occupied safety pass in `supabase/functions/generate-document/index.ts` only.
-2. Make the glyph targeting stricter:
-   - Locate the `OWNER OCCUPIED` label inside each detected PROPERTY #N region.
-   - Find the actual `Yes` and `No` label positions after that label.
-   - Rewrite only the nearest checkbox glyph immediately associated with `Yes` and the nearest checkbox glyph immediately associated with `No`.
-   - Keep the rewrite bounded to the current property region so one property cannot affect another.
-3. Keep the existing condition source:
-   - Use `pr_p_occupanc_N` for the matching property.
-   - Treat only `"Owner Occupied"` as true.
-   - Treat all other values as false.
-4. Preserve the existing normalized field publisher for `pr_p_occupanc_N`; no field names or template placeholders will be changed.
-
-### Technical Detail
-The current code has this safe normalized source:
-
-```ts
-fieldValues.set(`pr_p_occupanc_${idx}`, {
-  rawValue: isYes ? "Owner Occupied" : "",
-  dataType: "text",
-});
-```
-
-The planned change is only in the later XML safety pass. Instead of assuming the first two glyphs after `OWNER OCCUPIED` are Yes and No, it will anchor each rewrite to the actual adjacent labels:
+Expected output for each property section:
 
 ```text
-OWNER OCCUPIED
-[checkbox glyph] Yes
-[checkbox glyph] No
+Owner Occupied  -> Yes checked, No unchecked
+Tenant / Other  -> Yes unchecked, No checked
+Vacant          -> Yes unchecked, No checked
+NA              -> Yes unchecked, No checked
+blank/other     -> Yes unchecked, No checked
 ```
 
-This prevents an unrelated or already-rendered checkbox glyph from being rewritten and eliminates the both-checked result.
+Applies to Property #1 through Property #5 only.
 
-### Acceptance Criteria
-- Owner Occupied: only Yes is checked.
-- Tenant / Other: only No is checked.
-- Vacant: only No is checked.
-- NA: only No is checked.
-- Works for PROPERTY #1 through PROPERTY #5.
-- No changes to UI behavior, database schema, save/update APIs, or other document-generation mappings.
+### Root Cause Found
+The current code has two remaining risks:
+
+1. The safety pass still treats `"Owner"` as owner-occupied:
+   ```ts
+   occVal === "owner occupied" || occVal === "owner"
+   ```
+   This is not strict enough for the requested behavior. It must be exactly `"Owner Occupied"` after normalization.
+
+2. The uploaded RE851D template can still contain malformed or independent conditional patterns such as:
+   ```text
+   (eq pr_p_occupanc_N"Owner")
+   (eq pr_p_occupanc_N "Owner")
+   separate Yes and No if blocks
+   ```
+   The parser only evaluates well-formed `(eq FIELD "literal")` expressions. Bad spacing or the wrong literal can leave condition markers stripped while both branch glyphs remain visible, producing a double-check.
+
+### Implementation Scope
+Only update document generation/template parsing logic. No UI changes, no database/schema changes, no new APIs, and no document flow refactor.
+
+### Changes to Make
+
+1. **Strict value match in `supabase/functions/generate-document/index.ts`**
+   - Change Owner Occupied detection to:
+     ```ts
+     const isOwner = occVal === "owner occupied";
+     ```
+   - Remove the permissive `|| occVal === "owner"` fallback.
+
+2. **Strengthen RE851D Owner Occupied safety pass**
+   - Keep the current per-property region scoping.
+   - Replace only the checkbox glyph directly attached to the `Yes` label and the checkbox glyph directly attached to the `No` label.
+   - Ensure queued rewrites force a mutually exclusive pair:
+     - `Owner Occupied`: `Yes = checked`, `No = unchecked`
+     - anything else: `Yes = unchecked`, `No = checked`
+   - If malformed conditionals leave duplicate glyphs around the labels, add a narrow cleanup in the same Owner Occupied block so each label ends with exactly one checkbox glyph.
+
+3. **Normalize malformed Owner Occupied condition expressions in RE851D only**
+   - Before the normal parser runs, add a narrow RE851D-only correction for the known template syntax/value issue:
+     - `eq pr_p_occupanc_N"Owner"` -> `eq pr_p_occupanc_N "Owner Occupied"`
+     - `eq pr_p_occupanc_N "Owner"` -> `eq pr_p_occupanc_N "Owner Occupied"`
+   - This is limited to `pr_p_occupanc_N` / already indexed `pr_p_occupanc_1..5` expressions and will not affect other document conditions.
+
+4. **Add parser support for the requested single-block `if + else` pattern if needed**
+   - The existing parser already handles normal `{{#if (eq FIELD "Owner Occupied")}}...{{else}}...{{/if}}` when well formed.
+   - The fix will preserve that behavior and only improve malformed spacing/value normalization for this specific RE851D field.
+
+### Validation Plan
+After implementing, test generation logic using the uploaded `Re851d_v2-2.docx` template structure and verify the generated XML around `OWNER OCCUPIED` sections has only one checked glyph per property:
+
+- Property #1: `Owner Occupied` -> Yes checked only
+- Property #2: `Tenant / Other` -> No checked only
+- Property #3: `Vacant` -> No checked only
+- Property #4: `NA` -> No checked only
+- Property #5: blank/other -> No checked only
+
+### Non-Goals
+- No UI changes.
+- No database changes.
+- No save/update API changes.
+- No changes to other RE851D checkbox groups unless directly necessary to isolate the Owner Occupied pair.
+- No broad parser refactor.
