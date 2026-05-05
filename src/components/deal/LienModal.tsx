@@ -31,6 +31,7 @@ interface LienModalProps {
   isEdit: boolean;
   propertyOptions?: { id: string; label: string }[];
   loanValues?: Record<string, string>;
+  currentPropertyId?: string;
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
