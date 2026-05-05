@@ -228,11 +228,24 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             </div>
 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+              {/* Left column - Lien Details */}
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Source of Information</Label>
+                <Select value={formData.sourceOfInformation || undefined} onValueChange={(val) => handleChange('sourceOfInformation', val)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select source" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    {SOURCE_OF_INFORMATION_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Right column - Balances */}
+              {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
+
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Related Property</Label>
-                 <Select value={formData.property || undefined} onValueChange={(val) => handleChange('property', val)}>
-                   <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
-                   <SelectContent className="bg-background border border-border z-[200]">
+                <Select value={formData.property || undefined} onValueChange={(val) => handleChange('property', val)}>
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
                     <SelectItem value="unassigned">Unassigned</SelectItem>
                     {propertyOptions.map(opt => (
                       <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
@@ -240,35 +253,8 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                   </SelectContent>
                 </Select>
               </div>
-              {renderInlineField('lienPriorityNow', 'Lien Priority Now')}
-
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-thisLoan" checked={isThisLoan} onCheckedChange={(c) => handleThisLoanToggle(!!c)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-thisLoan" className="text-xs text-foreground">This Loan</Label>
-              </div>
               {renderInlineField('lienPriorityAfter', 'Lien Priority After')}
 
-              {renderInlineField('holder', 'Lien Holder', 'text', isThisLoan)}
-              {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
-              {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
-              {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
-              <div className="flex items-center gap-2">
-                <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
-                <PhoneInput value={formData.phone} onValueChange={(v) => handleChange('phone', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
-              </div>
-              {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
-              <div className="flex items-center gap-2">
-                <Label className="w-[110px] shrink-0 text-xs text-foreground">Fax</Label>
-                <PhoneInput value={formData.fax} onValueChange={(v) => handleChange('fax', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
-              </div>
-              {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
-              <div className="flex items-center gap-2">
-                <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
-                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" disabled={isThisLoan} />
-              </div>
-              {renderCurrencyField('balanceAfter', 'Balance After', isThisLoan || isPayoff)}
-              {renderInlineField('contact', 'Contact', 'text', isThisLoan)}
-              {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
                  <Select value={formData.loanType || undefined} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
@@ -278,6 +264,63 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                   </SelectContent>
                 </Select>
               </div>
+              {renderCurrencyField('originalBalance', 'Original Balance', isThisLoan || isAnticipated)}
+
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-thisLoan" checked={isThisLoan} onCheckedChange={(c) => handleThisLoanToggle(!!c)} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-thisLoan" className="text-xs text-foreground">This Loan</Label>
+              </div>
+              {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
+
+              {renderInlineField('holder', 'Lien Holder Name', 'text', isThisLoan)}
+              {renderCurrencyField('balanceAfter', 'Anticipated / Remaining Balance', isThisLoan || isPayoff)}
+
+              {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
+              {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Phone</Label>
+                <PhoneInput value={formData.phone} onValueChange={(v) => handleChange('phone', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
+              {renderCurrencyField('regularPayment', 'Regular Payment', isThisLoan)}
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Fax</Label>
+                <PhoneInput value={formData.fax} onValueChange={(v) => handleChange('fax', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-currentlyDelinquent" checked={formData.currentlyDelinquent === 'true'} onCheckedChange={(c) => handleChange('currentlyDelinquent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-currentlyDelinquent" className="text-xs text-foreground">If Delinquent</Label>
+              </div>
+
+              {renderInlineField('recordingDate', 'Recording Date', 'date')}
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-paidByLoan" checked={formData.paidByLoan === 'true'} onCheckedChange={(c) => handleChange('paidByLoan', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-paidByLoan" className="text-xs text-foreground">Will Be Paid By This Loan</Label>
+              </div>
+
+              {renderInlineField('recordingNumber', 'Recording Number')}
+              {renderInlineField('sourceOfPayment', 'If No, Provide Source')}
+
+              {renderInlineField('maturityDate', 'Maturity Date', 'date', isThisLoan)}
+              {renderInlineField('delinquenciesHowMany', 'Times 60-days Delinquent (12 < Months)')}
+
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-balloon" checked={formData.balloon === 'true'} onCheckedChange={(c) => handleChange('balloon', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-balloon" className="text-xs text-foreground">Balloon</Label>
+              </div>
+              <div />
+
+              {formData.balloon === 'true' && renderCurrencyField('balloonAmount', 'Amount of Balloon')}
+              {formData.balloon === 'true' && <div />}
+
+              <div className="flex items-center gap-2">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Email</Label>
+                <EmailInput value={String(formData.email || '')} onValueChange={(v) => handleChange('email', v)} className="h-7 text-xs" disabled={isThisLoan} />
+              </div>
+              <div />
+
+              {renderInlineField('contact', 'Contact', 'text', isThisLoan)}
               <div />
             </div>
 
