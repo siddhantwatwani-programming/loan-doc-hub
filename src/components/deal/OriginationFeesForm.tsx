@@ -698,9 +698,17 @@ export const OriginationFeesForm: React.FC<OriginationFeesFormProps> = ({
       {/* Payment of Other Obligations */}
       <div className="space-y-0">
         <h3 className="font-semibold text-sm text-foreground underline mb-1">Payment of Other Obligations</h3>
-        <div className="py-1 border-b border-border/50">
-          <span className="text-xs text-foreground">Credit Life and/or Disability Insurance</span>
-        </div>
+        <DirtyFieldWrapper fieldKey={FIELD_KEYS.creditLifeDisabilityInsurance_label}>
+          <div className="py-1 border-b border-border/50">
+            <Input
+              value={getValue(FIELD_KEYS.creditLifeDisabilityInsurance_label)}
+              onChange={(e) => setValue(FIELD_KEYS.creditLifeDisabilityInsurance_label, e.target.value)}
+              disabled={disabled}
+              placeholder="Credit Life and/or Disability Insurance"
+              className="h-7 text-xs"
+            />
+          </div>
+        </DirtyFieldWrapper>
         {renderSimpleRow('Loan Documentation Fee', FIELD_KEYS.loanDocumentationFee_d)}
         {renderSimpleRow('', FIELD_KEYS.customOtherObligation_d, FIELD_KEYS.customOtherObligation_label)}
       </div>
