@@ -251,14 +251,49 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <div className="flex items-center gap-3">
-            {renderCheckbox('anticipated', 'Anticipated')}
-          </div>
-          {lien.anticipated === 'true' && renderCurrency('anticipatedAmount', 'Amount')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.anticipated}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Anticipated</Label>
+              <Select
+                value={(lien.anticipated === 'This Loan' || lien.anticipated === 'Other') ? lien.anticipated : undefined}
+                onValueChange={(val) => onChange('anticipated', val)}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="This Loan">This Loan</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+          {(lien.anticipated === 'This Loan' || lien.anticipated === 'Other') && renderCurrency('anticipatedAmount', 'Amount')}
 
-          {renderCheckbox('existingPayoff', 'Existing - Payoff')}
-          {renderCheckbox('existingPaydown', 'Existing - Paydown')}
-          {renderCheckbox('existingRemain', 'Existing - Remain')}
+          <DirtyFieldWrapper fieldKey="lien1.existing">
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Existing</Label>
+              <Select
+                value={
+                  lien.existingPayoff === 'true' ? 'Payoff' :
+                  lien.existingPaydown === 'true' ? 'Paydown' :
+                  lien.existingRemain === 'true' ? 'Remain' : undefined
+                }
+                onValueChange={(val) => {
+                  onChange('existingPayoff', val === 'Payoff' ? 'true' : 'false');
+                  onChange('existingPaydown', val === 'Paydown' ? 'true' : 'false');
+                  onChange('existingRemain', val === 'Remain' ? 'true' : 'false');
+                }}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="Payoff">Payoff</SelectItem>
+                  <SelectItem value="Paydown">Paydown</SelectItem>
+                  <SelectItem value="Remain">Remain</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
 
           {renderField('holder', 'Lien Holder Name', {}, isThisLoan)}
           {renderField('account', 'Account Number', {}, isThisLoan)}
@@ -336,11 +371,11 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </DirtyFieldWrapper>
         </div>
         <div className="space-y-3">
-          <div className="border-b border-border pb-2">
+          <div className="border-b border-border pb-2 flex items-center justify-between gap-3">
             <span className="font-semibold text-sm text-primary">Senior Lien Tracking</span>
+            {renderCheckbox('sltActive', 'Active')}
           </div>
 
-          {renderCheckbox('sltActive', 'Active')}
           {renderField('lastVerified', 'Last Verified', { type: 'date' })}
 
           <div className="flex items-center gap-3">

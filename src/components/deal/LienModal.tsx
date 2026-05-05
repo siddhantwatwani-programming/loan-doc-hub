@@ -324,24 +324,59 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               <div />
             </div>
 
-            <div className="grid grid-cols-4 gap-x-4 gap-y-1.5 mt-2">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 mt-2">
               <div className="flex items-center gap-2">
-                <Checkbox id="modal-anticipated" checked={isAnticipated} onCheckedChange={(c) => handleLienTypeSelect('anticipated', !!c)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-anticipated" className="text-xs text-foreground">Anticipated</Label>
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Anticipated</Label>
+                <Select
+                  value={(formData.anticipated === 'This Loan' || formData.anticipated === 'Other') ? formData.anticipated : undefined}
+                  onValueChange={(val) => {
+                    handleChange('anticipated', val);
+                    handleChange('existingPayoff', 'false');
+                    handleChange('existingPaydown', 'false');
+                    handleChange('existingRemain', 'false');
+                  }}
+                >
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    <SelectItem value="This Loan">This Loan</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2">
-                <Checkbox id="modal-existingRemain" checked={formData.existingRemain === 'true'} onCheckedChange={(c) => handleLienTypeSelect('existingRemain', !!c)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-existingRemain" className="text-xs text-foreground">Existing - Remain</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-existingPaydown" checked={isPaydown} onCheckedChange={(c) => handleLienTypeSelect('existingPaydown', !!c)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-existingPaydown" className="text-xs text-foreground">Existing - Paydown</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-existingPayoff" checked={isPayoff} onCheckedChange={(c) => handleLienTypeSelect('existingPayoff', !!c)} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-existingPayoff" className="text-xs text-foreground">Existing - Payoff</Label>
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Existing</Label>
+                <Select
+                  value={
+                    formData.existingPayoff === 'true' ? 'Payoff' :
+                    formData.existingPaydown === 'true' ? 'Paydown' :
+                    formData.existingRemain === 'true' ? 'Remain' : undefined
+                  }
+                  onValueChange={(val) => {
+                    handleLienTypeSelect(
+                      val === 'Payoff' ? 'existingPayoff' : val === 'Paydown' ? 'existingPaydown' : 'existingRemain',
+                      true
+                    );
+                  }}
+                >
+                  <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-[200]">
+                    <SelectItem value="Payoff">Payoff</SelectItem>
+                    <SelectItem value="Paydown">Paydown</SelectItem>
+                    <SelectItem value="Remain">Remain</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            {(formData.anticipated === 'This Loan' || formData.anticipated === 'Other') && (
+              <div className="flex items-center gap-2 ml-1">
+                <Label className="w-[110px] shrink-0 text-xs text-foreground">Anticipated Amount</Label>
+                <div className="relative flex-1 max-w-[160px]">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                  <Input value={formData.anticipatedAmount} onChange={(e) => handleChange('anticipatedAmount', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('anticipatedAmount', val))} onBlur={() => { const raw = formData.anticipatedAmount; if (raw) handleChange('anticipatedAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.anticipatedAmount; if (raw) handleChange('anticipatedAmount', unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="0.00" />
+                </div>
+              </div>
+            )}
 
             {isPaydown && (
               <div className="flex items-center gap-2 ml-1">
