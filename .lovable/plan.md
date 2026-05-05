@@ -1,42 +1,43 @@
 ## Problem
 
-In RE851D, the question:
+Template RE851D's "NAME OF APPRAISER (IF KNOWN TO BROKER)" / "ADDRESS OF APPRAISER" rows use:
+```
+{{#if (eq pr_p_performeBy_N "Broker")}}BPO Performed by Broker{{/if}}
+{{#if (eq pr_p_performeBy_N "Broker")}}N/A{{/if}}
+```
+But the edge function (`supabase/functions/generate-document/index.ts`) never publishes the `pr_p_performeBy_N` (or correctly-spelled `pr_p_performedBy_N`) alias for any property index. The CSR value is stored at `property{N}.appraisal_performed_by` (see `PropertySectionContent.tsx:71` and `prKeyToSuffix` map lines 224–257) but no entry maps a `pr_p_performe…` prefix to the `appraisal_performed_by` short suffix, so the conditional silently fails for every property.
 
-> If YES, will the proceeds of the subject loan be used to cure the delinquency?
+Per the user's "do not change any logic" constraint and the existing memory `re851d-multi-property-mapping` (strict per-index publisher, no cross-bleed), the fix must publish the alias **per property index** through the same RE851D publisher loop, not via global broadcast.
 
-renders both YES/NO unchecked (or both checked) per property, regardless of UI input.
+## Fix (single edge-function change, additive)
 
-## Root Cause
+In `supabase/functions/generate-document/index.ts`:
 
-- The CSR Property → Liens "Will Be Paid By This Loan" checkbox (`lienK.paid_by_loan`) is already aggregated per property at `supabase/functions/generate-document/index.ts:2443` and published as `pr_li_delinquencyPaidByLoan_<propIdx>`.
-- The template's inline `{{#if}}` for this question is split across `<w:r>` runs and sometimes wrapped in Word `<w:sdt>` checkbox SDTs, so the tag never resolves and the static glyphs remain.
-- An existing post-render safety pass (lines 4095–4314) handles only the *"Do any of these payments remain unpaid?"* question, bound to `pr_li_currentDelinqu_K`. There is no equivalent pass for "cure the delinquency".
+1. **Add to `prKeyToSuffix` map (lines 224–257):**
+   ```ts
+   'pr_p_performedBy': 'appraisal_performed_by',
+   ```
+   This causes the existing RE851D per-index loop (`for (const idx of sortedPropIndices)` at line 984, calling `suffixToPrKey` mirror at lines 996–1001) to automatically publish `pr_p_performedBy_${idx}` from `property${idx}.appraisal_performed_by` for each property that has a CSR value — and to omit the alias for indices without one (matching the strict per-index contract).
 
-## Fix (single edge-function change)
+2. **Mirror to legacy misspelling inside the same loop** (immediately after lines 996–1001), so the existing template tag `pr_p_performeBy_N` resolves without requiring a template edit:
+   ```ts
+   const pb = fieldValues.get(`pr_p_performedBy_${idx}`);
+   if (pb && pb.rawValue) {
+     fieldValues.set(`pr_p_performeBy_${idx}`, { rawValue: pb.rawValue, dataType: pb.dataType || "text" });
+   }
+   ```
 
-Add a new post-render safety pass in `supabase/functions/generate-document/index.ts`, immediately after the "Remain Unpaid" pass (~line 4314), modeled on it:
+## What this delivers
 
-1. Runs only when `template.name` matches `/851d/i`.
-2. Skips files lacking the literal text `"cure the delinquency"`.
-3. Builds the same `PROPERTY INFORMATION` anchor map → property indices 1..5.
-4. For each `/cure the delinquency/gi` match, finds the YES and NO `<w:t>` label runs within that property block window.
-5. Locates the nearest `<w:sdt>` checkbox or bare `☐|☑|☒` glyph run for each label (preceding scan, then forward fallback).
-6. Forces YES/NO from `pr_li_delinquencyPaidByLoan_<K>`:
-   - `true` → YES `☑` / NO `☐`
-   - `false`/missing → YES `☐` / NO `☑`
-   - For SDTs, also rewrites `<w14:checked w14:val="1|0">`.
-7. Mutually exclusive — exactly one box per property.
-
-## Constraints respected
-
-- No UI, schema, API, or template (`.docx`) changes.
-- Reuses the already-published `pr_li_delinquencyPaidByLoan_<N>` alias.
-- Existing "Remain Unpaid" pass untouched.
+- `pr_p_performedBy_1..5` and `pr_p_performeBy_1..5` resolve to each property's "Performed By" dropdown value (e.g. `"Broker"`, `"Appraiser"`, `"Other"`).
+- Template `{{#if (eq pr_p_performeBy_N "Broker")}}…{{/if}}` now renders "BPO Performed by Broker" / "N/A" only for properties whose dropdown = `Broker`; all other properties render blank.
+- Indices without a CSR property record never get the alias set → row stays blank (no cross-bleed from property #1).
+- Template `.docx`, UI, schema, and field-dictionary unchanged.
 
 ## Files Modified
 
-- `supabase/functions/generate-document/index.ts` — add new safety-pass block after line 4314.
+- `supabase/functions/generate-document/index.ts` — two small additions inside the existing RE851D publisher (no removals, no logic changes elsewhere).
 
 ## Memory update
 
-Add `mem://features/document-generation/re851d-cure-delinquency-checkboxes` and reference it in `mem://index.md`.
+Append a new line to `mem://index.md` referencing a new memory file `mem://features/document-generation/re851d-performed-by-mapping` describing the per-index `pr_p_performedBy_N` / legacy `pr_p_performeBy_N` publisher derived from `property{N}.appraisal_performed_by`.
