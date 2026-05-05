@@ -345,6 +345,16 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-sltBorrowerNotified" checked={formData.sltBorrowerNotified === 'true'} onCheckedChange={(c) => handleChange('sltBorrowerNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltBorrowerNotified" className="text-xs text-foreground">Borrower Notified</Label>
+                </div>
+                {renderInlineField('sltBorrowerNotifiedDate', 'Borrower Notified Date', 'date', formData.sltBorrowerNotified !== 'true')}
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-sltLenderNotified" checked={formData.sltLenderNotified === 'true'} onCheckedChange={(c) => handleChange('sltLenderNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltLenderNotified" className="text-xs text-foreground">Lender Notified</Label>
+                </div>
+                {renderInlineField('sltLenderNotifiedDate', 'Lender Notified Date', 'date', formData.sltLenderNotified !== 'true')}
               </div>
             )}
 
