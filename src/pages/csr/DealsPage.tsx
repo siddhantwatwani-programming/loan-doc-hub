@@ -266,8 +266,7 @@ export const DealsPage: React.FC = () => {
       setCreating(false);
     }
   };
-
-
+  const handleDelete = async (deal: Deal) => {
     if (!confirm(`Delete file ${deal.deal_number}?`)) return;
 
     try {
