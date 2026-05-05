@@ -3926,9 +3926,13 @@ async function generateSingleDocument(
       // so the resolver's priority-1 direct match returns publisher-set values
       // (publisher emits these at lines ~2528–2592).
       const ENC_REM_BASES = [
-        "pr_li_rem_priority", "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
+        "pr_li_rem_priority", "pr_li_rem_lienPriori", "pr_li_rem_lienPriority", "pr_li_rem_lien_priority_now",
+        "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
         "pr_li_rem_beneficiary", "pr_li_rem_lienHolder", "pr_li_rem_holder",
-        "pr_li_rem_originalAmount", "pr_li_rem_principalBalance", "pr_li_rem_monthlyPayment",
+        "pr_li_rem_originalAmount", "pr_li_rem_lienOriginBalanc", "pr_li_rem_lienOriginBalanc2", "pr_li_rem_original_balance",
+        "pr_li_rem_principalBalance", "pr_li_rem_lienCurrenBalanc", "pr_li_rem_lienCurrenBalanc2", "pr_li_rem_current_balance",
+        "pr_li_rem_newRemainingBalance", "pr_li_rem_new_remaining_balance",
+        "pr_li_rem_monthlyPayment", "pr_li_rem_lienRegulaPaymen", "pr_li_rem_lienRegulaPaymen2", "pr_li_rem_regular_payment",
         "pr_li_rem_maturityDate", "pr_li_rem_maturity_date", "pr_li_rem_matDate",
         "pr_li_rem_balloonAmount", "pr_li_rem_balloonYes", "pr_li_rem_balloonNo", "pr_li_rem_balloonUnknown",
       ];
