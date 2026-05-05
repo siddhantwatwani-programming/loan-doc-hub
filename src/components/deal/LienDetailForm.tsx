@@ -31,6 +31,7 @@ interface LienDetailFormProps {
 
 const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
+const EXISTING_DROPDOWN_OPTIONS = ['Payoff', 'Paydown', 'Will Remain'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
@@ -236,49 +237,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {renderField('holder', 'Lien Holder', {}, isThisLoan)}
-          {renderField('account', 'Account Number', {}, isThisLoan)}
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.phone}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
-              <PhoneInput value={lien.phone} onValueChange={(val) => onChange('phone', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.fax}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
-              <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
-            </div>
-          </DirtyFieldWrapper>
-
-          {renderCheckbox('existingPayoff', 'Existing - Payoff')}
-          {renderCheckbox('existingRemain', 'Existing - Remain')}
-          {renderCheckbox('existingPaydown', 'Existing - Paydown')}
-
-          {renderField('lienPriorityNow', 'Lien Priority Now', { placeholder: 'e.g. 1st' })}
-
-          <div className="flex items-center gap-3">
-            {renderCheckbox('currentlyDelinquent', 'Currently Delinquent')}
-          </div>
-          {lien.currentlyDelinquent === 'true' && renderCurrency('currentlyDelinquentAmount', 'Amount')}
-
-          {renderCheckbox('paidByLoan', 'Delinquency to be Paid by This Loan')}
-
-          {renderField('sourceOfPayment', 'If No, Provide Source')}
-
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.delinquenciesHowMany || 'lien1.delinquenciesHowMany'}>
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0 leading-tight">Number of 60-day<br />in 12 months</Label>
-              <Input value={lien.delinquenciesHowMany} onChange={(e) => onChange('delinquenciesHowMany', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
-            </div>
-          </DirtyFieldWrapper>
-        </div>
-
-        <div className="space-y-3">
-          <div className="border-b border-border pb-2">
-            <span className="font-semibold text-sm text-primary">&nbsp;</span>
-          </div>
-
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.loanTypeDropdown}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Loan Type</Label>
@@ -298,25 +256,56 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </div>
           {lien.anticipated === 'true' && renderCurrency('anticipatedAmount', 'Amount')}
 
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.remainingNewLienPriority}>
+          {renderCheckbox('existingPayoff', 'Existing - Payoff')}
+          {renderCheckbox('existingPaydown', 'Existing - Paydown')}
+          {renderCheckbox('existingRemain', 'Existing - Remain')}
+
+          {renderField('holder', 'Lien Holder Name', {}, isThisLoan)}
+          {renderField('account', 'Account Number', {}, isThisLoan)}
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.phone}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">Remaining / New<br />Lien Priority</Label>
-              <Input value={lien.remainingNewLienPriority} onChange={(e) => onChange('remainingNewLienPriority', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Phone</Label>
+              <PhoneInput value={lien.phone} onValueChange={(val) => onChange('phone', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
+            </div>
+          </DirtyFieldWrapper>
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.fax}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Fax</Label>
+              <PhoneInput value={lien.fax} onValueChange={(val) => onChange('fax', val)} disabled={disabled || isThisLoan} className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`} />
             </div>
           </DirtyFieldWrapper>
 
+          {renderField('recordingDate', 'Recording Date', { type: 'date' })}
+          {renderField('recordingNumber', 'Recording Number')}
+          {renderField('maturityDate', 'Maturity Date', { type: 'date' }, isThisLoan)}
+
+          <div className="flex items-center gap-3">
+            {renderCheckbox('balloon', 'Balloon')}
+          </div>
+          {lien.balloon === 'true' && renderCurrency('balloonAmount', 'Amount of Balloon')}
+        </div>
+
+        <div className="space-y-3">
+          <div className="border-b border-border pb-2">
+            <span className="font-semibold text-sm text-primary">&nbsp;</span>
+          </div>
+
+          {renderField('lienPriorityNow', 'Lien Priority Now', { placeholder: 'e.g. 1st' })}
+          {renderField('lienPriorityAfter', 'Lien Priority After', { placeholder: 'e.g. 1st' })}
+
+          {renderCurrency('originalBalance', 'Original Balance', isThisLoan)}
+          {renderCurrency('currentBalance', 'Current Balance')}
+
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.newRemainingBalance}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">New / Remaining<br />Balance</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">Anticipated /<br />Remaining Balance</Label>
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                 <Input value={lien.newRemainingBalance} onChange={(e) => onChange('newRemainingBalance', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onChange('newRemainingBalance', val))} onBlur={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
               </div>
             </div>
           </DirtyFieldWrapper>
-
-          {renderCurrency('originalBalance', 'Original Balance', isThisLoan)}
-          {renderCurrency('currentBalance', 'Current Balance')}
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.interestRate}>
             <div className="flex items-center gap-3">
@@ -329,16 +318,23 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </DirtyFieldWrapper>
 
           {renderCurrency('regularPayment', 'Regular Payment', isThisLoan)}
-          {renderField('maturityDate', 'Maturity Date', { type: 'date' }, isThisLoan)}
 
           <div className="flex items-center gap-3">
-            {renderCheckbox('balloon', 'Balloon')}
+            {renderCheckbox('currentlyDelinquent', 'If Delinquent')}
           </div>
-          {lien.balloon === 'true' && renderCurrency('balloonAmount', 'Amount of Balloon')}
+          {lien.currentlyDelinquent === 'true' && renderCurrency('currentlyDelinquentAmount', 'Amount')}
 
-          {renderField('recordingDate', 'Recording Date', { type: 'date' })}
+          {renderCheckbox('paidByLoan', 'Will Be Paid By This Loan')}
+
+          {renderField('sourceOfPayment', 'If No, Provide Source')}
+
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.delinquenciesHowMany || 'lien1.delinquenciesHowMany'}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] max-w-[140px] text-left shrink-0 leading-tight">Times 60-days Delinquent<br />(12 &lt; Months)</Label>
+              <Input value={lien.delinquenciesHowMany} onChange={(e) => onChange('delinquenciesHowMany', e.target.value)} disabled={disabled} className="h-7 text-sm flex-1" />
+            </div>
+          </DirtyFieldWrapper>
         </div>
-
         <div className="space-y-3">
           <div className="border-b border-border pb-2">
             <span className="font-semibold text-sm text-primary">Senior Lien Tracking</span>
