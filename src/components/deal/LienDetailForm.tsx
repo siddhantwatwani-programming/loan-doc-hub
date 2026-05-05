@@ -371,11 +371,11 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </DirtyFieldWrapper>
         </div>
         <div className="space-y-3">
-          <div className="border-b border-border pb-2">
+          <div className="border-b border-border pb-2 flex items-center justify-between gap-3">
             <span className="font-semibold text-sm text-primary">Senior Lien Tracking</span>
+            {renderCheckbox('sltActive', 'Active')}
           </div>
 
-          {renderCheckbox('sltActive', 'Active')}
           {renderField('lastVerified', 'Last Verified', { type: 'date' })}
 
           <div className="flex items-center gap-3">
