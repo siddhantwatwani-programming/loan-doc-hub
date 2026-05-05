@@ -34,6 +34,7 @@ interface LienModalProps {
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 const STATUS_OPTIONS = ['Current', 'Unable to Verify', '30-90', '90+', 'Foreclosure', 'Modification', 'Paid'];
+const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
