@@ -264,7 +264,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     sortColumnId={sortState.columnId}
                     sortDirection={sortState.direction}
                     onSort={toggleSort}
-                    className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                    className={['originalBalance', 'balanceAfter', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
                   />
                 ))}
               </TableRow>
@@ -283,7 +283,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                       <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
+                      <TableCell key={col.id} className={['originalBalance', 'balanceAfter', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
                         {renderCellValue(lien, col.id)}
                       </TableCell>
                     ))}
