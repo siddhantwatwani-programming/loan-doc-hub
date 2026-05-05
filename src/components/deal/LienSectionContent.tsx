@@ -236,7 +236,12 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   // fall back to showing all (legacy behavior).
   const liensForProperty = useMemo(() => {
     if (!currentPropertyId) return allLiens;
-    return allLiens.filter(l => l.property === currentPropertyId);
+    return allLiens.filter(l => {
+      // Backward-compat: legacy liens missing/unassigned property still
+      // appear under the currently active property so they aren't lost.
+      if (!l.property || l.property === 'unassigned') return true;
+      return l.property === currentPropertyId;
+    });
   }, [allLiens, currentPropertyId]);
 
   // Auto-compute 10A: "yes" if any lien has an existing type checked
