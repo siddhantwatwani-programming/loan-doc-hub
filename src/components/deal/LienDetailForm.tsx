@@ -90,6 +90,8 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   sltUnableToVerify: 'lien1.slt_unable_to_verify',
   sltLenderNotified: 'lien1.slt_lender_notified',
   sltLenderNotifiedDate: 'lien1.slt_lender_notified_date',
+  sltBorrowerNotified: 'lien1.slt_borrower_notified',
+  sltBorrowerNotifiedDate: 'lien1.slt_borrower_notified_date',
   note: 'lien1.note',
   thisLoan: 'lien1.this_loan',
   estimate: 'lien1.estimate',
