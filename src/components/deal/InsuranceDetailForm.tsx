@@ -96,6 +96,7 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   lastVerified: 'insurance1.last_verified',
   trackingStatus: 'insurance1.tracking_status',
   impoundsActive: 'insurance1.impounds_active',
+  impoundedStatus: 'insurance1.impounded_status',
   redFlagTrigger: 'insurance1.red_flag_trigger',
   attemptAgent: 'insurance1.attempt_agent',
   attemptBorrower: 'insurance1.attempt_borrower',
@@ -221,6 +222,21 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.impoundedStatus}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[120px] text-left shrink-0">Impounded</Label>
+              <Select value={insurance.impoundedStatus || undefined} onValueChange={(val) => onChange('impoundedStatus', val)} disabled={disabled}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="bg-background border border-border z-50">
+                  <SelectItem value="NA">NA</SelectItem>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="On Hold">On Hold</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </DirtyFieldWrapper>
+
           {/* Payment Mailing Address */}
           <div className="border-b border-border pb-2 pt-2">
             <span className="font-semibold text-sm text-primary">Payment Mailing Address</span>
@@ -283,17 +299,6 @@ export const InsuranceDetailForm: React.FC<InsuranceDetailFormProps> = ({
           </DirtyFieldWrapper>
 
           {/* Insurance Tracking */}
-          <div className="border-b border-border pb-2 pt-2">
-            <span className="font-semibold text-sm text-primary">Impounds</span>
-          </div>
-
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.impoundsActive}>
-            <div className="flex items-center gap-2">
-              <Checkbox id="detail-impounds-active" checked={insurance.impoundsActive} onCheckedChange={(checked) => onChange('impoundsActive', !!checked)} disabled={disabled} className="h-4 w-4" />
-              <Label htmlFor="detail-impounds-active" className="text-sm text-foreground">Active</Label>
-            </div>
-          </DirtyFieldWrapper>
-
           <div className="border-b border-border pb-2 pt-2">
             <span className="font-semibold text-sm text-primary">Insurance Tracking</span>
           </div>
