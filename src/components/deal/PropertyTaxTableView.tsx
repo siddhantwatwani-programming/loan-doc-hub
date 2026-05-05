@@ -109,7 +109,6 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'apn', label: 'APN', visible: false },
   { id: 'memo', label: 'Memo', visible: false },
   { id: 'annualPayment', label: 'Annual Payment (est.)', visible: true },
-  { id: 'amount', label: 'Amount', visible: true },
   { id: 'nextDue', label: 'Next Due', visible: true },
   { id: 'frequency', label: 'Frequency', visible: true },
   { id: 'escrowImpounds', label: 'Escrow Impounds', visible: false },
