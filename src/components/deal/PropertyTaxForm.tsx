@@ -134,7 +134,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
       <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">{label}</Label>
       <Select value={getValue(field)} onValueChange={(value) => handleChange(field, value)} disabled={disabled}>
         <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-        <SelectContent className="bg-background z-50">
+        <SelectContent className="bg-background border border-border z-[9999]">
           {options.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
         </SelectContent>
       </Select>
@@ -162,7 +162,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">Source of<br />Information</Label>
                 <Select value={getValue('source_of_information')} onValueChange={(value) => handleChange('source_of_information', value)} disabled={disabled}>
                   <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent className="bg-background z-50">
+                  <SelectContent className="bg-background border border-border z-[9999]">
                     {SOURCE_OPTIONS.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
                   </SelectContent>
                 </Select>
@@ -212,7 +212,7 @@ export const PropertyTaxForm: React.FC<PropertyTaxFormProps> = ({
                 <Label className="text-sm text-foreground whitespace-nowrap min-w-[110px]">State</Label>
                 <Select value={getValue('pma_state')} onValueChange={(value) => handleChange('pma_state', value)} disabled={disabled}>
                   <SelectTrigger className="h-7 text-sm flex-1 bg-background"><SelectValue placeholder="Select state" /></SelectTrigger>
-                  <SelectContent className="bg-background z-50 max-h-[200px]">
+                  <SelectContent className="bg-background border border-border z-[9999] max-h-[200px]">
                     {STATE_OPTIONS.map((st) => (<SelectItem key={st} value={st}>{st}</SelectItem>))}
                   </SelectContent>
                 </Select>
