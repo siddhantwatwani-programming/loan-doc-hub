@@ -42,6 +42,7 @@ export interface InsuranceData {
   lastVerified: string;
   trackingStatus: string;
   impoundsActive: boolean;
+  impoundedStatus: string;
   redFlagTrigger: string;
   attemptAgent: boolean;
   attemptBorrower: boolean;
