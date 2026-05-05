@@ -61,7 +61,7 @@ interface PropertyTaxTableViewProps {
   onPageChange?: (page: number) => void;
 }
 
-const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'apn', 'pmaStreet', 'pmaCity'];
+const SEARCH_FIELDS = ['property', 'authority', 'type', 'frequency', 'pmaStreet', 'pmaCity'];
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -79,7 +79,6 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'property', label: 'Property' },
   { id: 'authority', label: 'Tax Authority' },
   { id: 'type', label: 'Type' },
-  { id: 'apn', label: 'APN' },
   { id: 'memo', label: 'Memo' },
   { id: 'annualPayment', label: 'Annual Payment (est.)' },
   { id: 'amount', label: 'Amount' },
@@ -106,7 +105,6 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'property', label: 'Property', visible: true },
   { id: 'authority', label: 'Tax Authority', visible: true },
   { id: 'type', label: 'Type', visible: true },
-  { id: 'apn', label: 'APN', visible: false },
   { id: 'memo', label: 'Memo', visible: false },
   { id: 'annualPayment', label: 'Annual Payment (est.)', visible: true },
   { id: 'nextDue', label: 'Next Due', visible: true },
@@ -150,7 +148,6 @@ const renderCellValue = (tax: PropertyTaxData, columnId: string) => {
     case 'authority': return tax.authority || '-';
     
     case 'type': return tax.type || '-';
-    case 'apn': return tax.apn || '-';
     case 'memo': return tax.memo || '-';
     case 'annualPayment': return formatCurrency(tax.annualPayment) || '-';
     case 'amount': return formatCurrency(tax.amount) || '-';
