@@ -371,33 +371,93 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
               <div className="flex items-center gap-2">
                 <Checkbox id="modal-seniorLien" checked={formData.seniorLienTracking === 'true'} onCheckedChange={(c) => handleChange('seniorLienTracking', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-seniorLien" className="text-xs text-foreground">Senior Lien Tracking</Label>
+                <Label htmlFor="modal-seniorLien" className="text-xs font-semibold text-foreground">Senior Lien Tracking</Label>
               </div>
-              <div />
+              <div className="flex items-center gap-2">
+                <Checkbox id="modal-sltActive" checked={formData.sltActive === 'true'} onCheckedChange={(c) => handleChange('sltActive', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                <Label htmlFor="modal-sltActive" className="text-xs text-foreground">Active</Label>
+              </div>
             </div>
 
             {formData.seniorLienTracking === 'true' && (
-              <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 mt-2">
+              <div className="space-y-1.5 mt-2">
                 {renderInlineField('lastVerified', 'Last Verified', 'date')}
-                <div className="flex items-center gap-2">
-                  <Label className="w-[110px] shrink-0 text-xs text-foreground">Status</Label>
-                  <Select value={formData.status || undefined} onValueChange={(val) => handleChange('status', val)}>
-                    <SelectTrigger className="h-7 text-xs flex-1"><SelectValue placeholder="Select status" /></SelectTrigger>
-                    <SelectContent className="bg-background border border-border z-[200]">
-                      {STATUS_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
+
+                <div className="border-b border-border pb-1 mt-2">
+                  <span className="font-semibold text-xs text-foreground">Status</span>
                 </div>
+
                 <div className="flex items-center gap-2">
-                  <Checkbox id="modal-sltBorrowerNotified" checked={formData.sltBorrowerNotified === 'true'} onCheckedChange={(c) => handleChange('sltBorrowerNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-sltBorrowerNotified" className="text-xs text-foreground">Borrower Notified</Label>
+                  <Checkbox id="modal-sltCurrent" checked={formData.sltCurrent === 'true'} onCheckedChange={(c) => handleChange('sltCurrent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltCurrent" className="text-xs text-foreground">Current</Label>
                 </div>
-                {renderInlineField('sltBorrowerNotifiedDate', 'Borrower Notified Date', 'date', formData.sltBorrowerNotified !== 'true')}
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <Checkbox id="modal-sltDelinquent" checked={formData.sltDelinquent === 'true'} onCheckedChange={(c) => handleChange('sltDelinquent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-sltDelinquent" className="text-xs text-foreground">Delinquent</Label>
+                  </div>
+                  {formData.sltDelinquent === 'true' && (
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs text-muted-foreground"># of Days</Label>
+                      <Input value={formData.sltDelinquentDays} onChange={(e) => handleChange('sltDelinquentDays', e.target.value)} className="h-7 text-xs w-24" />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2">
-                  <Checkbox id="modal-sltLenderNotified" checked={formData.sltLenderNotified === 'true'} onCheckedChange={(c) => handleChange('sltLenderNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
-                  <Label htmlFor="modal-sltLenderNotified" className="text-xs text-foreground">Lender Notified</Label>
+                  <Checkbox id="modal-sltUnderModification" checked={formData.sltUnderModification === 'true'} onCheckedChange={(c) => handleChange('sltUnderModification', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltUnderModification" className="text-xs text-foreground">Under Modification / FB Plan</Label>
                 </div>
-                {renderInlineField('sltLenderNotifiedDate', 'Lender Notified Date', 'date', formData.sltLenderNotified !== 'true')}
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <Checkbox id="modal-sltForeclosure" checked={formData.sltForeclosure === 'true'} onCheckedChange={(c) => handleChange('sltForeclosure', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-sltForeclosure" className="text-xs text-foreground">Foreclosure: Date Filed</Label>
+                  </div>
+                  {formData.sltForeclosure === 'true' && (
+                    <div className="flex-1 max-w-[220px]">
+                      {renderInlineField('sltForeclosureDate', '', 'date')}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-sltPaidOff" checked={formData.sltPaidOff === 'true'} onCheckedChange={(c) => handleChange('sltPaidOff', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltPaidOff" className="text-xs text-foreground">Paid Off</Label>
+                </div>
+
+                {renderInlineField('sltLastPaymentMade', 'Last Payment Made', 'date')}
+                {renderInlineField('sltNextPaymentDue', 'Next Payment Due', 'date')}
+                {renderCurrencyField('sltCurrentBalance', 'Current Balance')}
+
+                <div className="flex items-center gap-2">
+                  <Checkbox id="modal-sltUnableToVerify" checked={formData.sltUnableToVerify === 'true'} onCheckedChange={(c) => handleChange('sltUnableToVerify', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-sltUnableToVerify" className="text-xs text-foreground">Unable to Verify</Label>
+                </div>
+
+                {renderInlineField('sltRequestSubmitted', 'Request Submitted', 'date')}
+                {renderInlineField('sltResponseReceived', 'Response Received', 'date')}
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <Checkbox id="modal-sltBorrowerNotified" checked={formData.sltBorrowerNotified === 'true'} onCheckedChange={(c) => handleChange('sltBorrowerNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-sltBorrowerNotified" className="text-xs text-foreground">Borrower Notified</Label>
+                  </div>
+                  <div className="flex-1 max-w-[220px]">
+                    {renderInlineField('sltBorrowerNotifiedDate', '', 'date', formData.sltBorrowerNotified !== 'true')}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 min-w-[160px]">
+                    <Checkbox id="modal-sltLenderNotified" checked={formData.sltLenderNotified === 'true'} onCheckedChange={(c) => handleChange('sltLenderNotified', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                    <Label htmlFor="modal-sltLenderNotified" className="text-xs text-foreground">Lender Notified</Label>
+                  </div>
+                  <div className="flex-1 max-w-[220px]">
+                    {renderInlineField('sltLenderNotifiedDate', '', 'date', formData.sltLenderNotified !== 'true')}
+                  </div>
+                </div>
               </div>
             )}
           </div>
