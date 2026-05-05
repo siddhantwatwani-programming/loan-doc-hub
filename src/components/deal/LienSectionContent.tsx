@@ -141,6 +141,8 @@ const LIEN_FIELD_MAP: Record<string, string> = {
   sltUnableToVerify: 'slt_unable_to_verify',
   sltLenderNotified: 'slt_lender_notified',
   sltLenderNotifiedDate: 'slt_lender_notified_date',
+  sltBorrowerNotified: 'slt_borrower_notified',
+  sltBorrowerNotifiedDate: 'slt_borrower_notified_date',
   note: 'note',
   thisLoan: 'this_loan',
   estimate: 'estimate',
