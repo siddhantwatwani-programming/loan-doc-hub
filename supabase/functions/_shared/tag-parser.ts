@@ -1896,7 +1896,7 @@ export function processConditionalBlocks(
       let truthyEval = evaluateEqExpression(eqExpr, fieldValues, mergeTagMap, validFieldKeys) ?? false;
       if (head === 'ne') truthyEval = !truthyEval;
       const truthy = useUnless ? !truthyEval : truthyEval;
-      const blockContent = m[2];
+      const blockContent = m[3];
       const elseIdx = blockContent.indexOf('{{else}}');
       let kept = "";
       if (truthy) {
