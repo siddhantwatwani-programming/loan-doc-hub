@@ -3237,6 +3237,16 @@ async function generateSingleDocument(
             /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\(N\)/g,
             "$1_N",
           );
+          // Curly-brace placeholder variant authored in some RE851D templates:
+          // pr_li_(rem|ant)_<field>_{N}_{S} -> _N_S, _{N} -> _N.
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\{N\}_\{S\}/g,
+            "$1_N_S",
+          );
+          xml = xml.replace(
+            /\b(pr_li_(?:rem|ant)_[A-Za-z]+)_\{N\}/g,
+            "$1_N",
+          );
 
           // RE851D Owner Occupied condition normalizer.
           // Some authored RE851D templates write the (eq ...) sub-expression
