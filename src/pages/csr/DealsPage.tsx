@@ -333,8 +333,8 @@ export const DealsPage: React.FC = () => {
           <Button variant="outline" size="icon" onClick={() => fetchDeals(currentPage)} title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </Button>
-          <Button onClick={() => navigate('/deals/new')} className="gap-2">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleCreateDeal} disabled={creating} className="gap-2">
+            {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Create File
           </Button>
         </div>
