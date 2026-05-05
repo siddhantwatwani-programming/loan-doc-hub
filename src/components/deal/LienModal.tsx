@@ -31,6 +31,7 @@ interface LienModalProps {
   isEdit: boolean;
   propertyOptions?: { id: string; label: string }[];
   loanValues?: Record<string, string>;
+  currentPropertyId?: string;
 }
 
 const LOAN_TYPE_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
@@ -66,13 +67,21 @@ const getDefaultLien = (): LienData => ({
   sourceOfInformation: '',
 });
 
-export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {} }) => {
+export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, onSave, isEdit, propertyOptions = [], loanValues = {}, currentPropertyId }) => {
   const [formData, setFormData] = useState<LienData>(getDefaultLien());
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
-    if (open) setFormData(lien ? lien : getDefaultLien());
-  }, [open, lien]);
+    if (open) {
+      if (lien) {
+        setFormData(lien);
+      } else {
+        const seeded = getDefaultLien();
+        if (currentPropertyId) seeded.property = currentPropertyId;
+        setFormData(seeded);
+      }
+    }
+  }, [open, lien, currentPropertyId]);
 
   const handleChange = (field: keyof LienData, value: string) => setFormData(prev => ({ ...prev, [field]: value }));
 

@@ -236,7 +236,12 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   // fall back to showing all (legacy behavior).
   const liensForProperty = useMemo(() => {
     if (!currentPropertyId) return allLiens;
-    return allLiens.filter(l => l.property === currentPropertyId);
+    return allLiens.filter(l => {
+      // Backward-compat: legacy liens missing/unassigned property still
+      // appear under the currently active property so they aren't lost.
+      if (!l.property || l.property === 'unassigned') return true;
+      return l.property === currentPropertyId;
+    });
   }, [allLiens, currentPropertyId]);
 
   // Auto-compute 10A: "yes" if any lien has an existing type checked
@@ -282,14 +287,19 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
   const handleSaveLien = useCallback(async (lienData: LienData) => {
     const prefix = editingLien ? editingLien.id : getNextLienPrefix(values);
 
-    // Bind the lien to the current property when adding a new lien and the
-    // user did not pick one explicitly (or left it as "unassigned").
-    // This is what isolates liens per property and ensures the new lien shows
-    // up in the current property's Liens grid after save.
-    const isUnboundProperty = !lienData.property || lienData.property === 'unassigned';
+    // Resolve Related Property robustly so it is ALWAYS persisted.
+    // Order: explicit user choice → current property scope → first available
+    // property → 'unassigned' (explicit fallback so the field exists).
+    const explicit = lienData.property && lienData.property !== 'unassigned'
+      ? lienData.property
+      : '';
+    const resolvedProperty = explicit
+      || currentPropertyId
+      || (propertyOptions[0]?.id ?? 'unassigned');
+
     const boundLienData: LienData = {
       ...lienData,
-      property: isUnboundProperty ? (currentPropertyId || lienData.property) : lienData.property,
+      property: resolvedProperty,
     };
 
     flushSync(() => {
@@ -297,7 +307,8 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
         if (lienKey === 'id') return;
         const val = (boundLienData as any)[lienKey] || '';
         const defaultVal = (DEFAULT_LIEN as any)[lienKey] || '';
-        if (val !== defaultVal || editingLien) {
+        // Always write the property so the lien remains bound after save.
+        if (lienKey === 'property' || val !== defaultVal || editingLien) {
           onValueChange(`${prefix}.${dbField}`, val);
         }
       });
@@ -309,7 +320,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       setModalOpen(false);
     }
     return success;
-  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId]);
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId, propertyOptions]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
@@ -369,7 +380,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
           </DirtyFieldsProvider>
         </div>
       </div>
-      <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} loanValues={values} />
+      <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} loanValues={values} currentPropertyId={currentPropertyId} />
     </>
   );
 };
