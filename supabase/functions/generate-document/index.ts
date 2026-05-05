@@ -3912,11 +3912,27 @@ async function generateSingleDocument(
           };
 
           let om: RegExpExecArray | null;
+          let ownerOccurrence = 0;
           while ((om = ownerRe.exec(xml)) !== null) {
             const qStart = om.index;
-            const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
-            if (!region) continue;
-            const winEnd = Math.min(region.end, qStart + 3000);
+            ownerOccurrence += 1;
+            // Primary: assign property index by OWNER OCCUPIED occurrence order
+            // (1st OWNER OCCUPIED -> property 1, 2nd -> property 2, ...). This
+            // is robust regardless of how many PROPERTY INFORMATION / PROPERTY #K
+            // headings the template carries. Fall back to range-based lookup
+            // only if occurrence index exceeds known properties.
+            let regionK = ownerOccurrence;
+            const rangeMatch = propRanges.find((p) => qStart >= p.start && qStart < p.end);
+            if (regionK > 5 && rangeMatch) regionK = rangeMatch.k;
+            if (regionK < 1 || regionK > 5) continue;
+            // Bound search window: until next OWNER OCCUPIED or end of xml.
+            const nextOwnerIdx = (() => {
+              const tmp = new RegExp(ownerRe.source, "gi");
+              tmp.lastIndex = qStart + 1;
+              const nm = tmp.exec(xml);
+              return nm ? nm.index : xml.length;
+            })();
+            const winEnd = Math.min(nextOwnerIdx, qStart + 3000);
 
             yesLabelRe.lastIndex = qStart;
             noLabelRe.lastIndex = qStart;
@@ -3953,7 +3969,7 @@ async function generateSingleDocument(
             if (!nCSel) continue;
             const nC = nCSel.c;
 
-            const isOwner = occByIdx[region.k] === "owner occupied";
+            const isOwner = occByIdx[regionK] === "owner occupied";
             const yesChecked = isOwner;
             const noChecked = !isOwner;
 
@@ -3969,7 +3985,7 @@ async function generateSingleDocument(
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
             console.log(
-              `[generate-document] RE851D owner-occupied PROP#${region.k} occ="${occByIdx[region.k]}" => YES=${yesChecked ? "☑" : "☐"} NO=${noChecked ? "☑" : "☐"}`,
+              `[generate-document] RE851D owner-occupied PROP#${regionK} (occ#${ownerOccurrence}) occ="${occByIdx[regionK]}" => YES=${yesChecked ? "☑" : "☐"} NO=${noChecked ? "☑" : "☐"}`,
             );
           }
 
