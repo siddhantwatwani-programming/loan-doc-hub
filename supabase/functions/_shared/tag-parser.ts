@@ -1878,15 +1878,23 @@ export function processConditionalBlocks(
     // Cheap pre-check: only run the (eq …) regexes when an `(eq ` literal is
     // actually present. Avoids two full-string regex scans per iteration on
     // large templates that have no eq sub-expressions.
-    const hasEqSexp = hasSexpOpener && result.indexOf('(eq') !== -1 && result.indexOf('(eq ') !== -1;
-    const eqIfPattern = /\{\{#if\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
-    const eqUnlessPattern = /\{\{#unless\s+\(\s*(eq\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
+    const hasEqSexp = hasSexpOpener && (
+      (result.indexOf('(eq') !== -1 && result.indexOf('(eq ') !== -1) ||
+      (result.indexOf('(ne') !== -1 && result.indexOf('(ne ') !== -1)
+    );
+    // Match either `eq` or `ne` heads. `ne` is treated as the negation of `eq`.
+    const eqIfPattern = /\{\{#if\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/if\}\}/;
+    const eqUnlessPattern = /\{\{#unless\s+\(\s*((eq|ne)\s+[A-Za-z0-9_.]+\s+(?:"[^"]*"|'[^']*'|[A-Za-z0-9_.\-]+))\s*\)\s*\}\}([\s\S]*?)\{\{\/unless\}\}/;
     const eqIfMatch = hasEqSexp ? eqIfPattern.exec(result) : null;
     const eqUnlessMatch = hasEqSexp ? eqUnlessPattern.exec(result) : null;
     if (eqIfMatch || eqUnlessMatch) {
       const useUnless = !eqIfMatch || (eqUnlessMatch !== null && eqUnlessMatch.index < (eqIfMatch?.index ?? Infinity));
       const m = (useUnless ? eqUnlessMatch : eqIfMatch) as RegExpExecArray;
-      const truthyEval = evaluateEqExpression(m[1], fieldValues, mergeTagMap, validFieldKeys) ?? false;
+      // Convert (ne FIELD LIT) to (eq FIELD LIT) for evaluation, then negate.
+      const head = m[2].toLowerCase();
+      const eqExpr = head === 'ne' ? m[1].replace(/^\s*ne\b/i, 'eq') : m[1];
+      let truthyEval = evaluateEqExpression(eqExpr, fieldValues, mergeTagMap, validFieldKeys) ?? false;
+      if (head === 'ne') truthyEval = !truthyEval;
       const truthy = useUnless ? !truthyEval : truthyEval;
       const blockContent = m[2];
       const elseIdx = blockContent.indexOf('{{else}}');
