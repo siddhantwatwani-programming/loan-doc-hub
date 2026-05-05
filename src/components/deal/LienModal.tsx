@@ -273,7 +273,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
 
               {renderInlineField('holder', 'Lien Holder Name', 'text', isThisLoan)}
-              {renderCurrencyField('balanceAfter', 'Anticipated / Remaining Balance', isThisLoan || isPayoff)}
+              {renderCurrencyField('newRemainingBalance', 'Anticipated / Remaining Balance', isThisLoan || isPayoff)}
 
               {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
               {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
