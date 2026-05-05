@@ -514,7 +514,8 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'loan_terms.penalties.default_interest.distribution.lenders': 'ln_p_defaultLenderSplit',
   'loan_terms.penalties.default_interest.distribution.company': 'ln_p_defaultCost',
   'loan_terms.penalties.default_interest.distribution.origination_vendors': 'ln_p_defaultBroker',
-  'loan_terms.penalties.prepayment.penalty_months': 'ln_p_penaltym',
+  'loan_terms.penalties.prepayment.first_years': 'ln_pn_prepaymePenaltYears',
+  'loan_terms.penalties.prepayment.penalty_months': 'ln_pn_prepaymePenaltMonths',
   'loan_terms.penalties.prepayment.of_the': 'ln_p_penaltyBasedOn',
   'loan_terms.penalties.maturity.grace_period_days': 'ln_p_graceper4',
 
