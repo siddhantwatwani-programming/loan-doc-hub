@@ -257,7 +257,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
-                 <Select value={formData.loanType || undefined} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
+                 <Select value={formData.loanTypeDropdown || undefined} onValueChange={(val) => handleChange('loanTypeDropdown', val)} disabled={isThisLoan}>
                    <SelectTrigger className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`}><SelectValue placeholder="Select" /></SelectTrigger>
                    <SelectContent className="bg-background border border-border z-[200]">
                     {LOAN_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
