@@ -770,6 +770,16 @@ async function generateSingleDocument(
       fieldValues.set("of_re_interestRate.fixed", { rawValue: isFixed ? "true" : "false", dataType: "boolean" });
       fieldValues.set("of_re_interestRate.adjustable", { rawValue: isAdjustable ? "true" : "false", dataType: "boolean" });
       console.log(`[generate-document] RE885 interest rate checkboxes: fixed=${isFixed} adjustable=${isAdjustable} (raw fixed="${fixedRaw}" adjustable="${adjRaw}")`);
+
+      // RE885 Prepayment Penalty enabled -> boolean checkbox.
+      // UI persists `loan_terms.penalties.prepayment.enabled` as 'true'/'false' string.
+      // Template uses `{{#if ln_pn_prepaymePenalt}}`.
+      const ppRaw =
+        fieldValues.get("loan_terms.penalties.prepayment.enabled")?.rawValue ??
+        fieldValues.get("loan_terms.prepayment_penalty_enabled")?.rawValue;
+      const isPP = toBool(ppRaw);
+      fieldValues.set("ln_pn_prepaymePenalt", { rawValue: isPP ? "true" : "false", dataType: "boolean" });
+      console.log(`[generate-document] RE885 prepayment penalty checkbox: enabled=${isPP} (raw="${ppRaw}")`);
     }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
