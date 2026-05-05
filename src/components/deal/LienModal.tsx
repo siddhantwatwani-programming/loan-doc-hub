@@ -257,7 +257,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
 
               <div className="flex items-center gap-2">
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Loan Type</Label>
-                 <Select value={formData.loanType || undefined} onValueChange={(val) => handleChange('loanType', val)} disabled={isThisLoan}>
+                 <Select value={formData.loanTypeDropdown || undefined} onValueChange={(val) => handleChange('loanTypeDropdown', val)} disabled={isThisLoan}>
                    <SelectTrigger className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`}><SelectValue placeholder="Select" /></SelectTrigger>
                    <SelectContent className="bg-background border border-border z-[200]">
                     {LOAN_TYPE_OPTIONS.map(opt => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
@@ -273,7 +273,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
               {renderCurrencyField('currentBalance', 'Current Balance', isThisLoan || isAnticipated)}
 
               {renderInlineField('holder', 'Lien Holder Name', 'text', isThisLoan)}
-              {renderCurrencyField('balanceAfter', 'Anticipated / Remaining Balance', isThisLoan || isPayoff)}
+              {renderCurrencyField('newRemainingBalance', 'Anticipated / Remaining Balance', isThisLoan || isPayoff)}
 
               {renderInlineField('account', 'Account Number', 'text', isThisLoan)}
               {renderPercentageField('interestRate', 'Interest Rate', isThisLoan)}
@@ -288,9 +288,17 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
                 <Label className="w-[110px] shrink-0 text-xs text-foreground">Fax</Label>
                 <PhoneInput value={formData.fax} onValueChange={(v) => handleChange('fax', v)} disabled={isThisLoan} className={`h-7 text-xs flex-1 ${isThisLoan ? 'opacity-50 bg-muted' : ''}`} />
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox id="modal-currentlyDelinquent" checked={formData.currentlyDelinquent === 'true'} onCheckedChange={(c) => handleChange('currentlyDelinquent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
-                <Label htmlFor="modal-currentlyDelinquent" className="text-xs text-foreground">If Delinquent</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 min-w-[140px]">
+                  <Checkbox id="modal-currentlyDelinquent" checked={formData.currentlyDelinquent === 'true'} onCheckedChange={(c) => handleChange('currentlyDelinquent', c ? 'true' : 'false')} className="h-3.5 w-3.5" />
+                  <Label htmlFor="modal-currentlyDelinquent" className="text-xs text-foreground">If Delinquent</Label>
+                </div>
+                {formData.currentlyDelinquent === 'true' && (
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
+                    <Input value={formData.currentlyDelinquentAmount} onChange={(e) => handleChange('currentlyDelinquentAmount', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => handleChange('currentlyDelinquentAmount', val))} onBlur={() => { const raw = formData.currentlyDelinquentAmount; if (raw) handleChange('currentlyDelinquentAmount', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = formData.currentlyDelinquentAmount; if (raw) handleChange('currentlyDelinquentAmount', unformatCurrencyDisplay(raw)); }} className="h-7 text-xs pl-7" inputMode="decimal" placeholder="Amount" />
+                  </div>
+                )}
               </div>
 
               {renderInlineField('recordingDate', 'Recording Date', 'date')}
