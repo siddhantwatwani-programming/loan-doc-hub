@@ -4313,6 +4313,212 @@ async function generateSingleDocument(
       }
     }
 
+    // ── RE851D POST-RENDER "Cure the Delinquency" YES/NO safety pass ──
+    // Anchored to "cure the delinquency" question per PROPERTY block.
+    // Driven by pr_li_delinquencyPaidByLoan_K (Property→Lien "Will Be Paid By This Loan"):
+    //   true  → YES ☑ / NO ☐
+    //   false → YES ☐ / NO ☑
+    if (/851d/i.test(template.name || "")) {
+      try {
+        const truthy = (raw: unknown): boolean => {
+          if (raw === null || raw === undefined) return false;
+          if (typeof raw === "boolean") return raw;
+          if (typeof raw === "number") return raw !== 0;
+          const s = String(raw).trim().toLowerCase();
+          return ["true", "yes", "y", "1", "checked", "on"].includes(s);
+        };
+        const cureByIdx: Record<number, boolean> = {};
+        for (let k = 1; k <= 5; k++) {
+          const v = fieldValues.get(`pr_li_delinquencyPaidByLoan_${k}`);
+          cureByIdx[k] = truthy(v?.rawValue);
+        }
+
+        const decoder3 = new TextDecoder("utf-8");
+        const encoder3 = new TextEncoder();
+        const unzipped = fflate.unzipSync(processedDocx);
+        const rezip: fflate.Zippable = {};
+        let didMutate = false;
+
+        for (const [filename, bytes] of Object.entries(unzipped)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = decoder3.decode(bytes);
+          if (xml.toLowerCase().indexOf("cure the delinquency") === -1) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+
+          const propAnchors: number[] = [];
+          {
+            const map: number[] = [];
+            const buf: string[] = [];
+            let i = 0;
+            while (i < xml.length) {
+              if (xml[i] === "<") {
+                const e = xml.indexOf(">", i);
+                if (e === -1) break;
+                const prev = buf.length ? buf[buf.length - 1] : "";
+                if (prev !== " ") { buf.push(" "); map.push(i); }
+                i = e + 1; continue;
+              }
+              buf.push(xml[i]); map.push(i); i++;
+            }
+            const txt = buf.join("");
+            const re = /\bPROPERTY\s+INFORMATION\b/gi;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(txt)) !== null) {
+              propAnchors.push(map[m.index] ?? 0);
+              if (propAnchors.length >= 5) break;
+            }
+          }
+          if (propAnchors.length === 0) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          const propRanges: Array<{ k: number; start: number; end: number }> = [];
+          for (let pi = 0; pi < propAnchors.length; pi++) {
+            propRanges.push({
+              k: pi + 1,
+              start: propAnchors[pi],
+              end: pi + 1 < propAnchors.length ? propAnchors[pi + 1] : xml.length,
+            });
+          }
+
+          const questionRe = /cure the delinquency/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
+
+          type Rewrite = { start: number; end: number; replacement: string };
+          const rewrites: Rewrite[] = [];
+
+          const rewriteSdtChecked = (block: string, checked: boolean): string => {
+            const val = checked ? "1" : "0";
+            const glyph = checked ? "\u2611" : "\u2610";
+            let next = block.replace(
+              /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
+              `$1${val}$2`,
+            );
+            next = next.replace(
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              `$1${glyph}$3`,
+            );
+            return next;
+          };
+
+          const findControlNear = (
+            labelStart: number,
+            labelEnd: number,
+            regionStart: number,
+            regionEnd: number,
+          ):
+            | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+            | null => {
+            const maxBack = 2500;
+            const scanStart = Math.max(regionStart, labelStart - maxBack);
+            const before = xml.slice(scanStart, labelStart);
+            let last:
+              | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+              | null = null;
+            const sdtRe = new RegExp(sdtCheckboxRe.source, "g");
+            let sm: RegExpExecArray | null;
+            while ((sm = sdtRe.exec(before)) !== null) {
+              last = { idx: scanStart + sm.index, end: scanStart + sm.index + sm[0].length, kind: "sdt", m: [sm[0]] };
+            }
+            if (last) return last;
+            const gRe = new RegExp(glyphRunRe.source, "g");
+            let gm: RegExpExecArray | null;
+            while ((gm = gRe.exec(before)) !== null) {
+              last = { idx: scanStart + gm.index, end: scanStart + gm.index + gm[0].length, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] };
+            }
+            if (last) return last;
+            const fwdEnd = Math.min(regionEnd, labelEnd + 300);
+            const after = xml.slice(labelEnd, fwdEnd);
+            const sdtRe2 = new RegExp(sdtCheckboxRe.source, "g");
+            const sm2 = sdtRe2.exec(after);
+            if (sm2) {
+              return { idx: labelEnd + sm2.index, end: labelEnd + sm2.index + sm2[0].length, kind: "sdt", m: [sm2[0]] };
+            }
+            const gRe2 = new RegExp(glyphRunRe.source, "g");
+            const gm2 = gRe2.exec(after);
+            if (gm2) {
+              return { idx: labelEnd + gm2.index, end: labelEnd + gm2.index + gm2[0].length, kind: "glyph", m: [gm2[0], gm2[1], gm2[2], gm2[3]] };
+            }
+            return null;
+          };
+
+          let qm: RegExpExecArray | null;
+          while ((qm = questionRe.exec(xml)) !== null) {
+            const qStart = qm.index;
+            const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
+            if (!region) continue;
+            const winEnd = Math.min(region.end, qStart + 4096);
+
+            yesLabelRe.lastIndex = qStart;
+            noLabelRe.lastIndex = qStart;
+            const yL = yesLabelRe.exec(xml);
+            const nL = noLabelRe.exec(xml);
+            if (!yL || !nL) continue;
+            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+
+            const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
+            const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
+            if (!yC || !nC || yC.idx === nC.idx) continue;
+
+            const isYes = cureByIdx[region.k] === true;
+            const yesChecked = isYes;
+            const noChecked = !isYes;
+
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start);
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+
+            const yesReplacement =
+              yC.kind === "sdt"
+                ? rewriteSdtChecked(yC.m[0], yesChecked)
+                : `${yC.m[1]}${yesChecked ? "\u2611" : "\u2610"}${yC.m[3]}`;
+            const noReplacement =
+              nC.kind === "sdt"
+                ? rewriteSdtChecked(nC.m[0], noChecked)
+                : `${nC.m[1]}${noChecked ? "\u2611" : "\u2610"}${nC.m[3]}`;
+
+            rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
+            rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+          }
+
+          if (rewrites.length > 0) {
+            rewrites.sort((a, b) => b.start - a.start);
+            for (const r of rewrites) {
+              xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+            }
+            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            didMutate = true;
+            console.log(
+              `[generate-document] RE851D post-render cure-delinquency safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
+            );
+          } else {
+            rezip[filename] = [bytes, { level: 0 }];
+          }
+        }
+
+        if (didMutate) {
+          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+        }
+      } catch (postErr) {
+        console.error(
+          `[generate-document] RE851D post-render cure-delinquency pass failed (continuing):`,
+          postErr instanceof Error ? postErr.message : String(postErr)
+        );
+      }
+    }
+
     debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
 
     // 6. Calculate version number
