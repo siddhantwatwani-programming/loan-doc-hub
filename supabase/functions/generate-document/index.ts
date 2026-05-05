@@ -749,6 +749,27 @@ async function generateSingleDocument(
       fieldValues.set("of_re_proposedLoanTerm.years", { rawValue: isYears ? "true" : "false", dataType: "boolean" });
       fieldValues.set("of_re_proposedLoanTerm.months", { rawValue: isMonths ? "true" : "false", dataType: "boolean" });
       console.log(`[generate-document] RE885 loan term checkboxes: unit="${unit}" years=${isYears} months=${isMonths}`);
+
+      // RE885 Interest Rate Fixed/Adjustable -> mutually exclusive boolean checkboxes.
+      // UI persists `origination_fees.re885_rate_type_fixed` / `_adjustable` (boolean).
+      // Template uses `{{#if of_re_interestRate.fixed}}` / `.adjustable`.
+      const toBool = (v: unknown): boolean => {
+        if (v === true) return true;
+        if (v === false || v === null || v === undefined) return false;
+        const s = String(v).trim().toLowerCase();
+        return s === "true" || s === "yes" || s === "y" || s === "1" || s === "checked" || s === "on";
+      };
+      const fixedRaw =
+        fieldValues.get("origination_fees.re885_rate_type_fixed")?.rawValue ??
+        fieldValues.get("of_re_rateTypeFixed")?.rawValue;
+      const adjRaw =
+        fieldValues.get("origination_fees.re885_rate_type_adjustable")?.rawValue ??
+        fieldValues.get("of_re_rateTypeAdjustable")?.rawValue;
+      const isFixed = toBool(fixedRaw);
+      const isAdjustable = toBool(adjRaw);
+      fieldValues.set("of_re_interestRate.fixed", { rawValue: isFixed ? "true" : "false", dataType: "boolean" });
+      fieldValues.set("of_re_interestRate.adjustable", { rawValue: isAdjustable ? "true" : "false", dataType: "boolean" });
+      console.log(`[generate-document] RE885 interest rate checkboxes: fixed=${isFixed} adjustable=${isAdjustable} (raw fixed="${fixedRaw}" adjustable="${adjRaw}")`);
     }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
