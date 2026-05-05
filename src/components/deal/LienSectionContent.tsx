@@ -380,7 +380,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
           </DirtyFieldsProvider>
         </div>
       </div>
-      <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} loanValues={values} />
+      <LienModal open={modalOpen} onOpenChange={setModalOpen} lien={editingLien} onSave={handleSaveLien} isEdit={!!editingLien} propertyOptions={propertyOptions} loanValues={values} currentPropertyId={currentPropertyId} />
     </>
   );
 };
