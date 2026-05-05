@@ -3889,8 +3889,8 @@ async function generateSingleDocument(
           }
 
           const ownerRe = /OWNER\s+OCCUPIED/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*Yes\s*<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*No\s*<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
