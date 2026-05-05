@@ -67,6 +67,8 @@ export interface LienData {
   sltUnableToVerify: string;
   sltLenderNotified: string;
   sltLenderNotifiedDate: string;
+  sltBorrowerNotified: string;
+  sltBorrowerNotifiedDate: string;
   note: string;
   thisLoan: string;
   estimate: string;
