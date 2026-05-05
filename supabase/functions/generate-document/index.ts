@@ -3877,6 +3877,25 @@ async function generateSingleDocument(
           effectiveValidFieldKeys.add(`${base}_${i}`);
         }
       }
+      // RE851D Encumbrance Remaining/Anticipated: per-property + per-slot keys
+      // so the resolver's priority-1 direct match returns publisher-set values
+      // (publisher emits these at lines ~2528–2592).
+      const ENC_REM_BASES = [
+        "pr_li_rem_priority", "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
+        "pr_li_rem_beneficiary", "pr_li_rem_lienHolder", "pr_li_rem_holder",
+        "pr_li_rem_originalAmount", "pr_li_rem_principalBalance", "pr_li_rem_monthlyPayment",
+        "pr_li_rem_maturityDate", "pr_li_rem_maturity_date", "pr_li_rem_matDate",
+        "pr_li_rem_balloonAmount", "pr_li_rem_balloonYes", "pr_li_rem_balloonNo", "pr_li_rem_balloonUnknown",
+      ];
+      const ENC_ANT_BASES = ENC_REM_BASES.map(b => b.replace("pr_li_rem_", "pr_li_ant_"));
+      for (let p = 1; p <= 5; p++) {
+        for (const base of [...ENC_REM_BASES, ...ENC_ANT_BASES]) {
+          effectiveValidFieldKeys.add(`${base}_${p}`);
+          for (let s = 1; s <= 10; s++) {
+            effectiveValidFieldKeys.add(`${base}_${p}_${s}`);
+          }
+        }
+      }
     }
 
     let processedDocx: Uint8Array;
