@@ -1,79 +1,45 @@
-## Plan: RE851D Owner Occupied Checkbox Deep Fix
+I found why this is still happening with the uploaded `Re851d_v3.docx` / screenshot pattern.
 
-### Goal
-Ensure the RE851D generated document can never show both `OWNER OCCUPIED` checkboxes selected.
-
-Expected output for each property section:
+The template is using inline conditional text like:
 
 ```text
-Owner Occupied  -> Yes checked, No unchecked
-Tenant / Other  -> Yes unchecked, No checked
-Vacant          -> Yes unchecked, No checked
-NA              -> Yes unchecked, No checked
-blank/other     -> Yes unchecked, No checked
+{{#if (eq pr_p_occupanc_N "Owner Occupied")}} ☒ {{else}} ☐ {{/if}} Yes
+{{#if (ne pr_p_occupanc_N "Owner Occupied")}} ☒ {{else}} ☐ {{/if}} No
 ```
 
-Applies to Property #1 through Property #5 only.
+The current engine has two gaps:
 
-### Root Cause Found
-The current code has two remaining risks:
+1. It only safely evaluates `(eq ...)`, but the template uses `(ne ...)` for the No checkbox.
+2. The existing owner-occupied safety pass runs before the final template parser. It rewrites static glyph runs only, but then unresolved or partially-resolved inline conditional glyphs can still render later and leave both Yes and No checked.
 
-1. The safety pass still treats `"Owner"` as owner-occupied:
-   ```ts
-   occVal === "owner occupied" || occVal === "owner"
-   ```
-   This is not strict enough for the requested behavior. It must be exactly `"Owner Occupied"` after normalization.
+Plan:
 
-2. The uploaded RE851D template can still contain malformed or independent conditional patterns such as:
-   ```text
-   (eq pr_p_occupanc_N"Owner")
-   (eq pr_p_occupanc_N "Owner")
-   separate Yes and No if blocks
-   ```
-   The parser only evaluates well-formed `(eq FIELD "literal")` expressions. Bad spacing or the wrong literal can leave condition markers stripped while both branch glyphs remain visible, producing a double-check.
+1. Extend the shared template conditional parser narrowly and safely:
+   - Add support for `(ne FIELD "literal")` as the inverse of `(eq FIELD "literal")`.
+   - Keep existing `(eq ...)` behavior unchanged.
+   - Update the conditional detection regexes so both `#if (ne ...)` and `#unless (ne ...)` are resolved instead of stripped or left as visible text.
 
-### Implementation Scope
-Only update document generation/template parsing logic. No UI changes, no database/schema changes, no new APIs, and no document flow refactor.
+2. Harden the RE851D owner-occupied template normalization:
+   - Keep the current correction for malformed `pr_p_occupanc_N"Owner"` / `"Owner"` expressions.
+   - Also normalize owner-occupied `(ne ...)` expressions when they use the same malformed spacing/value pattern.
+   - Scope this only to the `pr_p_occupanc` field family inside RE851D preprocessing.
 
-### Changes to Make
+3. Add a final RE851D-only post-render safety pass after `processDocx(...)`:
+   - Re-open the processed DOCX XML.
+   - For each PROPERTY #1–#5 region, find the `OWNER OCCUPIED` cell.
+   - Replace that cell’s rendered checkbox/label content with exactly one mutually-exclusive pair based on `pr_p_occupanc_1` through `pr_p_occupanc_5`:
+     - `Owner Occupied` → `☑ Yes` and `☐ No`
+     - anything else → `☐ Yes` and `☑ No`
+   - Remove any leftover `{{#if ...}}`, `{{else}}`, `{{/if}}`, duplicate glyphs, or duplicate labels in that OWNER OCCUPIED cell only.
 
-1. **Strict value match in `supabase/functions/generate-document/index.ts`**
-   - Change Owner Occupied detection to:
-     ```ts
-     const isOwner = occVal === "owner occupied";
-     ```
-   - Remove the permissive `|| occVal === "owner"` fallback.
+4. Keep the change minimal and isolated:
+   - No UI changes.
+   - No database/schema changes.
+   - No save/update API changes.
+   - No unrelated document-generation flow changes.
 
-2. **Strengthen RE851D Owner Occupied safety pass**
-   - Keep the current per-property region scoping.
-   - Replace only the checkbox glyph directly attached to the `Yes` label and the checkbox glyph directly attached to the `No` label.
-   - Ensure queued rewrites force a mutually exclusive pair:
-     - `Owner Occupied`: `Yes = checked`, `No = unchecked`
-     - anything else: `Yes = unchecked`, `No = checked`
-   - If malformed conditionals leave duplicate glyphs around the labels, add a narrow cleanup in the same Owner Occupied block so each label ends with exactly one checkbox glyph.
+Validation:
 
-3. **Normalize malformed Owner Occupied condition expressions in RE851D only**
-   - Before the normal parser runs, add a narrow RE851D-only correction for the known template syntax/value issue:
-     - `eq pr_p_occupanc_N"Owner"` -> `eq pr_p_occupanc_N "Owner Occupied"`
-     - `eq pr_p_occupanc_N "Owner"` -> `eq pr_p_occupanc_N "Owner Occupied"`
-   - This is limited to `pr_p_occupanc_N` / already indexed `pr_p_occupanc_1..5` expressions and will not affect other document conditions.
-
-4. **Add parser support for the requested single-block `if + else` pattern if needed**
-   - The existing parser already handles normal `{{#if (eq FIELD "Owner Occupied")}}...{{else}}...{{/if}}` when well formed.
-   - The fix will preserve that behavior and only improve malformed spacing/value normalization for this specific RE851D field.
-
-### Validation Plan
-After implementing, test generation logic using the uploaded `Re851d_v2-2.docx` template structure and verify the generated XML around `OWNER OCCUPIED` sections has only one checked glyph per property:
-
-- Property #1: `Owner Occupied` -> Yes checked only
-- Property #2: `Tenant / Other` -> No checked only
-- Property #3: `Vacant` -> No checked only
-- Property #4: `NA` -> No checked only
-- Property #5: blank/other -> No checked only
-
-### Non-Goals
-- No UI changes.
-- No database changes.
-- No save/update API changes.
-- No changes to other RE851D checkbox groups unless directly necessary to isolate the Owner Occupied pair.
-- No broad parser refactor.
+- Use the uploaded `Re851d_v3.docx` structure as the target pattern.
+- Verify that all five `pr_p_occupanc_N` mappings are handled.
+- Confirm final output cannot contain both Yes and No checked in the same OWNER OCCUPIED block.
