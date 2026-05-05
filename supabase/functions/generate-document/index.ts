@@ -3015,6 +3015,43 @@ async function generateSingleDocument(
           "property_type_land_income_N_glyph", "property_type_land_income_N",
           "property_type_other_N_glyph", "property_type_other_N",
           "property_type_other_text_N",
+          // Encumbrance Remaining / Anticipated (per-property, per-slot).
+          // Both _N_S and _N forms listed; longest-first ordering ensures
+          // _N_S is consumed first so the slot index survives the rewrite.
+          "pr_li_rem_priority_N_S", "pr_li_rem_priority_N",
+          "pr_li_rem_interestRate_N_S", "pr_li_rem_interestRate_N",
+          "pr_li_rem_interest_rate_N_S", "pr_li_rem_interest_rate_N",
+          "pr_li_rem_intRate_N_S", "pr_li_rem_intRate_N",
+          "pr_li_rem_beneficiary_N_S", "pr_li_rem_beneficiary_N",
+          "pr_li_rem_lienHolder_N_S", "pr_li_rem_lienHolder_N",
+          "pr_li_rem_holder_N_S", "pr_li_rem_holder_N",
+          "pr_li_rem_originalAmount_N_S", "pr_li_rem_originalAmount_N",
+          "pr_li_rem_principalBalance_N_S", "pr_li_rem_principalBalance_N",
+          "pr_li_rem_monthlyPayment_N_S", "pr_li_rem_monthlyPayment_N",
+          "pr_li_rem_maturityDate_N_S", "pr_li_rem_maturityDate_N",
+          "pr_li_rem_maturity_date_N_S", "pr_li_rem_maturity_date_N",
+          "pr_li_rem_matDate_N_S", "pr_li_rem_matDate_N",
+          "pr_li_rem_balloonAmount_N_S", "pr_li_rem_balloonAmount_N",
+          "pr_li_rem_balloonYes_N_S", "pr_li_rem_balloonYes_N",
+          "pr_li_rem_balloonNo_N_S", "pr_li_rem_balloonNo_N",
+          "pr_li_rem_balloonUnknown_N_S", "pr_li_rem_balloonUnknown_N",
+          "pr_li_ant_priority_N_S", "pr_li_ant_priority_N",
+          "pr_li_ant_interestRate_N_S", "pr_li_ant_interestRate_N",
+          "pr_li_ant_interest_rate_N_S", "pr_li_ant_interest_rate_N",
+          "pr_li_ant_intRate_N_S", "pr_li_ant_intRate_N",
+          "pr_li_ant_beneficiary_N_S", "pr_li_ant_beneficiary_N",
+          "pr_li_ant_lienHolder_N_S", "pr_li_ant_lienHolder_N",
+          "pr_li_ant_holder_N_S", "pr_li_ant_holder_N",
+          "pr_li_ant_originalAmount_N_S", "pr_li_ant_originalAmount_N",
+          "pr_li_ant_principalBalance_N_S", "pr_li_ant_principalBalance_N",
+          "pr_li_ant_monthlyPayment_N_S", "pr_li_ant_monthlyPayment_N",
+          "pr_li_ant_maturityDate_N_S", "pr_li_ant_maturityDate_N",
+          "pr_li_ant_maturity_date_N_S", "pr_li_ant_maturity_date_N",
+          "pr_li_ant_matDate_N_S", "pr_li_ant_matDate_N",
+          "pr_li_ant_balloonAmount_N_S", "pr_li_ant_balloonAmount_N",
+          "pr_li_ant_balloonYes_N_S", "pr_li_ant_balloonYes_N",
+          "pr_li_ant_balloonNo_N_S", "pr_li_ant_balloonNo_N",
+          "pr_li_ant_balloonUnknown_N_S", "pr_li_ant_balloonUnknown_N",
         ];
         // Tags that appear in the repeating PART 1 / PART 2 row blocks.
         // PART 1 (LOAN TO VALUE RATIO table) and PART 2 (SECURING PROPERTIES
@@ -3838,6 +3875,25 @@ async function generateSingleDocument(
       for (let i = 1; i <= 5; i++) {
         for (const base of SUFFIXED_BASES) {
           effectiveValidFieldKeys.add(`${base}_${i}`);
+        }
+      }
+      // RE851D Encumbrance Remaining/Anticipated: per-property + per-slot keys
+      // so the resolver's priority-1 direct match returns publisher-set values
+      // (publisher emits these at lines ~2528–2592).
+      const ENC_REM_BASES = [
+        "pr_li_rem_priority", "pr_li_rem_interestRate", "pr_li_rem_interest_rate", "pr_li_rem_intRate",
+        "pr_li_rem_beneficiary", "pr_li_rem_lienHolder", "pr_li_rem_holder",
+        "pr_li_rem_originalAmount", "pr_li_rem_principalBalance", "pr_li_rem_monthlyPayment",
+        "pr_li_rem_maturityDate", "pr_li_rem_maturity_date", "pr_li_rem_matDate",
+        "pr_li_rem_balloonAmount", "pr_li_rem_balloonYes", "pr_li_rem_balloonNo", "pr_li_rem_balloonUnknown",
+      ];
+      const ENC_ANT_BASES = ENC_REM_BASES.map(b => b.replace("pr_li_rem_", "pr_li_ant_"));
+      for (let p = 1; p <= 5; p++) {
+        for (const base of [...ENC_REM_BASES, ...ENC_ANT_BASES]) {
+          effectiveValidFieldKeys.add(`${base}_${p}`);
+          for (let s = 1; s <= 10; s++) {
+            effectiveValidFieldKeys.add(`${base}_${p}_${s}`);
+          }
         }
       }
     }
