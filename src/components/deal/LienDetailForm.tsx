@@ -29,7 +29,7 @@ interface LienDetailFormProps {
   loanValues?: Record<string, string>;
 }
 
-const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Title / Prelim', 'Lender', 'Broker'];
+const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
@@ -90,6 +90,8 @@ const DIRTY_KEY_MAP: Record<string, string> = {
   sltUnableToVerify: 'lien1.slt_unable_to_verify',
   sltLenderNotified: 'lien1.slt_lender_notified',
   sltLenderNotifiedDate: 'lien1.slt_lender_notified_date',
+  sltBorrowerNotified: 'lien1.slt_borrower_notified',
+  sltBorrowerNotifiedDate: 'lien1.slt_borrower_notified_date',
   note: 'lien1.note',
   thisLoan: 'lien1.this_loan',
   estimate: 'lien1.estimate',
@@ -383,6 +385,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           {renderField('sltResponseReceived', 'Response Received', { type: 'date' })}
 
           {renderCheckbox('sltUnableToVerify', 'Unable to Verify')}
+
+          {renderCheckbox('sltBorrowerNotified', 'Borrower Notified')}
+          {renderField('sltBorrowerNotifiedDate', 'Borrower Notified Date', { type: 'date' }, lien.sltBorrowerNotified !== 'true')}
 
           {renderCheckbox('sltLenderNotified', 'Lender Notified')}
           {renderField('sltLenderNotifiedDate', 'Lender Notified Date', { type: 'date' }, lien.sltLenderNotified !== 'true')}

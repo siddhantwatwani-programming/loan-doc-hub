@@ -67,6 +67,8 @@ export interface LienData {
   sltUnableToVerify: string;
   sltLenderNotified: string;
   sltLenderNotifiedDate: string;
+  sltBorrowerNotified: string;
+  sltBorrowerNotifiedDate: string;
   note: string;
   thisLoan: string;
   estimate: string;
@@ -117,11 +119,12 @@ const EXPORT_COLUMNS: ExportColumn[] = [
   { id: 'holder', label: 'Lien Holder' },
   { id: 'loanTypeDropdown', label: 'Loan Type' },
   { id: 'lienPriorityNow', label: 'Lien Priority Now' },
-  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority' },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After' },
   { id: 'interestRate', label: 'Interest Rate' },
   { id: 'originalBalance', label: 'Original Balance' },
-  { id: 'currentBalance', label: 'Current Balance' },
+  { id: 'balanceAfter', label: 'Balance After' },
   { id: 'regularPayment', label: 'Regular Payment' },
+  { id: 'recordingNumber', label: 'Recording Number' },
   { id: 'lastVerified', label: 'Last Verified' },
 ];
 
@@ -130,11 +133,12 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'holder', label: 'Lien Holder', visible: true },
   { id: 'loanTypeDropdown', label: 'Loan Type', visible: true },
   { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
-  { id: 'remainingNewLienPriority', label: 'Remaining / New Lien Priority', visible: true },
+  { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
   { id: 'interestRate', label: 'Interest Rate', visible: true },
   { id: 'originalBalance', label: 'Original Balance', visible: true },
-  { id: 'currentBalance', label: 'Current Balance', visible: true },
+  { id: 'balanceAfter', label: 'Balance After', visible: true },
   { id: 'regularPayment', label: 'Regular Payment', visible: true },
+  { id: 'recordingNumber', label: 'Recording Number', visible: true },
   { id: 'lastVerified', label: 'Last Verified', visible: true },
 ];
 
@@ -180,11 +184,14 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
       case 'holder': return lien.holder || '-';
       case 'loanTypeDropdown': return lien.loanTypeDropdown || '-';
       case 'lienPriorityNow': return lien.lienPriorityNow || '-';
+      case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
       case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
+      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
       case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
+      case 'recordingNumber': return lien.recordingNumber || '-';
       case 'lastVerified': {
         if (!lien.lastVerified) return '-';
         try {
@@ -257,7 +264,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                     sortColumnId={sortState.columnId}
                     sortDirection={sortState.direction}
                     onSort={toggleSort}
-                    className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
+                    className={['originalBalance', 'balanceAfter', 'currentBalance', 'regularPayment'].includes(col.id) ? 'min-w-[120px] text-right' : 'min-w-[100px]'}
                   />
                 ))}
               </TableRow>
@@ -276,7 +283,7 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
                       <Checkbox checked={selectedIds.has(lien.id)} onCheckedChange={() => toggleOne(lien.id)} aria-label={`Select lien`} />
                     </TableCell>
                     {visibleColumns.map((col) => (
-                      <TableCell key={col.id} className={['originalBalance', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
+                      <TableCell key={col.id} className={['originalBalance', 'balanceAfter', 'currentBalance', 'regularPayment'].includes(col.id) ? 'text-right' : ''}>
                         {renderCellValue(lien, col.id)}
                       </TableCell>
                     ))}
