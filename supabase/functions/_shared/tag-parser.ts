@@ -1892,7 +1892,7 @@ export function processConditionalBlocks(
       const m = (useUnless ? eqUnlessMatch : eqIfMatch) as RegExpExecArray;
       // Convert (ne FIELD LIT) to (eq FIELD LIT) for evaluation, then negate.
       const head = m[2].toLowerCase();
-      const eqExpr = head === 'ne' ? m[1].replace(/^\s*ne\b/i, 'eq') : m[1];
+      const eqExpr = (head === 'ne' ? m[1].replace(/^\s*ne\b/i, 'eq') : m[1]).replace(/&quot;/g, '"');
       let truthyEval = evaluateEqExpression(eqExpr, fieldValues, mergeTagMap, validFieldKeys) ?? false;
       if (head === 'ne') truthyEval = !truthyEval;
       const truthy = useUnless ? !truthyEval : truthyEval;
