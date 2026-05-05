@@ -705,10 +705,35 @@ async function generateSingleDocument(
     const sampleKeys = [...fieldValues.keys()].slice(0, 30);
     console.log(`[generate-document] Sample field keys: ${sampleKeys.join(", ")}`);
     // Log specific fields we expect to find
-    const debugFields = ["ln_p_loanAmount", "of_fe_801LenderLoanOrigin", "pr_p_street", "br_p_fullName", "of_re_interestRate", "of_re_impoundHazardIns"];
+    const debugFields = ["ln_p_loanAmount", "of_fe_801LenderLoanOrigin", "pr_p_street", "br_p_fullName", "of_re_interestRate", "of_re_impoundHazardIns", "of_re_subtotalDeductions", "origination_esc.estimated_closing", "of_re_estimatedClosing"];
     for (const df of debugFields) {
       const val = fieldValues.get(df);
       console.log(`[generate-document] Field "${df}" = ${val ? JSON.stringify(val) : "NOT FOUND"}`);
+    }
+
+    // RE885 alias publisher: ensure newly added dictionary keys are exposed under the
+    // merge-tag names the template expects. Templates may reference the dotted key
+    // (`{{origination_esc.estimated_closing}}`) OR a flat alias (`{{of_re_estimatedClosing}}`).
+    {
+      const ec = fieldValues.get("origination_esc.estimated_closing");
+      if (ec && ec.rawValue) {
+        if (!fieldValues.has("of_re_estimatedClosing")) {
+          fieldValues.set("of_re_estimatedClosing", { rawValue: ec.rawValue, dataType: ec.dataType || "date" });
+        }
+        if (!fieldValues.has("origination_esc_estimated_closing")) {
+          fieldValues.set("origination_esc_estimated_closing", { rawValue: ec.rawValue, dataType: ec.dataType || "date" });
+        }
+      }
+      const sd = fieldValues.get("of_re_subtotalDeductions") || fieldValues.get("origination_fees.re885_subtotal_deductions");
+      if (sd && sd.rawValue) {
+        if (!fieldValues.has("of_re_subtotalDeductions")) {
+          fieldValues.set("of_re_subtotalDeductions", { rawValue: sd.rawValue, dataType: sd.dataType || "currency" });
+        }
+        if (!fieldValues.has("origination_fees.re885_subtotal_deductions")) {
+          fieldValues.set("origination_fees.re885_subtotal_deductions", { rawValue: sd.rawValue, dataType: sd.dataType || "currency" });
+        }
+      }
+      console.log(`[generate-document] RE885 alias publisher: of_re_estimatedClosing="${fieldValues.get("of_re_estimatedClosing")?.rawValue ?? ""}" of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}"`);
     }
 
     // Inject systemDate so only templates using {{systemDate}} get the current date
