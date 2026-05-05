@@ -3301,6 +3301,14 @@ async function generateSingleDocument(
             /(<w:t(?:\s[^>]*)?>)([^<]*?)_\(N\)([^<]*?)(<\/w:t>)/g,
             "$1$2$3$4",
           );
+          xml = xml.replace(
+            /(<w:t(?:\s[^>]*)?>)([^<]*?)_\{N\}_\{S\}([^<]*?)(<\/w:t>)/g,
+            "$1$2$3$4",
+          );
+          xml = xml.replace(
+            /(<w:t(?:\s[^>]*)?>)([^<]*?)_\{N\}([^<]*?)(<\/w:t>)/g,
+            "$1$2$3$4",
+          );
 
           if (!xml.includes("_N")) {
             out[filename] = encoder.encode(xml);
