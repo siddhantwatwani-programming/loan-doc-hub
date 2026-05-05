@@ -1,77 +1,50 @@
-I’ll fix this with a targeted RE851D document-generation change only. No UI, schema, permissions, or field-dictionary changes.
+## Goal
 
-Deep analysis findings:
+The document template uses the tag `pr_p_currentBalanc` (and per-property `pr_p_currentBalanc_1` … `_5`) to render the **Current Balance** value entered in the UI under **Property → Liens**. Today the generator only publishes that value under `pr_li_lienCurrenBalanc` / `property1.lien_current_balance`, so `pr_p_currentBalanc` resolves to empty.
 
-1. The per-property data publisher is currently destructive for non-owner values:
-   - It reads each property occupancy value.
-   - It computes `isYes = occRawNorm === "owner occupied"`.
-   - But then it stores `pr_p_occupanc_N` as:
-     - `"Owner Occupied"` when owner occupied
-     - `""` for Tenant / Other, Vacant, NA, and blank
-   - This means the downstream post-render safety pass can only distinguish owner vs not-owner, but loses the actual CSR value. It also makes template conditionals brittle when variants expect the literal non-owner values.
+## Where the value already exists in the resolver
 
-2. There are two owner-occupied safety passes:
-   - A pre-render glyph-only pass around the template rewrite stage.
-   - A post-render SDT-aware pass after `processDocx` converts glyphs into native Word checkboxes.
-   - The post-render pass is the right place to fix the “both checked” Word behavior because Word renders native SDT checkbox state from `<w14:checked w14:val>`, not just the visible glyph.
+In `supabase/functions/generate-document/index.ts` (around line 2127–2263, the "Lien field bridging" block), each `lienK.current_balance` from CSR is already:
+- collected per-lien index in `lienFieldCollector["current_balance"]`
+- aggregated (newline-joined across liens) and published as `pr_li_lienCurrenBalanc` with `dataType: "currency"`
 
-3. The current post-render owner-occupied pass has two likely gaps causing the persistent issue:
-   - It builds property regions using only `PROPERTY INFORMATION` anchors, unlike the earlier robust `findAnchorOffsets` helper that also supports `PROPERTY #K` fallback. If the generated XML structure varies, the pass may miss some or all property sections.
-   - `findControlBefore()` searches backward from the Yes/No labels and returns the last SDT if present, before checking bare glyphs. In a local window containing both controls, this can choose the wrong checkbox when SDT blocks and labels are arranged differently or fragmented by Word.
+The per-property total of all liens belonging to property N is also already computed in the RE851D block (line 845–857, `lienTotalsByPropertyName`) but that is a numeric sum used for `pr_p_totalSenior_N`, not the raw entered Current Balance string.
 
-Implementation plan:
+## Change
 
-1. Preserve the actual normalized CSR occupancy value per property.
-   - For `pr_p_occupanc_1` through `pr_p_occupanc_5`, store one of:
-     - `Owner Occupied`
-     - `Tenant / Other`
-     - `Vacant`
-     - `NA`
-     - empty only when truly missing/unknown
-   - Keep the existing boolean/glyph aliases:
-     - `pr_p_occupancySt_N_yes`
-     - `pr_p_occupancySt_N_no`
-     - `pr_p_occupancySt_N_yes_glyph`
-     - `pr_p_occupancySt_N_no_glyph`
-   - YES remains true only for exact `Owner Occupied`; NO remains true for every other value.
+In `supabase/functions/generate-document/index.ts`:
 
-2. Strengthen the post-render RE851D owner-occupied safety pass.
-   - Reuse the same robust property-boundary approach as the template preprocessor:
-     - Prefer `PROPERTY INFORMATION` anchors.
-     - Fall back to `PROPERTY #1` … `PROPERTY #5` headings when needed.
-     - Cap to properties 1–5.
-   - This ensures property #1 through #5 are independently scoped.
+### 1. Publish single alias `pr_p_currentBalanc`
+Inside the existing aggregation loop (around line 2235, where `pr_li_lienCurrenBalanc` is set for `field === "current_balance"`), additionally set:
 
-3. Replace the owner-occupied control finder with a local pair-based resolver.
-   - For each `OWNER OCCUPIED` anchor inside a property region:
-     - Find the local Yes label and No label only within that property block.
-     - Locate the checkbox control closest to each label, supporting both:
-       - native Word SDT checkbox blocks (`<w:sdt>...<w14:checkbox>...`)
-       - bare glyph runs (`☐`, `☑`, `☒`)
-     - Prefer the nearest control to each label instead of blindly choosing the last SDT in a large backward window.
-     - Ensure the selected Yes and No controls are different before rewriting.
+```ts
+fieldValues.set("pr_p_currentBalanc", { rawValue: aggregated, dataType: "currency" });
+```
 
-4. Rewrite both the visible glyph and native Word checkbox state.
-   - For SDT checkbox controls, update:
-     - `<w14:checked w14:val="1|0">`
-     - the inner `<w:sdtContent>` glyph
-   - For bare glyph runs, update the glyph directly.
-   - Use one mutually-exclusive branch per property:
-     - if `pr_p_occupanc_N === "Owner Occupied"`: YES checked, NO unchecked
-     - else: YES unchecked, NO checked
+This mirrors the existing newline-joined behaviour (one value per lien) so single-lien deals show the entered value verbatim and multi-lien deals show each on its own line.
 
-5. Add targeted diagnostics for future verification.
-   - Log how many owner-occupied YES/NO pairs were forced per document part.
-   - Include property index and resolved occupancy in debug logging where useful.
+### 2. Publish per-property aliases `pr_p_currentBalanc_N`
+Inside the RE851D per-property loop (around line 928, after `pr_p_totalSenior_${idx}` is set), build a per-property aggregated string by:
 
-Expected result:
+- Walking all `lienK.current_balance` entries
+- Reading the matching `lienK.property` value
+- Matching it against `property{N}` (by index name) or against `property{N}.address` (case-insensitive) — same matching used at lines 988–991
+- Joining matched lien current balance raw strings with `\n`
 
-- Property #1 uses `pr_p_occupanc_1` only.
-- Property #2 uses `pr_p_occupanc_2` only.
-- Property #3 uses `pr_p_occupanc_3` only.
-- Property #4 uses `pr_p_occupanc_4` only.
-- Property #5 uses `pr_p_occupanc_5` only.
-- Only one checkbox is selected per property.
-- YES is checked only for `Owner Occupied`.
-- NO is checked for `Tenant / Other`, `Vacant`, `NA`, empty, or any other non-owner value.
-- No double selection in the generated Word output.
+Then publish:
+
+```ts
+fieldValues.set(`pr_p_currentBalanc_${idx}`, { rawValue: joined, dataType: "currency" });
+```
+
+Only set when at least one lien matches that property (so unused indices stay blank, matching the existing per-index publisher contract).
+
+### 3. No schema, UI, or RLS changes
+The Current Balance UI key (`property1.lien_current_balance` / `lienK.current_balance`) and storage are untouched. Only the document-generator alias publisher gains two new output keys.
+
+## Acceptance criteria
+
+- Template tag `{{pr_p_currentBalanc}}` renders the Current Balance value entered under Property → Liens (newline-joined when multiple liens exist).
+- Template tags `{{pr_p_currentBalanc_1}}` … `{{pr_p_currentBalanc_5}}` render only the lien current balances belonging to that specific property, with no cross-property bleed.
+- Existing `pr_li_lienCurrenBalanc` and `property1.lien_current_balance` outputs are unchanged.
+- No regressions in RE851A / RE851D / RE885 generation.

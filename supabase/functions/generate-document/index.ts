@@ -2246,6 +2246,12 @@ async function generateSingleDocument(
           debugLog(`[generate-document] Multi-lien bridged ${field} -> ${prLiKey} (${entries.length} liens)`);
         }
 
+        // Also publish pr_p_currentBalanc alias (template tag for Property -> Liens Current Balance)
+        if (field === "current_balance") {
+          fieldValues.set("pr_p_currentBalanc", { rawValue: aggregated, dataType: "currency" });
+          debugLog(`[generate-document] Published pr_p_currentBalanc (${entries.length} liens)`);
+        }
+
         // Set li_* key with aggregated value
         const liKey = lienFieldToLiKeys[field];
         if (liKey) {
