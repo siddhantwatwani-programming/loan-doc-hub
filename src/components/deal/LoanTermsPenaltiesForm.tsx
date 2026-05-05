@@ -688,6 +688,28 @@ const PrepaymentPenaltySection: React.FC<{
       </DirtyFieldWrapper>
 
         <div className="space-y-3">
+          <DirtyFieldWrapper fieldKey={`${prefix}.principal_paydown_type`}>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm min-w-[160px] max-w-[160px]">Principal Paydown Type</Label>
+              <div className="flex-1 min-w-0">
+                <Select
+                  value={values[`${prefix}.principal_paydown_type`] || ''}
+                  onValueChange={(val) => onValueChange(`${prefix}.principal_paydown_type`, val)}
+                  disabled={disabled || !isEnabled}
+                >
+                  <SelectTrigger className="h-7 text-sm">
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {PRINCIPAL_PAYDOWN_TYPE_OPTIONS.map(opt => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </DirtyFieldWrapper>
+
           <DirtyFieldWrapper fieldKey={`${prefix}.first_years`}>
             <div className="flex flex-wrap items-center gap-2 text-sm text-foreground">
               <span className="whitespace-nowrap">A Principal paydown in the first</span>
