@@ -422,8 +422,8 @@ export const DealsPage: React.FC = () => {
               : 'Create your first file to get started'}
           </p>
           {!hasActiveFilters && !searchQuery && (
-            <Button onClick={() => navigate('/deals/new')}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={handleCreateDeal} disabled={creating}>
+              {creating ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
               Create File
             </Button>
           )}
