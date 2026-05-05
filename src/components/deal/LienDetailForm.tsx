@@ -213,7 +213,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Source of Information</Label>
               <Select value={lien.sourceOfInformation || undefined} onValueChange={(val) => onChange('sourceOfInformation', val)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select source" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
+                <SelectContent className="bg-background border border-border z-[9999]">
                   {SOURCE_OF_INFORMATION_OPTIONS.map(opt => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
@@ -227,7 +227,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Related Property</Label>
               <Select value={lien.property} onValueChange={(val) => onChange('property', val)} disabled={disabled}>
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select property" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
+                <SelectContent className="bg-background border border-border z-[9999]">
                   <SelectItem value="unassigned">Unassigned</SelectItem>
                   {propertyOptions.map(opt => (
                     <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
@@ -242,7 +242,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Loan Type</Label>
               <Select value={lien.loanTypeDropdown || undefined} onValueChange={(val) => onChange('loanTypeDropdown', val)} disabled={disabled || isThisLoan}>
                 <SelectTrigger className={`h-7 text-sm flex-1 ${isThisLoan ? 'opacity-50 bg-muted cursor-not-allowed' : ''}`}><SelectValue placeholder="Select type" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
+                <SelectContent className="bg-background border border-border z-[9999]">
                   {LOAN_TYPE_DROPDOWN_OPTIONS.map(opt => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
@@ -260,7 +260,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
                 disabled={disabled}
               >
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
+                <SelectContent className="bg-background border border-border z-[9999]">
                   <SelectItem value="This Loan">This Loan</SelectItem>
                   <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
@@ -286,7 +286,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
                 disabled={disabled}
               >
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-50">
+                <SelectContent className="bg-background border border-border z-[9999]">
                   <SelectItem value="Payoff">Payoff</SelectItem>
                   <SelectItem value="Paydown">Paydown</SelectItem>
                   <SelectItem value="Remain">Remain</SelectItem>
