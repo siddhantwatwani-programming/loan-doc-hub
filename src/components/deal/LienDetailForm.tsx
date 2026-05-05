@@ -29,7 +29,7 @@ interface LienDetailFormProps {
   loanValues?: Record<string, string>;
 }
 
-const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Title / Prelim', 'Lender', 'Broker'];
+const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
