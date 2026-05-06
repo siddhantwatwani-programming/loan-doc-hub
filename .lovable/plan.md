@@ -1,32 +1,59 @@
-## Fix RE851D "Are there multiple properties on the loan?" YES/NO checkbox
+## Findings
 
-### Root cause
-The publisher (`pr_p_multipleProperties_{yes,no}_glyph`) and four `field_dictionary` rows already exist. Inspecting the generated `Re851d_v11.docx` shows the merge-tag span resolved to empty (`...preserve"> YES    NO`) — the glyph runs were stripped between parser → glyph→SDT converter → shield, so neither box renders.
+I reviewed the uploaded mapped template and generated RE851D output, plus the current document-generation code and live CSR data for loan `DL-2026-0235`.
 
-Every other RE851D YES/NO pair (Remain-Unpaid, Owner-Occupied, Cure-Delinquency, Property Type) already has a **post-render label-anchored safety pass** that guarantees a glyph survives. Multiple-Properties is the only one missing one.
+Root cause:
 
-### Change (additive only)
-Insert one new safety-pass block in `supabase/functions/generate-document/index.ts`, immediately after the "Remain Unpaid" pass and before the "Owner-Occupied" pass (~line 3777). The block:
+- The template uses `{{#if (eq pr_p_performeBy_N "Broker")}}...{{/if}}` correctly inside each PROPERTY section.
+- The `_N -> _1/_2/_3...` preprocessor already includes `pr_p_performeBy_N` in its indexed tag allowlist.
+- The live CSR data currently has:
+  - `property1` Performed By = `Broker`
+  - `property2` Performed By = `Third Party`
+  - no saved Performed By value found for properties 3-5 in the database query
+- The generator publishes `pr_p_performedBy_1` and mirrors to legacy misspelled `pr_p_performeBy_1`, but it only publishes the misspelled alias when the canonical `pr_p_performedBy_N` exists.
+- The CSR field dictionary key is already the legacy key `pr_p_performeBy`, so for composite keys like `property2::field_id`, the bridge creates `property2.appraisal_performed_by` but does not reliably create canonical `pr_p_performedBy_2`. As a result, the mirror path can miss `pr_p_performeBy_2`.
+- The anti-fallback shield does not currently include `pr_p_performeBy` / `pr_p_performedBy`, so a missing `pr_p_performeBy_2` can fall back to the base `pr_p_performeBy` value from Property #1 (`Broker`), causing every PROPERTY block to render “BPO Performed by Broker” / “N/A”.
 
-- Anchors on text `Are there multiple properties on the loan` (global, not per-property).
-- Picks the next 2 glyph runs (`☐|☑|☒`) within a 4 KB window using the same `glyphRunRe` regex used by sibling passes.
-- Skips any glyph that overlaps an already-queued rewrite (`rewrites` / `consumed`).
-- Forces YES/NO based on `sortedPropIndices.length`: `>1` → YES ☑ NO ☐; `==1` → YES ☐ NO ☑.
-- Logs `RE851D multiple-properties YES/NO anchored: count=N isMultiple=…`.
+## Plan
 
-The original publisher (lines 929–937) and dictionary rows remain primary; this pass is a pure fallback.
+1. Update only `supabase/functions/generate-document/index.ts` in the existing RE851D multi-property publisher.
 
-### Out of scope
-- No template, UI, schema, API, packet, or other-template changes.
-- No new field_dictionary rows.
-- No changes to the publisher, anti-fallback shield, glyph→SDT converter, or any unrelated RE851D pass.
+2. Make Performed By publishing explicit and bidirectional per property:
+   - For each `propertyK`, read the source value from `propertyK.appraisal_performed_by`.
+   - Publish both aliases:
+     - `pr_p_performedBy_K`
+     - `pr_p_performeBy_K`
+   - Do this per index only; no cross-property fallback.
 
-### Acceptance
-- Loan DL-2026-0235 (3 properties) → YES ☑, NO ☐.
-- Single-property deal → YES ☐, NO ☑.
-- Zero-property deal → unchanged (no rewrite).
-- All other RE851D outputs identical to current.
+3. Add Performed By to the existing RE851D anti-fallback shield:
+   - Add `pr_p_performedBy`
+   - Add `pr_p_performeBy`
+   - This ensures missing values for Property #K become blank instead of falling back to Property #1/base values.
 
-### Files modified
-1. `supabase/functions/generate-document/index.ts` — insert ~55-line safety pass block in the existing RE851D post-rewrite section (~line 3777).
-2. Memory: append safety-pass note to `mem://features/document-generation/re851d-multiple-properties-checkbox`.
+4. Add Performed By keys to the RE851D `effectiveValidFieldKeys` suffixed-key seed:
+   - `pr_p_performedBy_1..5`
+   - `pr_p_performeBy_1..5`
+   - This makes the conditional resolver treat each indexed tag as an exact field key and prevents resolver fallback to the unsuffixed field.
+
+5. Keep the template logic unchanged:
+   - `{{#if (eq pr_p_performeBy_N "Broker")}}BPO Performed by Broker{{/if}}`
+   - `{{#if (eq pr_p_performeBy_N "Broker")}}N/A{{/if}}`
+   - The preprocessor will continue to rewrite `_N` to `_1`, `_2`, `_3`, `_4`, `_5` based on the PROPERTY section.
+
+6. Update the existing project memory for RE851D Performed By mapping to record the no-fallback requirement.
+
+## Expected result
+
+For loan `DL-2026-0235` with current data:
+
+```text
+Property #1 pr_p_performeBy_1 = Broker      -> BPO Performed by Broker / N/A prints
+Property #2 pr_p_performeBy_2 = Third Party -> conditional false, blank output
+Property #3 pr_p_performeBy_3 = blank/missing -> conditional false, blank output
+Property #4 pr_p_performeBy_4 = blank/missing -> conditional false, blank output
+Property #5 pr_p_performeBy_5 = blank/missing -> conditional false, blank output
+```
+
+If Property #3 is later set to `Broker`, then only Property #3 will print the Broker text; it will not affect any other PROPERTY section.
+
+No UI, schema, API, template, unrelated document-generation logic, or database migration changes are planned.

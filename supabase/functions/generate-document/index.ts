@@ -1013,13 +1013,23 @@ async function generateSingleDocument(
             fieldValues.set(`${prKey}_${idx}`, { rawValue: v.rawValue, dataType: v.dataType });
           }
         }
-        // Legacy alias mirror: template uses misspelled `pr_p_performeBy_N`.
-        // Mirror the canonical `pr_p_performedBy_N` value so existing tags resolve
-        // without requiring a template edit. Per-index, no cross-bleed.
+        // Per-property "Performed By" — read directly from
+        // property{N}.appraisal_performed_by and publish BOTH the canonical
+        // `pr_p_performedBy_<N>` and the legacy misspelled
+        // `pr_p_performeBy_<N>` aliases so the template's
+        // `{{#if (eq pr_p_performeBy_N "Broker")}}` conditional resolves
+        // strictly per-property. No cross-property fallback: indices without
+        // a saved value publish nothing here and are blanked by the
+        // anti-fallback shield below so the conditional sees an empty
+        // string and renders no text in that PROPERTY block.
         {
-          const pb = fieldValues.get(`pr_p_performedBy_${idx}`);
-          if (pb && pb.rawValue) {
-            fieldValues.set(`pr_p_performeBy_${idx}`, { rawValue: pb.rawValue, dataType: pb.dataType || "text" });
+          const perfRaw = fieldValues.get(`property${idx}.appraisal_performed_by`)
+            || fieldValues.get(`pr_p_performedBy_${idx}`)
+            || fieldValues.get(`pr_p_performeBy_${idx}`);
+          if (perfRaw && perfRaw.rawValue !== undefined && perfRaw.rawValue !== null && perfRaw.rawValue !== "") {
+            const dt = perfRaw.dataType || "text";
+            fieldValues.set(`pr_p_performedBy_${idx}`, { rawValue: perfRaw.rawValue, dataType: dt });
+            fieldValues.set(`pr_p_performeBy_${idx}`, { rawValue: perfRaw.rawValue, dataType: dt });
           }
         }
         // Annual property tax (UI: propertytax.annual_payment) per property
