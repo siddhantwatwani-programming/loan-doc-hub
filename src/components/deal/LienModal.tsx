@@ -236,7 +236,7 @@ export const LienModal: React.FC<LienModalProps> = ({ open, onOpenChange, lien, 
           <DialogHeader className="shrink-0">
             <DialogTitle className="flex items-center gap-2 text-sm">
               <Home className="h-4 w-4 text-primary" />
-              {isEdit ? 'Edit Property Lien' : 'New Property Lien'}
+              Lien Details
             </DialogTitle>
           </DialogHeader>
 
