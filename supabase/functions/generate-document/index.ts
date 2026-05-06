@@ -2429,6 +2429,8 @@ async function generateSingleDocument(
           howMany: number;
           currentDelinq: boolean;
           source: string[];
+          hasLien: boolean;
+          allPaidOff: boolean;
         }> = {};
 
         const truthy = (v: unknown) => {
@@ -2446,18 +2448,27 @@ async function generateSingleDocument(
           return "";
         };
 
+        const parseMoney = (s: string): number => {
+          const n = parseFloat(String(s ?? "").replace(/[$,\s]/g, ""));
+          return Number.isFinite(n) ? n : NaN;
+        };
+
         orderedLiens.forEach((prefix, i) => {
           const lienIdx = i + 1;
           const paidByLoanRaw = getLienVal(prefix, "paid_by_loan", "paidByLoan");
           const paidByLoan = truthy(paidByLoanRaw);
           const howManyRaw = getLienVal(prefix, "delinquencies_how_many", "delinquenciesHowMany").trim();
           const howManyNum = parseInt(howManyRaw, 10);
-          const has60Raw = getLienVal(prefix, "delinquencies_60day", "delinquencies60day");
-          const has60 = truthy(has60Raw)
-            || (Number.isFinite(howManyNum) && howManyNum > 0);
-          const currentDelinq = truthy(getLienVal(prefix, "currently_delinquent", "currentlyDelinquent"));
+          // Spec: Q2 strictly = (delinquencies_how_many > 0)
+          const has60 = Number.isFinite(howManyNum) && howManyNum > 0;
+          // Spec: Q4 strictly = (new_remaining_balance > 0)
+          const remBalRaw = getLienVal(prefix, "new_remaining_balance", "newRemainingBalance", "remaining_balance");
+          const remBalNum = parseMoney(remBalRaw);
+          const currentDelinq = Number.isFinite(remBalNum) && remBalNum > 0;
+          // Spec: Q1 = paid_off (slt_paid_off checkbox)
+          const paidOff = truthy(getLienVal(prefix, "slt_paid_off", "sltPaidOff"));
           const source = getLienVal(prefix, "source_of_payment", "sourceOfPayment").trim();
-          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" has60="${has60Raw}" howMany="${howManyRaw}" currentDelinq=${currentDelinq} source="${source}"`);
+          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" howMany="${howManyRaw}" remBal="${remBalRaw}" paidOff=${paidOff} has60=${has60} currentDelinq=${currentDelinq} source="${source}"`);
 
           // Per-lien-index aliases
           const setBool = (k: string, v: boolean) =>
@@ -2484,9 +2495,11 @@ async function generateSingleDocument(
           if (pm) {
             const pIdx = parseInt(pm[1], 10);
             if (!perProp[pIdx]) {
-              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [] };
+              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [], hasLien: false, allPaidOff: true };
             }
             const b = perProp[pIdx];
+            b.hasLien = true;
+            if (!paidOff) b.allPaidOff = false;
             if (paidByLoan) b.paidByLoan = true;
             if (has60) b.delinq60 = true;
             if (currentDelinq) b.currentDelinq = true;
