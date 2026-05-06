@@ -2518,8 +2518,19 @@ async function generateSingleDocument(
           const howManyNum = parseInt(howManyRaw, 10);
           // Spec: Q2 strictly = (delinquencies_how_many > 0)
           const has60 = Number.isFinite(howManyNum) && howManyNum > 0;
-          // Spec: Q4 strictly = (new_remaining_balance > 0)
-          const remBalRaw = getLienVal(prefix, "new_remaining_balance", "newRemainingBalance", "remaining_balance");
+          // Spec: Q4 = "Do any of these payments remain unpaid?" — TRUE when any
+          // remaining-balance-style field on the lien is > 0. The visible UI label
+          // "Remaining Balance" persists to existing_payoff_amount; "Anticipated
+          // Balance (if new lien)" persists to new_remaining_balance; "If
+          // Delinquent" amount persists to currently_delinquent_amount. Honor all
+          // three so user-entered data wins regardless of which field they used.
+          const remBalRaw = getLienVal(
+            prefix,
+            "existing_payoff_amount", "existingPayoffAmount",
+            "new_remaining_balance", "newRemainingBalance",
+            "remaining_balance",
+            "currently_delinquent_amount", "currentlyDelinquentAmount",
+          );
           const remBalNum = parseMoney(remBalRaw);
           const currentDelinq = Number.isFinite(remBalNum) && remBalNum > 0;
           // Spec: Q1 = paid_off (slt_paid_off checkbox)
@@ -2616,6 +2627,25 @@ async function generateSingleDocument(
           if ((existing === undefined || String(existing).trim() === "") && b.howMany > 0) {
             fieldValues.set(pPropKey, { rawValue: String(b.howMany), dataType: "number" });
           }
+
+          // ── pr_p_* per-property compatibility aliases ──
+          // Some RE851D template variants use the older property-questionnaire
+          // tag family (pr_p_*) instead of the newer pr_li_* family. Mirror the
+          // same per-property values to those tags so existing templates render
+          // without any template edits. Strict: only sets aliases, never reads.
+          const mirrorPP = (base: string, val: boolean) => {
+            fieldValues.set(`pr_p_${base}_${pIdx}`,           { rawValue: val ? "true" : "", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_yes`,       { rawValue: val ? "true" : "false", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_no`,        { rawValue: val ? "false" : "true", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_yes_glyph`, { rawValue: val ? "☒" : "☐", dataType: "text" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_no_glyph`,  { rawValue: val ? "☐" : "☒", dataType: "text" });
+          };
+          mirrorPP("encumbranceOfRecord", encOfRecord);
+          mirrorPP("delinqu60day", b.delinq60);
+          mirrorPP("currentDelinqu", b.currentDelinq);
+          mirrorPP("paidByLoan", b.paidByLoan);
+          fieldValues.set(`pr_p_sourceOfPaymen_${pIdx}`, { rawValue: b.source.join("\n"), dataType: "text" });
+          fieldValues.set(`pr_p_sourceOfPayment_${pIdx}`, { rawValue: b.source.join("\n"), dataType: "text" });
 
           if (pIdx === 1) {
             // Bare aliases for templates referencing keys without _N
@@ -3156,6 +3186,20 @@ async function generateSingleDocument(
           "pr_li_encumbranceOfRecord_N",
           "pr_li_encumbranceOfRecord_N_yes", "pr_li_encumbranceOfRecord_N_no",
           "pr_li_encumbranceOfRecord_N_yes_glyph", "pr_li_encumbranceOfRecord_N_no_glyph",
+          // pr_p_* compatibility aliases for older RE851D template variants
+          "pr_p_encumbranceOfRecord_N_yes_glyph", "pr_p_encumbranceOfRecord_N_no_glyph",
+          "pr_p_encumbranceOfRecord_N_yes", "pr_p_encumbranceOfRecord_N_no",
+          "pr_p_encumbranceOfRecord_N",
+          "pr_p_delinqu60day_N_yes_glyph", "pr_p_delinqu60day_N_no_glyph",
+          "pr_p_delinqu60day_N_yes", "pr_p_delinqu60day_N_no",
+          "pr_p_delinqu60day_N",
+          "pr_p_currentDelinqu_N_yes_glyph", "pr_p_currentDelinqu_N_no_glyph",
+          "pr_p_currentDelinqu_N_yes", "pr_p_currentDelinqu_N_no",
+          "pr_p_currentDelinqu_N",
+          "pr_p_paidByLoan_N_yes_glyph", "pr_p_paidByLoan_N_no_glyph",
+          "pr_p_paidByLoan_N_yes", "pr_p_paidByLoan_N_no",
+          "pr_p_paidByLoan_N",
+          "pr_p_sourceOfPaymen_N", "pr_p_sourceOfPayment_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
           // RE851D propertytax dotted-form _N tags. Order is critical: longer
           // matches FIRST so "delinquent_amount_N" wins before "delinquent_N".
@@ -5224,7 +5268,7 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen/gi;
+          const questionRe = /payments?\s+more\s+than\s+60\s*[-\s]?\s*days?\s+late|60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen|60\s+days?\s+late/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
