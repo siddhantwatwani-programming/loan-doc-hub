@@ -405,10 +405,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </DirtyFieldWrapper>
             {lien.sltDelinquent === 'true' && (
               <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquentDays}>
-                <div className="flex items-center gap-1">
-                  <Label className="text-xs text-muted-foreground"># of Days</Label>
-                  <Input value={lien.sltDelinquentDays} onChange={(e) => onChange('sltDelinquentDays', e.target.value)} disabled={disabled} className="h-7 text-sm w-20" />
-                </div>
+                <Input value={lien.sltDelinquentDays} onChange={(e) => onChange('sltDelinquentDays', e.target.value)} disabled={disabled} className="h-7 text-sm w-28" placeholder="# of Days" />
               </DirtyFieldWrapper>
             )}
           </div>
