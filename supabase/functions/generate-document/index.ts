@@ -716,15 +716,48 @@ async function generateSingleDocument(
     // merge-tag names the template expects. Templates may reference the dotted key
     // (`{{origination_esc.estimated_closing}}`) OR a flat alias (`{{of_re_estimatedClosing}}`).
     {
+      // Estimated Closing — bind to all known tag variants the template may use.
+      // DOCX engines often fail to resolve deep dot notation reliably, so we
+      // publish flat aliases as well.
       const ec = fieldValues.get("origination_esc.estimated_closing");
-      if (ec && ec.rawValue) {
-        if (!fieldValues.has("of_re_estimatedClosing")) {
-          fieldValues.set("of_re_estimatedClosing", { rawValue: ec.rawValue, dataType: ec.dataType || "date" });
-        }
-        if (!fieldValues.has("origination_esc_estimated_closing")) {
-          fieldValues.set("origination_esc_estimated_closing", { rawValue: ec.rawValue, dataType: ec.dataType || "date" });
+      if (ec && (ec.rawValue !== null && ec.rawValue !== undefined && ec.rawValue !== "")) {
+        const ecData = { rawValue: ec.rawValue, dataType: ec.dataType || "date" };
+        const ecAliases = [
+          "of_re_estimatedClosing",
+          "origination_esc_estimated_closing",
+          "estimatedClosing",
+          "estimated_closing",
+          "origination_esc.estimated_closing",
+        ];
+        for (const a of ecAliases) {
+          if (!fieldValues.has(a)) fieldValues.set(a, ecData);
         }
       }
+
+      // Credit Life / Disability Insurance Label — flat-key field (of_fe_creditLifediInsuraLabel)
+      // is loaded by id->key mapping; publish additional safe aliases to cover any
+      // template variant (legacy dot-notation or flat alternates). Source value is
+      // taken from the dictionary key first, then any pre-existing alias.
+      const clRaw =
+        fieldValues.get("of_fe_creditLifediInsuraLabel") ||
+        fieldValues.get("origination_fees.credit_life_disability_insurance_label") ||
+        fieldValues.get("creditLifeDisabilityInsurance_label");
+      if (clRaw && (clRaw.rawValue !== null && clRaw.rawValue !== undefined && clRaw.rawValue !== "")) {
+        const clData = { rawValue: clRaw.rawValue, dataType: clRaw.dataType || "text" };
+        const clAliases = [
+          "of_fe_creditLifediInsuraLabel",
+          "of_fe_creditLifeDisabilityInsuraLabel",
+          "of_fe_creditLifeDisabilityInsurance_label",
+          "creditLifeDisabilityInsurance_label",
+          "credit_life_disability_insurance_label",
+          "origination_fees.credit_life_disability_insurance_label",
+          "origination_fees_credit_life_disability_insurance_label",
+        ];
+        for (const a of clAliases) {
+          if (!fieldValues.has(a)) fieldValues.set(a, clData);
+        }
+      }
+
       const sd = fieldValues.get("of_re_subtotalDeductions") || fieldValues.get("origination_fees.re885_subtotal_deductions");
       if (sd && sd.rawValue) {
         if (!fieldValues.has("of_re_subtotalDeductions")) {
@@ -734,7 +767,13 @@ async function generateSingleDocument(
           fieldValues.set("origination_fees.re885_subtotal_deductions", { rawValue: sd.rawValue, dataType: sd.dataType || "currency" });
         }
       }
-      console.log(`[generate-document] RE885 alias publisher: of_re_estimatedClosing="${fieldValues.get("of_re_estimatedClosing")?.rawValue ?? ""}" of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}"`);
+      console.log(
+        `[generate-document] RE885 alias publisher: ` +
+          `of_re_estimatedClosing="${fieldValues.get("of_re_estimatedClosing")?.rawValue ?? ""}" ` +
+          `origination_esc.estimated_closing="${fieldValues.get("origination_esc.estimated_closing")?.rawValue ?? ""}" ` +
+          `of_fe_creditLifediInsuraLabel="${fieldValues.get("of_fe_creditLifediInsuraLabel")?.rawValue ?? ""}" ` +
+          `of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}"`
+      );
 
       // RE885 Proposed Loan Term unit -> mutually exclusive boolean checkboxes.
       // UI persists single text value `of_re_loanTermUnit` ('years'|'months').
