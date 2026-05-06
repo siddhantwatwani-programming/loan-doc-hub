@@ -5268,7 +5268,7 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen/gi;
+          const questionRe = /payments?\s+more\s+than\s+60\s*[-\s]?\s*days?\s+late|60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen|60\s+days?\s+late/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
