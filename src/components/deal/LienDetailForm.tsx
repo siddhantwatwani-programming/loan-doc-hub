@@ -390,7 +390,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {renderCurrency('existingPaydownAmount', 'Paydown Amount')}
+          {renderCurrency('existingPaydownAmount', 'Paydown Amount', lien.existingPaydown !== 'true')}
 
           {renderCurrency('existingPayoffAmount', 'Remaining Balance')}
 
