@@ -81,6 +81,7 @@ export function findThisLoanLien(liens: LienData[]): LienData | undefined {
 export interface EquitySummary {
   propertyValue: number;
   seniorTotal: number;
+  juniorTotal: number;
   totalLiens: number;
   protectiveEquity: number;
   totalEquity: number;
@@ -96,17 +97,19 @@ export function computeEquity(
     : Number.POSITIVE_INFINITY;
 
   let seniorTotal = 0;
+  let juniorTotal = 0;
   let totalLiens = 0;
   for (const l of liens) {
     const bal = getRemainingBalance(l);
     totalLiens += bal;
-    if (parsePriority(l.lienPriorityNow) < thisLoanPriority) {
-      seniorTotal += bal;
-    }
+    const p = parsePriority(l.lienPriorityNow);
+    if (p < thisLoanPriority) seniorTotal += bal;
+    else if (p > thisLoanPriority) juniorTotal += bal;
   }
   return {
     propertyValue,
     seniorTotal,
+    juniorTotal,
     totalLiens,
     protectiveEquity: propertyValue - seniorTotal,
     totalEquity: propertyValue - totalLiens,

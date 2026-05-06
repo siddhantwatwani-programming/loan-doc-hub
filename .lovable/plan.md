@@ -1,38 +1,70 @@
-## Root Cause
+## Property → Liens — UI alignment + calculation completion
 
-The field dictionary entry for "Performed By" is `pr_p_performeBy` (legacy misspelling, no `d`) — confirmed via DB:
+### Scope (no schema, no new tables)
+All persistence flows through the existing `useDealFields` / `deal_section_values` JSONB save path keyed by `{lienId}.<field>`. No `field_dictionary` rows are added. Existing calculation engine (`src/lib/lienCalculationEngine.ts`) is reused.
 
-```
-field_key = pr_p_performeBy
-```
+---
 
-In `supabase/functions/generate-document/index.ts` the property composite-key bridge (lines ~290-298) translates `propertyN::<dictId>` → `propertyN.<suffix>` using the `prKeyToSuffix` map. That map only contains the canonical-spelled key:
+### 1. Lien Details form (`LienDetailForm.tsx`) — match screenshot
 
-```ts
-'pr_p_performedBy': 'appraisal_performed_by',   // line 257 — wrong spelling for the actual dict key
-```
+Today the form already renders 90% of the screenshot fields across 3 columns (Lien Details, middle balances column, Senior Lien Tracking). The visible deltas vs. the image:
 
-Because the dict's `field_key` is `pr_p_performeBy` (no `d`), `prKeyToSuffix[fieldDict.field_key]` returns `undefined` for properties #2–#5, so **`property2.appraisal_performed_by` … `property5.appraisal_performed_by` are never bridged**.
+- **Column 1 ordering** (top → bottom) will be reordered to:
+  Source of Information → Related Property → Loan Type → Lien Type Dropdown (renamed from current label) → Anticipated → Condition (relabel of current "Existing") → Lien Holder Name → Account Number → Phone → Recording Date → Recording Number → Maturity Date → Balloon → Y/N → Times 60-days Delinquent.
+- **Column 2** stays as-is and gains the screenshot's label tweak: "Anticipated Balance (if new lien)" (already present), and "Remaining Balance" (already present as `existingPayoffAmount`). No field add/remove.
+- **Column 3 (Senior Lien Tracking)** — already complete; only verifying labels match exactly ("Foreclosure: Date Filed", "Last Payment Made", "Next Payment Due", "Current Balance", "Request Submitted", "Response Received", "Borrower Notified", "Lender Notified").
+- **"This Loan" checkbox** above Source of Information will be moved to top-of-column #1 to match the screenshot's first row.
 
-Property #1 happens to work only because the legacy-key map already exposes `property1.appraisal_performed_by` directly (`indexed_key` path), so the per-property publisher at lines 1082-1088 finds it for idx=1 only. For idx≥2, no `propertyN.appraisal_performed_by` exists, the publisher falls through, and the anti-fallback shield blanks `pr_p_performeBy_2..5` — **but the conditional `{{#if (eq pr_p_performeBy_N "Broker")}}` then sees the un-suffixed `pr_p_performeBy` global value (Property #1's value) inherited as fallback**, so all sections show the same text.
+No `LienData` interface fields added. No new dictionary keys. Persistence is unchanged.
 
-## Fix (one-line bridge map addition)
+### 2. Add-Lien modal — both surfaces
 
-**File:** `supabase/functions/generate-document/index.ts`, line 257
+**a. `LienModal.tsx`** — already wraps `LienDetailForm`, so the column-1 reorder above flows in automatically. Only modal-specific change: nothing (it just renders `<LienDetailForm/>`).
 
-Add the misspelled key to `prKeyToSuffix` so the bridge works for the actual dictionary key. Keep the `performedBy` (correct spelling) entry for forward-compat:
+**b. `PropertyLiensForm.tsx`** (the legacy quick-add) — currently has duplicated rendering blocks (lines 145–262 are an accidental duplicate of 88–145). I will:
+- Remove the duplicated block.
+- Reorder fields to match the screenshot's column 1: Source of Information dropdown, Related Property, Loan Type, Lien Type Dropdown, Anticipated, Condition, Lien Holder Name, Account Number, Phone, Original Balance, Current Balance, Regular Payment, Last Checked.
+- Use the same `FIELD_KEYS` constants already in `fieldKeyMap.ts` — no new keys.
 
-```ts
-'pr_p_performedBy': 'appraisal_performed_by',
-'pr_p_performeBy':  'appraisal_performed_by',   // ← add this (matches actual dict field_key)
-```
+### 3. Calculations (already implemented — verify and harden)
 
-That single addition lets the bridge populate `property2.appraisal_performed_by` … `propertyN.appraisal_performed_by`. The existing per-property publisher (lines 1072-1090) then publishes `pr_p_performedBy_N` and `pr_p_performeBy_N` correctly per index, and the existing anti-fallback shield (line 1671) blanks the un-suffixed global so `_N` no longer falls back to Property #1.
+The four formulas are already coded in `src/lib/lienCalculationEngine.ts` and wired in `LienSectionContent.tsx` (lines 261–301). Verification work only:
 
-## Out of scope
-- No template change (template tags `pr_p_performeBy_N` already correct).
-- No schema, field-dictionary, UI, publisher-logic, or shield changes.
-- No change to `legacyKeyMap.ts` (only `property1.*` mapping is needed there; `propertyN::dictId` composite keys for N≥2 flow through the edge-function bridge).
+| Formula | Engine func | Wired? | Action |
+|---|---|---|---|
+| Remaining Balance auto-calc (Payoff=0, Remain=Current, Paydown=Current−Paydown) | `getRemainingBalance` | Yes (LienDetailForm useEffect lines 156–180) | Confirm; ensure value persists into `lien.newRemainingBalance` |
+| Lien Priority After (renumber juniors after Payoff/Paydown distribution by property value) | `distributePayoff` → `priorityAfter` | Yes (LienSectionContent line 278) | Confirm — write `${lienId}.lien_priority_after` ordinal |
+| Protective Equity = PropertyValue − Senior liens (priority < This Loan) | `computeEquity.protectiveEquity` | Yes (writes `${propertyId}.protective_equity`) | Confirm; ensure surfaced read-only on Property Details (already done) |
+| Junior/Senior totals (sum of liens above/below "This Loan") | `computeEquity.seniorTotal` / `totalLiens − seniorTotal` | Partially — only `seniorTotal` & `totalEquity` are written | **Add** writes for `${propertyId}.senior_liens_total` and `${propertyId}.junior_liens_total` so both totals can be read back into the UI |
 
-## Deploy
-Deploy `generate-document` edge function and regenerate RE851D for deal `db7517e9-…` to verify each PROPERTY block shows its own Performed By value.
+Junior total formula will be `equity.totalLiens - equity.seniorTotal - <thisLoanRemaining>`, computed in the same `useEffect` that already runs.
+
+### 4. Persistence
+
+No DB changes. All writes use the existing `onValueChange(key, value)` plumbing → `deal_section_values.field_values[key]`. Keys used:
+- `${lienId}.<field>` — already saved
+- `${propertyId}.protective_equity` — already saved
+- `${propertyId}.total_equity` — already saved
+- `${propertyId}.senior_liens_total` — **new key, same JSONB column**
+- `${propertyId}.junior_liens_total` — **new key, same JSONB column**
+
+(These two new strings live in the existing `deal_section_values.field_values` JSONB; no schema migration.)
+
+### Out of scope
+- No changes to `LiensTableView` columns
+- No changes to `LienData` interface
+- No changes to document generation / merge tags
+- No changes to RLS, dictionary, or migrations
+- No new APIs
+
+### Files to touch
+- `src/components/deal/LienDetailForm.tsx` — reorder column 1, move This-Loan checkbox to top, label tweaks
+- `src/components/deal/PropertyLiensForm.tsx` — delete duplicated render block, reorder
+- `src/components/deal/LienSectionContent.tsx` — add senior/junior total writes inside existing `useEffect`
+- `src/lib/lienCalculationEngine.ts` — extend `EquitySummary` with `juniorTotal` (pure helper, no behavior change for existing callers)
+
+### Acceptance
+- Form layout visually matches the screenshot's 3-column structure and label order.
+- Editing Current Balance / Paydown updates Remaining Balance live (already works).
+- Saving a lien persists through existing API; reopening shows the same values.
+- After save, `Lien Priority After`, `Protective Equity`, `Senior Liens Total`, `Junior Liens Total` recompute automatically per property and persist.
