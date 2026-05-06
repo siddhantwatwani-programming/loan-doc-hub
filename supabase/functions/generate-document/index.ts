@@ -1744,6 +1744,19 @@ async function generateSingleDocument(
         if (blanked.length > 0) {
           debugLog(`[generate-document] RE851D anti-fallback shield: blanked unpublished _N tags for indices [${blanked.join(", ")}]`);
         }
+        // ── RE851D bare performBy hard-blank ──
+        // If a `pr_p_performeBy_N` literal survives ALL rewrites (worst case:
+        // tag splits the safety pass cannot stitch), the resolver will fall
+        // back via canonical_key to the bare unsuffixed `pr_p_performeBy` /
+        // `pr_p_performedBy` field — which holds property #1's value and would
+        // make every PROPERTY block render Property #1's "Broker" output. To
+        // make the conditional render blank in that worst case (matching the
+        // spec: non-Broker / unresolved -> blank), force the bare key to "".
+        // This is RE851D-only and runs after per-index publishers, so the
+        // legitimate `_1`..`_5` entries are already in place and unaffected.
+        for (const bareKey of ["pr_p_performeBy", "pr_p_performedBy"]) {
+          fieldValues.set(bareKey, { rawValue: "", dataType: "text" });
+        }
       }
 
       // ── RE851D final encumbrance state log ──
@@ -3865,6 +3878,60 @@ async function generateSingleDocument(
               consumed.push([start, end]);
               bumpRegion(region.id);
               totalRewrites++;
+            }
+          }
+
+          // ── RE851D pr_p_performeBy_N targeted safety rewrite ──
+          // Some authored RE851D templates split the
+          // `{{#if (eq pr_p_performeBy_N "Broker")}}` opener across multiple
+          // <w:r> runs. After normalizeWordXml the literal `pr_p_performeBy_N`
+          // is contiguous again, but if a glyph/whitespace artifact prevented
+          // the main region rewriter from matching it, the literal `_N` survives
+          // and the resolver falls back via canonical_key to the bare
+          // `pr_p_performeBy` field — which holds property #1's value, causing
+          // every PROPERTY block to render Broker's BPO/N/A lines.
+          // This pass scans for ANY remaining literal occurrences (both the
+          // canonical and legacy-misspelled aliases) and rewrites _N -> _K
+          // based on the PROPERTY region the offset sits in. If the offset is
+          // outside all detected PROPERTY ranges (shouldn't happen given the
+          // log shows all 5 detected, but defensive), fall back to occurrence
+          // pair index (occurrences 1+2 -> property 1, 3+4 -> property 2, ...).
+          {
+            const performByTagRe = /\bpr_p_perform(?:e|ed)By_N\b/g;
+            const literalHits: Array<{ start: number; end: number; matched: string }> = [];
+            let pm: RegExpExecArray | null;
+            while ((pm = performByTagRe.exec(xml)) !== null) {
+              const s = pm.index;
+              const e = s + pm[0].length;
+              if (isConsumed(s, e)) continue;
+              literalHits.push({ start: s, end: e, matched: pm[0] });
+            }
+            if (literalHits.length > 0) {
+              let pairCounter = 0;
+              let lastPropOfPair = 0;
+              for (const hit of literalHits) {
+                let pIdx: number | null = null;
+                for (const p of regions.props) {
+                  if (hit.start >= p.range[0] && hit.start < p.range[1]) {
+                    pIdx = p.k;
+                    break;
+                  }
+                }
+                if (pIdx === null) {
+                  // Pair fallback: 1st & 2nd literal -> property 1, etc.
+                  pairCounter++;
+                  const pair = Math.ceil(pairCounter / 2);
+                  pIdx = Math.min(Math.max(pair, 1), 5);
+                  lastPropOfPair = pIdx;
+                }
+                const replacement = hit.matched.replace(/_N$/, `_${pIdx}`);
+                rewrites.push({ start: hit.start, end: hit.end, replacement });
+                consumed.push([hit.start, hit.end]);
+                totalRewrites++;
+              }
+              try {
+                debugLog(`[generate-document] RE851D performBy targeted rewrite: ${literalHits.length} literal _N occurrence(s) reindexed`);
+              } catch (_) { /* ignore */ }
             }
           }
 
