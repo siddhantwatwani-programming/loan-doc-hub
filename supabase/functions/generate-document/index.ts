@@ -4308,9 +4308,6 @@ async function generateSingleDocument(
           const m = k.match(/^property(\d+)\./i);
           if (m) _propIdxSet.add(parseInt(m[1], 10));
         }
-        // If any property records exist, the count is the number of distinct
-        // indices; if none were detected, default to 1 (matches publisher
-        // semantics elsewhere).
         const propCount = _propIdxSet.size > 0 ? _propIdxSet.size : 1;
         const isMultipleQ = propCount > 1;
 
@@ -4320,25 +4317,29 @@ async function generateSingleDocument(
         const rezip3: fflate.Zippable = {};
         let didMutate3 = false;
 
-        // Match either supported question text. Also accept the template's
-        // current variant ("IS THERE ADDITIONAL SECURING PROPERTY") which the
-        // earlier in-render safety pass did not anchor on.
-        const questionRe = /(?:Are there multiple properties on the loan|IS\s+THERE\s+ADDITIONAL\s+SECURING\s+PROPERTY)/gi;
-        const yesLabelReM = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*YES\s*<\/w:t>/gi;
-        const noLabelReM  = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*NO\s*<\/w:t>/gi;
+        const sdtCheckboxReM = /<w:sdt\b[\s\S]*?<\/w:sdt>/g;
         const glyphRunReM = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
-        const sdtCheckboxReM = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
+        const inlineGlyphInWtReM = /<w:t(?:\s[^>]*)?>[^<]*([☐☑☒])[^<]*<\/w:t>/g;
 
         const rewriteSdtCheckedM = (block: string, checked: boolean): string => {
+          if (!/<w14:checkbox\b/.test(block)) return block;
           const val = checked ? "1" : "0";
           const glyph = checked ? "\u2611" : "\u2610";
-          let next = block.replace(
-            /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
-            `$1${val}$2`,
-          );
+          let next = block;
+          if (/<w14:checked\b[^/]*?w14:val="[01]"\s*\/?>/.test(next)) {
+            next = next.replace(
+              /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
+              `$1${val}$2`,
+            );
+          } else {
+            next = next.replace(
+              /(<w14:checkbox\b[^>]*>)/,
+              `$1<w14:checked w14:val="${val}"/>`,
+            );
+          }
           next = next.replace(
-            /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
-            `$1${glyph}$3`,
+            /(<w:sdtContent\b[\s\S]*?<w:t(?:\s[^>]*)?>)([\s\S]*?)(<\/w:t>)/,
+            (_m, open, _inner, close) => `${open}${glyph}${close}`,
           );
           return next;
         };
@@ -4353,10 +4354,45 @@ async function generateSingleDocument(
             continue;
           }
           let xml = decoder3.decode(bytes);
-          if (
-            !/Are there multiple properties on the loan/i.test(xml) &&
-            !/ADDITIONAL\s+SECURING\s+PROPERTY/i.test(xml)
-          ) {
+
+          // Build a visible-text projection with an offset map back into xml.
+          // This handles Word splitting visible text across multiple <w:t>
+          // runs and intervening tags.
+          const buf: string[] = [];
+          const map: number[] = [];
+          {
+            let i = 0;
+            while (i < xml.length) {
+              if (xml[i] === "<") {
+                const e = xml.indexOf(">", i);
+                if (e === -1) break;
+                const prev = buf.length ? buf[buf.length - 1] : "";
+                if (prev !== " " && prev !== "") {
+                  buf.push(" ");
+                  map.push(i);
+                }
+                i = e + 1;
+                continue;
+              }
+              buf.push(xml[i]);
+              map.push(i);
+              i++;
+            }
+          }
+          const txt = buf.join("");
+          const txtToXml = (ti: number) =>
+            ti < 0 ? 0 : ti >= map.length ? xml.length : map[ti];
+
+          // Detect supported labels in visible text.
+          const questionReTxt = /(?:Are\s+there\s+multiple\s+properties\s+on\s+the\s+loan|IS\s+THERE\s+ADDITIONAL\s+SECURING\s+PROPERTY)/gi;
+          const questionHits: Array<{ ti: number; len: number }> = [];
+          let qmt: RegExpExecArray | null;
+          while ((qmt = questionReTxt.exec(txt)) !== null) {
+            questionHits.push({ ti: qmt.index, len: qmt[0].length });
+            if (qmt.index === questionReTxt.lastIndex) questionReTxt.lastIndex++;
+          }
+
+          if (questionHits.length === 0) {
             rezip3[filename] = [bytes, { level: 0 }];
             continue;
           }
@@ -4368,6 +4404,7 @@ async function generateSingleDocument(
             const sdtRe = new RegExp(sdtCheckboxReM.source, "g");
             let sm: RegExpExecArray | null;
             while ((sm = sdtRe.exec(slice)) !== null) {
+              if (!/<w14:checkbox\b/.test(sm[0])) continue;
               ctrls.push({
                 idx: winStart + sm.index,
                 end: winStart + sm.index + sm[0].length,
@@ -4389,68 +4426,125 @@ async function generateSingleDocument(
 
           type Rewrite3 = { start: number; end: number; replacement: string };
           const rewrites: Rewrite3[] = [];
+          // Inline glyph rewrites (when label+glyph share one <w:t> run).
+          type InlineRw = { start: number; end: number; replacement: string };
+          const inlineRewrites: InlineRw[] = [];
 
-          questionRe.lastIndex = 0;
-          let qm: RegExpExecArray | null;
-          let occurrence = 0;
-          while ((qm = questionRe.exec(xml)) !== null) {
-            occurrence += 1;
-            const qStart = qm.index;
-            // Bound the search window to the next question or +3KB.
-            const tmpQ = new RegExp(questionRe.source, "gi");
-            tmpQ.lastIndex = qStart + qm[0].length;
-            const nextQ = tmpQ.exec(xml);
-            const winEnd = Math.min(nextQ ? nextQ.index : xml.length, qStart + 3000);
+          // Find YES/NO label offsets in visible text.
+          const yesLabelReTxt = /\b(YES|Yes)\b/g;
+          const noLabelReTxt = /\b(NO|No)\b/g;
 
-            yesLabelReM.lastIndex = qStart;
-            noLabelReM.lastIndex = qStart;
-            const yL = yesLabelReM.exec(xml);
-            const nL = noLabelReM.exec(xml);
-            if (!yL || !nL) continue;
-            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+          for (let qi = 0; qi < questionHits.length; qi++) {
+            const q = questionHits[qi];
+            const qTxtEnd = q.ti + q.len;
+            const nextQTxt = qi + 1 < questionHits.length ? questionHits[qi + 1].ti : txt.length;
+            const winTxtEnd = Math.min(nextQTxt, qTxtEnd + 600); // ~600 visible chars
+            const winText = txt.slice(qTxtEnd, winTxtEnd);
 
-            const ctrls = collectControls(qStart, winEnd);
-            if (ctrls.length < 2) continue;
+            yesLabelReTxt.lastIndex = 0;
+            noLabelReTxt.lastIndex = 0;
+            const yMtxt = yesLabelReTxt.exec(winText);
+            const nMtxt = noLabelReTxt.exec(winText);
+            if (!yMtxt || !nMtxt) {
+              console.log(
+                `[generate-document] RE851D multi-properties post-render: question occ#${qi + 1} found but YES/NO labels not located in window`,
+              );
+              continue;
+            }
+            const yTxtIdx = qTxtEnd + yMtxt.index;
+            const nTxtIdx = qTxtEnd + nMtxt.index;
+            const yXmlIdx = txtToXml(yTxtIdx);
+            const nXmlIdx = txtToXml(nTxtIdx);
+            const winXmlStart = txtToXml(qTxtEnd);
+            const winXmlEnd = txtToXml(winTxtEnd);
+
+            const ctrls = collectControls(winXmlStart, winXmlEnd);
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            const sortByDist = (labelIdx: number) =>
-              ctrls
-                .filter((c) => !overlaps(c.idx, c.end))
-                .map((c) => ({ c, d: Math.abs(labelIdx >= c.end ? labelIdx - c.end : c.idx - labelIdx) }))
-                .sort((a, b) => a.d - b.d);
-
-            const yesCands = sortByDist(yL.index);
-            const noCands = sortByDist(nL.index);
-            if (yesCands.length === 0 || noCands.length === 0) continue;
-
-            const yC = yesCands[0].c;
-            const nCSel = noCands.find((x) => x.c.idx !== yC.idx);
-            if (!nCSel) continue;
-            const nC = nCSel.c;
 
             const yesChecked = isMultipleQ;
             const noChecked = !isMultipleQ;
+            const yesGlyph = yesChecked ? "\u2611" : "\u2610";
+            const noGlyph = noChecked ? "\u2611" : "\u2610";
 
-            const yesReplacement =
-              yC.kind === "sdt"
-                ? rewriteSdtCheckedM(yC.m[0], yesChecked)
-                : `${yC.m[1]}${yesChecked ? "\u2611" : "\u2610"}${yC.m[3]}`;
-            const noReplacement =
-              nC.kind === "sdt"
-                ? rewriteSdtCheckedM(nC.m[0], noChecked)
-                : `${nC.m[1]}${noChecked ? "\u2611" : "\u2610"}${nC.m[3]}`;
+            const pickFor = (labelXml: number, exclude: Ctrl3 | null): Ctrl3 | null => {
+              const cands = ctrls
+                .filter((c) => !overlaps(c.idx, c.end))
+                .filter((c) => !exclude || c.idx !== exclude.idx)
+                .map((c) => ({
+                  c,
+                  d: Math.abs(labelXml >= c.end ? labelXml - c.end : c.idx - labelXml),
+                }))
+                .sort((a, b) => a.d - b.d);
+              return cands.length > 0 ? cands[0].c : null;
+            };
 
-            rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
-            rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            const yC = pickFor(yXmlIdx, null);
+            const nC = pickFor(nXmlIdx, yC);
+
+            let touched = false;
+            if (yC) {
+              const repl =
+                yC.kind === "sdt"
+                  ? rewriteSdtCheckedM(yC.m[0], yesChecked)
+                  : `${yC.m[1]}${yesGlyph}${yC.m[3]}`;
+              rewrites.push({ start: yC.idx, end: yC.end, replacement: repl });
+              touched = true;
+            }
+            if (nC) {
+              const repl =
+                nC.kind === "sdt"
+                  ? rewriteSdtCheckedM(nC.m[0], noChecked)
+                  : `${nC.m[1]}${noGlyph}${nC.m[3]}`;
+              rewrites.push({ start: nC.idx, end: nC.end, replacement: repl });
+              touched = true;
+            }
+
+            // Fallback: glyph(s) sit inside the SAME <w:t> as the YES/NO
+            // label (e.g. "☐ YES" in one run). Rewrite the glyph in-place
+            // inside that <w:t>, scoped strictly to the run that contains
+            // the label. Skip a side already handled above.
+            const inlineForLabel = (
+              labelXml: number,
+              glyph: string,
+              skip: boolean,
+            ) => {
+              if (skip) return;
+              // Look-back ~200 bytes for the enclosing <w:t…>; the label is
+              // visible-text adjacent so this window safely covers it.
+              const lo = Math.max(0, labelXml - 200);
+              const wtOpen = xml.lastIndexOf("<w:t", labelXml);
+              if (wtOpen < lo) return;
+              const wtCloseTagStart = xml.indexOf("</w:t>", labelXml);
+              if (wtCloseTagStart === -1 || wtCloseTagStart - wtOpen > 600) return;
+              const openTagEnd = xml.indexOf(">", wtOpen);
+              if (openTagEnd === -1 || openTagEnd > labelXml) return;
+              const inner = xml.slice(openTagEnd + 1, wtCloseTagStart);
+              if (!/[☐☑☒]/.test(inner)) return;
+              const newInner = inner.replace(/[☐☑☒]/g, glyph);
+              if (newInner === inner) return;
+              if (overlaps(openTagEnd + 1, wtCloseTagStart)) return;
+              inlineRewrites.push({
+                start: openTagEnd + 1,
+                end: wtCloseTagStart,
+                replacement: newInner,
+              });
+              touched = true;
+            };
+            inlineForLabel(yXmlIdx, yesGlyph, !!yC);
+            inlineForLabel(nXmlIdx, noGlyph, !!nC);
+
             console.log(
-              `[generate-document] RE851D multi-properties post-render occ#${occurrence}: propCount=${propCount} => YES=${yesChecked ? "☑" : "☐"} NO=${noChecked ? "☑" : "☐"}`
+              `[generate-document] RE851D multi-properties post-render occ#${qi + 1}: propCount=${propCount} => YES=${yesGlyph} NO=${noGlyph} (yC=${yC ? yC.kind : "none"}, nC=${nC ? nC.kind : "none"}, inline=${inlineRewrites.length}, touched=${touched})`,
             );
           }
 
-          if (rewrites.length > 0) {
-            rewrites.sort((a, b) => b.start - a.start);
-            for (const r of rewrites) {
+          const allRewrites = [...rewrites, ...inlineRewrites].sort(
+            (a, b) => b.start - a.start,
+          );
+          if (allRewrites.length > 0) {
+            for (const r of allRewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
             rezip3[filename] = [encoder3.encode(xml), { level: 0 }];
