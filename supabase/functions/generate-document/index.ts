@@ -2598,7 +2598,7 @@ async function generateSingleDocument(
                 const isUnknown = !isYes && !isNo;
 
                 const fields: Array<[string, string, string]> = [
-                  ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "n"), "text"],
+                  ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "lien_priority_after", "n"), "text"],
                   ["interestRate", firstNonEmpty("interest_rate", "intRate"), "percent"],
                   ["beneficiary", firstNonEmpty("holder", "lienHolder", "beneficiary"), "text"],
                   ["originalAmount", firstNonEmpty("original_balance", "originalBalance"), "currency"],
