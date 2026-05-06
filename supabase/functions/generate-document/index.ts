@@ -4398,7 +4398,7 @@ async function generateSingleDocument(
 
         const decoder2 = new TextDecoder("utf-8");
         const encoder2 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -4618,7 +4618,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -4653,7 +4653,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped3 = fflate.unzipSync(processedDocx);
+        const unzipped3 = __passUnzip(processedDocx);
         const rezip3: fflate.Zippable = {};
         let didMutate3 = false;
 
@@ -4895,7 +4895,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate3) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip3));
+          processedDocx = __passZip(rezip3);
         }
       } catch (postErrM) {
         console.error(
@@ -4934,7 +4934,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5121,7 +5121,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5153,7 +5153,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5332,7 +5332,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5362,7 +5362,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5541,7 +5541,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5572,7 +5572,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5750,7 +5750,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5769,7 +5769,7 @@ async function generateSingleDocument(
       try {
         const decoder4 = new TextDecoder("utf-8");
         const encoder4 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -6033,7 +6033,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
