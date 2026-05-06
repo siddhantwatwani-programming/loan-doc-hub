@@ -3775,6 +3775,60 @@ async function generateSingleDocument(
             }
           }
 
+          // ── RE851D "Are there multiple properties on the loan?" YES/NO safety pass ──
+          // Global (NOT per-property region). Anchors the next two glyph runs
+          // following the question text to property count: >1 → YES ☑ NO ☐;
+          // ==1 → YES ☐ NO ☑. The merge-tag publisher
+          // (pr_p_multipleProperties_*_glyph) remains primary; this pass only
+          // fires when the next two glyph runs are still raw ☐/☑/☒.
+          {
+            const propCount = sortedPropIndices.length;
+            const isMultipleQ = propCount > 1;
+            const multiQRe = /Are there multiple properties on the loan/gi;
+            const multiGlyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            let mqm: RegExpExecArray | null;
+            while ((mqm = multiQRe.exec(xml)) !== null) {
+              const qStart = mqm.index;
+              const windowEnd = Math.min(xml.length, qStart + 4096);
+              multiGlyphRunRe.lastIndex = qStart;
+              const matches: RegExpExecArray[] = [];
+              let mgm: RegExpExecArray | null;
+              while ((mgm = multiGlyphRunRe.exec(xml)) !== null && mgm.index < windowEnd) {
+                matches.push(mgm);
+                if (matches.length >= 2) break;
+              }
+              if (matches.length < 2) continue;
+              const overlapsM = (s: number, e: number) =>
+                rewrites.some((r) => s < r.end && e > r.start) ||
+                consumed.some(([cs, ce]) => s < ce && e > cs);
+              const yMm = matches[0];
+              const nMm = matches[1];
+              const ysM = yMm.index;
+              const yeM = ysM + yMm[0].length;
+              const nsM = nMm.index;
+              const neM = nsM + nMm[0].length;
+              if (overlapsM(ysM, yeM) || overlapsM(nsM, neM)) continue;
+              const yGlyph = isMultipleQ ? "☑" : "☐";
+              const nGlyph = isMultipleQ ? "☐" : "☑";
+              rewrites.push({
+                start: ysM,
+                end: yeM,
+                replacement: `${yMm[1]}${yGlyph}${yMm[3]}`,
+              });
+              rewrites.push({
+                start: nsM,
+                end: neM,
+                replacement: `${nMm[1]}${nGlyph}${nMm[3]}`,
+              });
+              consumed.push([ysM, yeM]);
+              consumed.push([nsM, neM]);
+              totalRewrites += 2;
+              debugLog(
+                `[generate-document] RE851D multiple-properties YES/NO anchored: count=${propCount} isMultiple=${isMultipleQ}`
+              );
+            }
+          }
+
           // ── RE851D Owner-Occupied YES/NO safety pass ──
           // Anchor each glyph rewrite to the actual "Yes" / "No" label run that
           // follows the "OWNER OCCUPIED" question. We pick the checkbox glyph
