@@ -6044,6 +6044,24 @@ async function generateSingleDocument(
     }
 
 
+    // ── RE851D post-render flush ──
+    // If any RE851D safety pass mutated the in-memory cache, rezip exactly
+    // once now (instead of once per pass) before upload.
+    if (__re851dPassCache) {
+      try {
+        const flushZip: fflate.Zippable = {};
+        for (const [k, v] of Object.entries(__re851dPassCache)) {
+          flushZip[k] = [v, { level: 0 }];
+        }
+        processedDocx = new Uint8Array(fflate.zipSync(flushZip));
+      } catch (flushErr) {
+        console.error(
+          `[generate-document] RE851D post-render flush failed:`,
+          flushErr instanceof Error ? flushErr.message : String(flushErr),
+        );
+      }
+    }
+
     // 6. Calculate version number
     const { data: existingDocs } = await supabase
       .from("generated_documents")
