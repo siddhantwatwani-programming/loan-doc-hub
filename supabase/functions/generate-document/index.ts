@@ -4360,15 +4360,43 @@ async function generateSingleDocument(
     // cache makes them all share a single in-memory representation; the final
     // rezip happens once, just before upload.
     let __re851dPassCache: Record<string, Uint8Array> | null = null;
+    // Decoded-XML cache for content-bearing parts. Each part is decoded at
+    // most ONCE across all 7 RE851D safety passes, and re-encoded at most
+    // ONCE (at the final flush). Eliminates ~6× redundant 4 MB
+    // decode/encode round-trips on 5-property documents.
+    const __xmlStrCache: Record<string, string> = {};
+    const __xmlDirty: Set<string> = new Set();
     const __passUnzip = (buf: Uint8Array): Record<string, Uint8Array> => {
       if (__re851dPassCache) return __re851dPassCache;
       __re851dPassCache = fflate.unzipSync(buf);
       return __re851dPassCache;
     };
+    // Decode once per filename; subsequent passes reuse the cached string.
+    const __xmlGet = (filename: string, bytes: Uint8Array): string => {
+      let s = __xmlStrCache[filename];
+      if (s === undefined) {
+        s = new TextDecoder("utf-8").decode(bytes);
+        __xmlStrCache[filename] = s;
+      }
+      return s;
+    };
+    // Mark a content part as mutated and update the cached string. Returns
+    // a placeholder Uint8Array so callers can keep their existing rezip
+    // shape; the final flush re-encodes dirty strings exactly once.
+    const __xmlSet = (filename: string, xml: string): Uint8Array => {
+      __xmlStrCache[filename] = xml;
+      __xmlDirty.add(filename);
+      // Return existing bytes (or empty); the value is discarded by the
+      // final flush, which uses the cached string instead.
+      return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
     const __passZip = (rezip: fflate.Zippable): Uint8Array => {
       if (!__re851dPassCache) __re851dPassCache = {};
       for (const [k, v] of Object.entries(rezip)) {
         const bytes = Array.isArray(v) ? (v as [Uint8Array, unknown])[0] : (v as Uint8Array);
+        // Skip placeholder bytes returned by __xmlSet — the cached string
+        // is the source of truth for dirty content parts.
+        if (__xmlDirty.has(k) && bytes.length === 0) continue;
         __re851dPassCache[k] = bytes;
       }
       // Return current processedDocx unchanged — passes only call unzip on
