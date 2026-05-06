@@ -4071,11 +4071,37 @@ async function generateSingleDocument(
         "ln_p_expectedEncumbrance", "ln_p_remainingEncumbrance",
         "pr_p_expectedSenior", "pr_p_remainingSenior",
         "pr_p_totalEncumbrance", "pr_p_totalSenior", "pr_p_totalSeniorPlusLoan",
-        "ln_p_totalEncumbrance", "property_number",
+        "ln_p_totalEncumbrance", "ln_p_totalWithLoan", "ln_p_loanToValueRatio",
+        "property_number",
         // Per-property "Performed By" — both canonical and legacy-misspelled
         // aliases so the conditional resolver does an exact direct match per
         // PROPERTY #K block and never falls back to the unsuffixed field.
         "pr_p_performedBy", "pr_p_performeBy",
+        // Property identity / detail families used by RE851D PROPERTY #K blocks.
+        "pr_p_address", "pr_p_street", "pr_p_city", "pr_p_state",
+        "pr_p_zip", "pr_p_county", "pr_p_country", "pr_p_apn",
+        "pr_p_owner", "pr_p_ownerName", "pr_p_marketValue", "pr_p_appraiseValue",
+        "pr_p_appraiseDate", "pr_p_legalDescri", "pr_p_yearBuilt",
+        "pr_p_squareFeet", "pr_p_lotSize", "pr_p_numberOfUni",
+        "pr_p_propertyTyp", "pr_p_propertyType", "pr_p_occupancySt",
+        "pr_p_occupanc", "pr_p_construcType", "pr_p_purchasePrice",
+        "pr_p_downPayme", "pr_p_protectiveEquity", "pr_p_descript",
+        "pr_p_ltv", "pr_p_cltv", "pr_p_zoning", "pr_p_floodZone",
+        "pr_p_pledgedEquity", "pr_p_delinquHowMany",
+        // Property tax per-property aliases (both underscore and dotted forms).
+        "propertytax_annual_payment", "propertytax.annual_payment",
+        "propertytax_delinquent", "propertytax.delinquent",
+        "propertytax_delinquent_amount", "propertytax.delinquent_amount",
+        "propertytax_source_of_information", "propertytax.source_of_information",
+        // Lien-derived per-property aliases used by the questionnaire blocks.
+        "pr_li_delinquencyPaidByLoan", "pr_li_delinqu60day",
+        "pr_li_currentDelinqu", "pr_li_currentDelinqu_yes",
+        "pr_li_currentDelinqu_no", "pr_li_currentDelinqu_yes_glyph",
+        "pr_li_currentDelinqu_no_glyph",
+        "pr_li_delinquHowMany", "pr_li_sourceOfPayment",
+        "pr_li_encumbranceOfRecord", "pr_li_encumbranceOfRecord_yes",
+        "pr_li_encumbranceOfRecord_no", "pr_li_encumbranceOfRecord_yes_glyph",
+        "pr_li_encumbranceOfRecord_no_glyph",
       ];
       for (let i = 1; i <= 5; i++) {
         for (const base of SUFFIXED_BASES) {
