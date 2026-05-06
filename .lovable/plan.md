@@ -1,44 +1,51 @@
-## Goal
-Make the value entered in **Other Origination → Origination Fee → Estimated Cash at Closing** populate `{{origination_fees.re885_cash_at_closing_amount}}` in the RE885 document.
+Plan to fix RE851D field population without changing existing UI, database schema, APIs, or unrelated document flows.
 
-## Root cause
-- The UI (`src/components/deal/RE885ProposedLoanTerms.tsx`) already writes the auto-computed Estimated Cash at Closing to the key `origination_fees.re885_cash_at_closing_amount` (lines 17, 117–119).
-- `field_dictionary` has only 5 `origination_fees.re885_*` entries — and **`re885_cash_at_closing_amount` is not one of them**.
-- Per project rule, persistence is strictly governed by `field_dictionary`; missing keys are **skipped on save**, so the value never reaches `deal_section_values` and the template tag stays blank.
+Scope
+- Only update the RE851D-specific logic inside the existing `generate-document` backend function and, only if required, shared parser behavior strictly scoped to RE851D template handling.
+- Do not modify forms, UI layout, database schema, saved CSR data, or non-RE851D generation behavior.
 
-## Fix (minimal, scoped to this one field)
+Findings from inspection
+- The uploaded RE851D template uses generic `_N` placeholders throughout Part 1, Part 2, and Property #1-#5 blocks, for example `{{pr_p_address_N}}`, `{{pr_p_appraiseValue_N}}`, `{{ln_p_remainingEncumbrance_N}}`, `{{propertytax.annual_payment_N}}`, and `{{pr_li_*_N}}`.
+- The generation logs show a concrete failure before rendering: `RE851D _N preprocessing failed ... sortedPropIndices is not defined`. This means the template `_N` rewrite is failing and the original template continues with literal `_N` tags, which then resolve blank.
+- The current RE851D publisher already attempts to emit per-property aliases such as `pr_p_address_1`, `pr_p_address_2`, `ln_p_remainingEncumbrance_1`, etc., but the preprocessing failure prevents template tags from being rewritten to those suffixed keys.
+- The current template has mixed tag quality: some tags are correctly `_N`, some are unsuffixed inside property blocks (`{{propertytax.source_of_information}}`, `{{pr_p_squareFeet}}`, `{{pr_p_yearBuilt}}`), and some conditionals/glyphs are malformed. The fix should be defensive and RE851D-scoped.
 
-1. Add a single dictionary entry via migration:
-   - `field_key`: `origination_fees.re885_cash_at_closing_amount`
-   - `label`: `Estimated Cash at Closing`
-   - `data_type`: `currency`
-   - `section`: `origination_fees`
-   - `form_type`: `primary` (matching peers)
-   - `is_calculated`: `true` (UI computes it from Loan Amount − Subtotal of Deductions; non-editable input)
-   - `allowed_roles` / `read_only_roles`: same as the other `origination_fees.re885_*` peers
+Implementation steps
+1. Repair RE851D `_N` preprocessing variable scope
+   - Define the property index list used by the preprocessing block in the same scope where the block runs, derived from the already-built `propertyIndices` set.
+   - Ensure the multiple-properties safety pass uses that local list instead of an out-of-scope variable.
+   - Keep fallback behavior safe: if no property data exists, only Property #1 can be considered, and no cross-property duplication should occur.
 
-2. Add a small alias publisher in `supabase/functions/generate-document/index.ts` (mirrors the existing RE885 alias block at lines 718–776) so the template tag resolves even via flat aliases:
-   ```ts
-   const ec2 = fieldValues.get("origination_fees.re885_cash_at_closing_amount");
-   if (ec2?.rawValue) {
-     const data = { rawValue: ec2.rawValue, dataType: ec2.dataType || "currency" };
-     for (const a of [
-       "origination_fees.re885_cash_at_closing_amount",
-       "origination_fees_re885_cash_at_closing_amount",
-       "of_re_estimatedCashAtClosing",
-       "re885_cash_at_closing_amount",
-     ]) if (!fieldValues.has(a)) fieldValues.set(a, data);
-   }
-   ```
-   plus a debug log line (`EstimatedCashAtClosing=...`) for verification.
+2. Expand RE851D valid-key seeding for all published per-property aliases
+   - Add all RE851D suffixed keys that are published by the RE851D mapper to `effectiveValidFieldKeys`, not just encumbrance totals.
+   - Include property fields, tax fields, property type flags, delinquency/questionnaire fields, glyph aliases, and loan-to-value aliases.
+   - This prevents the resolver from treating `*_1..*_5` as unknown and falling back to unsuffixed/canonical keys.
 
-3. No UI changes — existing field key already matches the template.
-4. No template changes — `{{origination_fees.re885_cash_at_closing_amount}}` continues to work.
-5. Backward compatible — only a new dictionary row + a new alias publisher are added.
+3. Harden property/lien/tax publishing for strict N logic
+   - Confirm/preserve `PROPERTY #1 -> property1`, `PROPERTY #2 -> property2`, etc.
+   - Use only each property’s indexed keys for property data.
+   - Keep lien rollups filtered by `lienK.property` matching `propertyN` or that property’s address.
+   - Keep property tax routed through `propertytaxN` or address-based matching, with no cross-index fallback except the existing Property #1 legacy fallback.
 
-## Validation
-- After migration + redeploy: enter a value in UI → Save deal → row appears in `deal_section_values.field_values` keyed by the new dictionary id.
-- Generate RE885 → edge logs show `EstimatedCashAtClosing=<value>` and `Field "origination_fees.re885_cash_at_closing_amount" = {...}` (not `NOT FOUND`).
-- The amount renders next to the radio selection in the Estimated Cash at Closing line of the RE885 output.
+4. Add RE851D-scoped handling for unsuffixed tags inside property blocks
+   - Extend the existing RE851D contextual bare-tag rewrite so unsuffixed property/tax tags inside Property #K blocks are rewritten to `_<K>` equivalents.
+   - Include the unsuffixed tags seen in the uploaded template, such as `propertytax.source_of_information`, `propertytax.delinquent`, `pr_p_squareFeet`, `pr_p_yearBuilt`, and related property fields.
+   - Keep this strictly inside detected Property #K regions so it cannot affect other documents.
 
-Constraints respected: UI layout/behavior unchanged; no other fields touched.
+5. Add missing per-property boolean/glyph aliases where the template expects them
+   - Ensure `pr_li_delinqu60day_N_yes_glyph/no_glyph`, `pr_li_delinquencyPaidByLoan_N_yes_glyph/no_glyph`, and related yes/no aliases are published per property where lien data exists.
+   - Preserve existing questionnaire logic and only fill aliases from CSR lien values.
+
+6. Verification
+   - Run the existing document-generation path for the current RE851D deal/template if available.
+   - Check logs confirm no `_N preprocessing failed` error.
+   - Confirm output no longer contains literal `_N` placeholders for RE851D mapped fields.
+   - Spot-check Property #1-#5 mapping behavior: each property section uses its own property, lien, and tax values; no duplicate fallback from Property #1 into later sections.
+
+Acceptance criteria covered
+- RE851D dynamic fields populate when CSR data exists.
+- `_N` tags resolve as property-specific `_1.._5` aliases.
+- Property, lien, and property tax values are sourced from the correct CSR sections.
+- Lien-derived values are filtered by related property.
+- No blank fields caused by unresolved `_N` tags.
+- No cross-property duplication from unsuffixed fallback behavior.
