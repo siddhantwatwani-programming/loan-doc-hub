@@ -2528,6 +2528,14 @@ async function generateSingleDocument(
           fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no_glyph`, { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
+          // Q1: Encumbrances of record? — YES iff the property has at least one
+          // lien AND every matching lien is flagged Paid Off (slt_paid_off).
+          const encOfRecord = b.hasLien && b.allPaidOff;
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}`,           { rawValue: encOfRecord ? "true" : "", dataType: "boolean" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes`,       { rawValue: encOfRecord ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no`,        { rawValue: encOfRecord ? "false" : "true", dataType: "boolean" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes_glyph`, { rawValue: encOfRecord ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no_glyph`,  { rawValue: encOfRecord ? "☐" : "☒", dataType: "text" });
           // Also fill pr_p_delinquHowMany_N if the property-tax block didn't set it
           const pPropKey = `pr_p_delinquHowMany_${pIdx}`;
           const existing = fieldValues.get(pPropKey)?.rawValue;
