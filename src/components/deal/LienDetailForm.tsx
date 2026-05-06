@@ -267,8 +267,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
-          {(lien.anticipated === 'This Loan' || lien.anticipated === 'Other') && renderCurrency('anticipatedAmount', 'Amount')}
-
           <DirtyFieldWrapper fieldKey="lien1.existing">
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Existing</Label>
@@ -307,38 +305,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
-
-          {lien.existingPaydown === 'true' && (
-            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.existingPaydownAmount}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Paydown Amount</Label>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                  <Input
-                    value={lien.existingPaydownAmount}
-                    onChange={(e) => {
-                      const raw = unformatCurrencyDisplay(e.target.value);
-                      const cur = parseFloat(unformatCurrencyDisplay(lien.currentBalance || '')) || 0;
-                      const pd = parseFloat(raw) || 0;
-                      // Validation: paydown cannot exceed current balance
-                      const capped = cur > 0 && pd > cur ? cur.toFixed(2) : raw;
-                      onChange('existingPaydownAmount', capped);
-                      const pdNum = parseFloat(capped) || 0;
-                      const remain = Math.max(0, cur - pdNum);
-                      onChange('newRemainingBalance', remain ? remain.toFixed(2) : '');
-                    }}
-                    onKeyDown={numericKeyDown}
-                    onBlur={() => { const raw = lien.existingPaydownAmount; if (raw) onChange('existingPaydownAmount', formatCurrencyDisplay(raw)); }}
-                    onFocus={() => { const raw = lien.existingPaydownAmount; if (raw) onChange('existingPaydownAmount', unformatCurrencyDisplay(raw)); }}
-                    disabled={disabled}
-                    className="h-7 text-sm pl-7"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-            </DirtyFieldWrapper>
-          )}
 
           {renderField('holder', 'Lien Holder Name', {}, isThisLoan)}
           {renderField('account', 'Account Number', {}, isThisLoan)}
@@ -379,13 +345,17 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.newRemainingBalance}>
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">Anticipated /<br />Remaining Balance</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0 leading-tight">Anticipated Balance<br />(if new lien)</Label>
               <div className="relative flex-1">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
                 <Input value={lien.newRemainingBalance} onChange={(e) => onChange('newRemainingBalance', unformatCurrencyDisplay(e.target.value))} onKeyDown={numericKeyDown} onPaste={(e) => numericPaste(e, (val) => onChange('newRemainingBalance', val))} onBlur={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', formatCurrencyDisplay(raw)); }} onFocus={() => { const raw = lien.newRemainingBalance; if (raw) onChange('newRemainingBalance', unformatCurrencyDisplay(raw)); }} disabled={disabled} className="h-7 text-sm pl-7" inputMode="decimal" placeholder="0.00" />
               </div>
             </div>
           </DirtyFieldWrapper>
+
+          {renderCurrency('existingPaydownAmount', 'Paydown Amount')}
+
+          {renderCurrency('existingPayoffAmount', 'Remaining Balance')}
 
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.interestRate}>
             <div className="flex items-center gap-3">
@@ -399,10 +369,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderCurrency('regularPayment', 'Regular Payment', isThisLoan)}
 
-          <div className="flex items-center gap-3">
-            {renderCheckbox('currentlyDelinquent', 'If Delinquent')}
-          </div>
-          {lien.currentlyDelinquent === 'true' && renderCurrency('currentlyDelinquentAmount', 'Amount')}
+          {renderCurrency('currentlyDelinquentAmount', 'If Delinquent')}
 
           {renderCheckbox('paidByLoan', 'Will Be Paid By This Loan')}
 
