@@ -134,6 +134,15 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     }
   };
 
+  // Sync Anticipated dropdown -> thisLoan flag for backwards-compat tagging.
+  useEffect(() => {
+    const wantThisLoan = lien.anticipated === 'This Loan';
+    if (wantThisLoan && lien.thisLoan !== 'true') onChange('thisLoan', 'true');
+    if (!wantThisLoan && lien.anticipated === 'Other' && lien.thisLoan === 'true') {
+      onChange('thisLoan', 'false');
+    }
+  }, [lien.anticipated, lien.thisLoan, onChange]);
+
   useEffect(() => {
     if (!isThisLoan) return;
     const { account, balanceAfter, regularPayment } = getThisLoanAutofillValues(loanValues);
@@ -141,6 +150,34 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
     if (lien.balanceAfter !== balanceAfter) onChange('balanceAfter', balanceAfter);
     if (lien.regularPayment !== regularPayment) onChange('regularPayment', regularPayment);
   }, [isThisLoan, loanValues, lien.account, lien.balanceAfter, lien.regularPayment, onChange]);
+
+  // Recompute Remaining Balance when Current Balance / Paydown changes,
+  // honoring the active Existing selection.
+  useEffect(() => {
+    const cur = parseFloat(unformatCurrencyDisplay(lien.currentBalance || '')) || 0;
+    if (lien.existingPayoff === 'true') {
+      const expected = '0.00';
+      if (lien.newRemainingBalance !== expected) onChange('newRemainingBalance', expected);
+    } else if (lien.existingRemain === 'true') {
+      const expected = cur ? cur.toFixed(2) : '';
+      if (unformatCurrencyDisplay(lien.newRemainingBalance || '') !== unformatCurrencyDisplay(expected)) {
+        onChange('newRemainingBalance', expected);
+      }
+    } else if (lien.existingPaydown === 'true') {
+      const pdRaw = unformatCurrencyDisplay(lien.existingPaydownAmount || '');
+      const pd = parseFloat(pdRaw) || 0;
+      // Clamp paydown to current balance.
+      if (pd > cur && cur > 0) {
+        onChange('existingPaydownAmount', cur.toFixed(2));
+        return;
+      }
+      const remain = Math.max(0, cur - pd);
+      const expected = remain ? remain.toFixed(2) : '';
+      if (unformatCurrencyDisplay(lien.newRemainingBalance || '') !== unformatCurrencyDisplay(expected)) {
+        onChange('newRemainingBalance', expected);
+      }
+    }
+  }, [lien.currentBalance, lien.existingPaydownAmount, lien.existingPayoff, lien.existingPaydown, lien.existingRemain, lien.newRemainingBalance, onChange]);
 
   const renderField = (field: keyof LienData, label: string, props: Record<string, any> = {}, forceDisabled = false) => {
     if (props.type === 'date') {
