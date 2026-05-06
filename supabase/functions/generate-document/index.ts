@@ -4353,6 +4353,30 @@ async function generateSingleDocument(
       console.log(`[RE885] DOCX Render: ${Math.round(performance.now() - tRenderStart)} ms (output=${processedDocx.length} bytes)`);
     }
 
+    // ── RE851D post-render unzip/zip cache ──
+    // The 7 RE851D safety passes below each independently unzipped & rezipped
+    // the full DOCX. On 5-property documents (~4 MB document.xml) that 7×
+    // round-trip exhausted the edge function's CPU/memory budget. This shared
+    // cache makes them all share a single in-memory representation; the final
+    // rezip happens once, just before upload.
+    let __re851dPassCache: Record<string, Uint8Array> | null = null;
+    const __passUnzip = (buf: Uint8Array): Record<string, Uint8Array> => {
+      if (__re851dPassCache) return __re851dPassCache;
+      __re851dPassCache = fflate.unzipSync(buf);
+      return __re851dPassCache;
+    };
+    const __passZip = (rezip: fflate.Zippable): Uint8Array => {
+      if (!__re851dPassCache) __re851dPassCache = {};
+      for (const [k, v] of Object.entries(rezip)) {
+        const bytes = Array.isArray(v) ? (v as [Uint8Array, unknown])[0] : (v as Uint8Array);
+        __re851dPassCache[k] = bytes;
+      }
+      // Return current processedDocx unchanged — passes only call unzip on
+      // processedDocx, and __passUnzip ignores the buffer when the cache is
+      // populated. Avoids an O(N) zip per pass.
+      return processedDocx;
+    };
+
     // ── RE851D POST-RENDER OWNER OCCUPIED safety pass ──
     // Some authored RE851D templates carry inline conditional checkbox glyphs
     // (e.g. {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☑{{else}}☐{{/if}})
