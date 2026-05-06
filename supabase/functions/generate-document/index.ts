@@ -767,12 +767,29 @@ async function generateSingleDocument(
           fieldValues.set("origination_fees.re885_subtotal_deductions", { rawValue: sd.rawValue, dataType: sd.dataType || "currency" });
         }
       }
+
+      // Estimated Cash at Closing alias publisher (RE885)
+      const ecac = fieldValues.get("origination_fees.re885_cash_at_closing_amount")
+        || fieldValues.get("of_re_estimatedCashAtClosing");
+      if (ecac && ecac.rawValue !== null && ecac.rawValue !== undefined && ecac.rawValue !== "") {
+        const ecacData = { rawValue: ecac.rawValue, dataType: ecac.dataType || "currency" };
+        for (const a of [
+          "origination_fees.re885_cash_at_closing_amount",
+          "origination_fees_re885_cash_at_closing_amount",
+          "of_re_estimatedCashAtClosing",
+          "re885_cash_at_closing_amount",
+        ]) {
+          if (!fieldValues.has(a)) fieldValues.set(a, ecacData);
+        }
+      }
+
       console.log(
         `[generate-document] RE885 alias publisher: ` +
           `of_re_estimatedClosing="${fieldValues.get("of_re_estimatedClosing")?.rawValue ?? ""}" ` +
           `origination_esc.estimated_closing="${fieldValues.get("origination_esc.estimated_closing")?.rawValue ?? ""}" ` +
           `of_fe_creditLifediInsuraLabel="${fieldValues.get("of_fe_creditLifediInsuraLabel")?.rawValue ?? ""}" ` +
-          `of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}"`
+          `of_re_subtotalDeductions="${fieldValues.get("of_re_subtotalDeductions")?.rawValue ?? ""}" ` +
+          `EstimatedCashAtClosing="${fieldValues.get("origination_fees.re885_cash_at_closing_amount")?.rawValue ?? ""}"`
       );
 
       // RE885 Proposed Loan Term unit -> mutually exclusive boolean checkboxes.

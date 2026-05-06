@@ -1,60 +1,44 @@
-## Root Cause
+## Goal
+Make the value entered in **Other Origination → Origination Fee → Estimated Cash at Closing** populate `{{origination_fees.re885_cash_at_closing_amount}}` in the RE885 document.
 
-The generated documents (`Re851d_v18.docx`, `Re851d_v1_1_2_9-6.docx`) come out blank for every per-property field because the RE851D `_N` → `_1`, `_2`, … preprocessing block is throwing on every run.
+## Root cause
+- The UI (`src/components/deal/RE885ProposedLoanTerms.tsx`) already writes the auto-computed Estimated Cash at Closing to the key `origination_fees.re885_cash_at_closing_amount` (lines 17, 117–119).
+- `field_dictionary` has only 5 `origination_fees.re885_*` entries — and **`re885_cash_at_closing_amount` is not one of them**.
+- Per project rule, persistence is strictly governed by `field_dictionary`; missing keys are **skipped on save**, so the value never reaches `deal_section_values` and the template tag stays blank.
 
-Edge function logs confirm this on every generation:
-```
-[generate-document] RE851D _N preprocessing failed (continuing with original template):
-sortedPropIndices is not defined
-```
+## Fix (minimal, scoped to this one field)
 
-When the preprocessing `try` block throws, the function "continues with the original template", so `{{pr_p_address_N}}`, `{{ln_p_remainingEncumbrance_N}}`, `{{pr_li_currentDelinqu_N_yes_glyph}}`, etc. are never expanded into the per-property `_1`/`_2`/`_3` form. The merge-tag resolver then sees them as literal field keys, finds nothing, and renders blank. That single error cascades into "no per-property fields populate" in both uploaded docs.
+1. Add a single dictionary entry via migration:
+   - `field_key`: `origination_fees.re885_cash_at_closing_amount`
+   - `label`: `Estimated Cash at Closing`
+   - `data_type`: `currency`
+   - `section`: `origination_fees`
+   - `form_type`: `primary` (matching peers)
+   - `is_calculated`: `true` (UI computes it from Loan Amount − Subtotal of Deductions; non-editable input)
+   - `allowed_roles` / `read_only_roles`: same as the other `origination_fees.re885_*` peers
 
-I confirmed both DOCX files contain raw `{{..._N}}` placeholders that depend on this preprocessing pass:
-```
-{{pr_p_address_N}}, {{ln_p_remainingEncumbrance_N}}, {{ln_p_expectedEncumbrance_N}},
-{{ln_p_totalEncumbrance_N}}, {{ln_p_totalWithLoan_N}}, {{ln_p_loanToValueRatio_N}},
-{{pr_li_currentDelinqu_N_yes_glyph}}, {{pr_li_currentDelinqu_N_no_glyph}}, …
-```
+2. Add a small alias publisher in `supabase/functions/generate-document/index.ts` (mirrors the existing RE885 alias block at lines 718–776) so the template tag resolves even via flat aliases:
+   ```ts
+   const ec2 = fieldValues.get("origination_fees.re885_cash_at_closing_amount");
+   if (ec2?.rawValue) {
+     const data = { rawValue: ec2.rawValue, dataType: ec2.dataType || "currency" };
+     for (const a of [
+       "origination_fees.re885_cash_at_closing_amount",
+       "origination_fees_re885_cash_at_closing_amount",
+       "of_re_estimatedCashAtClosing",
+       "re885_cash_at_closing_amount",
+     ]) if (!fieldValues.has(a)) fieldValues.set(a, data);
+   }
+   ```
+   plus a debug log line (`EstimatedCashAtClosing=...`) for verification.
 
-### Why the throw
-
-`supabase/functions/generate-document/index.ts`:
-
-- Line 963 declares `const sortedPropIndices` **inside** the alias-publisher block (`if (/851d/i.test(template.name || ""))` starting at line 931). It is block-scoped to that `if`.
-- Line 3864, inside the **separate** `_N` preprocessing block (different `if`, far later in the file), references `sortedPropIndices` — which is not in scope there → `ReferenceError`.
-- The surrounding `try { … } catch (e) { debugLog("RE851D _N preprocessing failed …") }` swallows the error and ships the un-rewritten template.
-
-`propertyIndices` (the underlying `Set<number>` declared at line 889) IS in scope at line 3864, so the fix is local.
-
-## Fix
-
-In `supabase/functions/generate-document/index.ts`, inside the preprocessing block (around line 3863, just before `const propCount = sortedPropIndices.length;`), re-derive the sorted indices from the still-in-scope `propertyIndices`:
-
-```ts
-const propCount = [...propertyIndices].sort((a, b) => a - b).slice(0, 5).length;
-```
-
-(Equivalently: a single `const sortedPropIndicesLocal = [...propertyIndices].sort((a, b) => a - b).slice(0, 5);` at the top of the preprocessing `try` block, and update the one usage.)
-
-No other logic changes. The cap of 5 matches `MAX_PROPERTIES` used elsewhere.
+3. No UI changes — existing field key already matches the template.
+4. No template changes — `{{origination_fees.re885_cash_at_closing_amount}}` continues to work.
+5. Backward compatible — only a new dictionary row + a new alias publisher are added.
 
 ## Validation
+- After migration + redeploy: enter a value in UI → Save deal → row appears in `deal_section_values.field_values` keyed by the new dictionary id.
+- Generate RE885 → edge logs show `EstimatedCashAtClosing=<value>` and `Field "origination_fees.re885_cash_at_closing_amount" = {...}` (not `NOT FOUND`).
+- The amount renders next to the radio selection in the Estimated Cash at Closing line of the RE885 output.
 
-After the fix, regenerate the same document and check the edge function logs:
-
-- The `RE851D _N preprocessing failed … sortedPropIndices is not defined` line must be gone.
-- A new log line like `RE851D multi-properties YES/NO anchored: count=3 isMultiple=true` should appear.
-- The per-property region rewrites (`PROP#1`, `PROP#2`, `PROP#3`) reported in `regionRewriteCounts` should be > 0.
-- The output DOCX should now show populated values in:
-  - PART 1 LTV table (Property #N, appraised value, encumbrances, LTV)
-  - PART 2 Securing Properties block (address, owner, type checkboxes)
-  - PROPERTY #N detail blocks (all `pr_p_*`, `pr_li_*`, `propertytax.*` `_N` fields)
-  - Lien delinquency YES/NO glyphs and counts
-
-## Scope
-
-- Single file: `supabase/functions/generate-document/index.ts`
-- ~1-line change inside the existing RE851D `_N` preprocessing `try` block.
-- No DB / schema / template / UI changes.
-- No impact on RE851A, RE885, or any non-RE851D generation path (block is gated by `/851d/i.test(template.name)`).
+Constraints respected: UI layout/behavior unchanged; no other fields touched.
