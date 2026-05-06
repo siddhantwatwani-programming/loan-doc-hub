@@ -2603,8 +2603,8 @@ async function generateSingleDocument(
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
           // Q1: Encumbrances of record? — YES iff the property has at least one
-          // lien AND every matching lien is flagged Paid Off (slt_paid_off).
-          const encOfRecord = b.hasLien && b.allPaidOff;
+          // lien flagged Paid Off (slt_paid_off). Per spec: any paid-off lien → YES.
+          const encOfRecord = b.hasLien && b.anyPaidOff;
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}`,           { rawValue: encOfRecord ? "true" : "", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes`,       { rawValue: encOfRecord ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no`,        { rawValue: encOfRecord ? "false" : "true", dataType: "boolean" });
