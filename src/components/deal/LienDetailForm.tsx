@@ -306,38 +306,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          {lien.existingPaydown === 'true' && (
-            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.existingPaydownAmount}>
-              <div className="flex items-center gap-3">
-                <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Paydown Amount</Label>
-                <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">$</span>
-                  <Input
-                    value={lien.existingPaydownAmount}
-                    onChange={(e) => {
-                      const raw = unformatCurrencyDisplay(e.target.value);
-                      const cur = parseFloat(unformatCurrencyDisplay(lien.currentBalance || '')) || 0;
-                      const pd = parseFloat(raw) || 0;
-                      // Validation: paydown cannot exceed current balance
-                      const capped = cur > 0 && pd > cur ? cur.toFixed(2) : raw;
-                      onChange('existingPaydownAmount', capped);
-                      const pdNum = parseFloat(capped) || 0;
-                      const remain = Math.max(0, cur - pdNum);
-                      onChange('newRemainingBalance', remain ? remain.toFixed(2) : '');
-                    }}
-                    onKeyDown={numericKeyDown}
-                    onBlur={() => { const raw = lien.existingPaydownAmount; if (raw) onChange('existingPaydownAmount', formatCurrencyDisplay(raw)); }}
-                    onFocus={() => { const raw = lien.existingPaydownAmount; if (raw) onChange('existingPaydownAmount', unformatCurrencyDisplay(raw)); }}
-                    disabled={disabled}
-                    className="h-7 text-sm pl-7"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-            </DirtyFieldWrapper>
-          )}
-
           {renderField('holder', 'Lien Holder Name', {}, isThisLoan)}
           {renderField('account', 'Account Number', {}, isThisLoan)}
 
