@@ -5880,18 +5880,32 @@ async function generateSingleDocument(
           };
 
           // Detect whether a cell already contains a "value" beyond its label text.
-          // We treat the cell as already populated for this field if, after stripping
-          // tags, it contains anything beyond the matched label, "$", "%" and whitespace.
+          // The template's value cells often contain empty Word content controls
+          // (<w:sdt> in placeholder mode) that render as a "▼" dropdown glyph or
+          // grey placeholder text like "Click here to enter text". Treat those as
+          // empty so the post-render publisher can insert the resolved value.
           const cellAlreadyPopulated = (
             tcOpen: number,
             tcClose: number,
             labelRx: RegExp,
           ): boolean => {
-            const inner = xml.slice(tcOpen, tcClose);
+            let inner = xml.slice(tcOpen, tcClose);
+            // Drop entire SDT blocks that are in placeholder state — those carry
+            // no user value and only render the control chrome.
+            inner = inner.replace(
+              /<w:sdt\b[\s\S]*?<\/w:sdt>/g,
+              (block) => (/\bw:showingPlcHdr\b/.test(block) ? "" : block),
+            );
             const visible = inner.replace(/<[^>]+>/g, "");
             const stripped = visible
               .replace(labelRx, "")
-              .replace(/[$%]/g, "")
+              // Strip currency/percent glyphs, common form-control chrome glyphs
+              // (▼ ▾ ▸ ☐ ☑ ☒) and whitespace.
+              .replace(/[$%\u25BC\u25BE\u25B8\u2610\u2611\u2612]/g, "")
+              // Strip Word's default placeholder phrases.
+              .replace(/Click here to enter text\.?/gi, "")
+              .replace(/Choose an item\.?/gi, "")
+              .replace(/Enter a date\.?/gi, "")
               .replace(/\s+/g, "")
               .trim();
             return stripped.length > 0;
