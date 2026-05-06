@@ -2487,6 +2487,7 @@ async function generateSingleDocument(
           source: string[];
           hasLien: boolean;
           allPaidOff: boolean;
+          anyPaidOff: boolean;
         }> = {};
 
         const truthy = (v: unknown) => {
