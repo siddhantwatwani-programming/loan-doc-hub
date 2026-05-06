@@ -1,56 +1,32 @@
-## RE851D – Multiple Properties Yes/No Checkbox
+## Fix RE851D "Are there multiple properties on the loan?" YES/NO checkbox
 
-### Edge function publisher
-File: `supabase/functions/generate-document/index.ts`
+### Root cause
+The publisher (`pr_p_multipleProperties_{yes,no}_glyph`) and four `field_dictionary` rows already exist. Inspecting the generated `Re851d_v11.docx` shows the merge-tag span resolved to empty (`...preserve"> YES    NO`) — the glyph runs were stripped between parser → glyph→SDT converter → shield, so neither box renders.
 
-Inside the existing RE851D template-gated block (`if (/851d/i.test(template.name || ""))`), immediately after `sortedPropIndices` is computed (line 924), insert:
+Every other RE851D YES/NO pair (Remain-Unpaid, Owner-Occupied, Cure-Delinquency, Property Type) already has a **post-render label-anchored safety pass** that guarantees a glyph survives. Multiple-Properties is the only one missing one.
 
-```ts
-// ── RE851D: Multiple Properties Yes/No checkboxes ──
-// YES if >1 property, NO if exactly 1.
-{
-  const isMultiple = sortedPropIndices.length > 1;
-  const isSingle   = sortedPropIndices.length === 1;
-  const base = "pr_p_multipleProperties";
-  fieldValues.set(`${base}_yes`,       { rawValue: isMultiple ? "true" : "false", dataType: "boolean" });
-  fieldValues.set(`${base}_no`,        { rawValue: isSingle   ? "true" : "false", dataType: "boolean" });
-  fieldValues.set(`${base}_yes_glyph`, { rawValue: isMultiple ? "☒" : "☐",       dataType: "text" });
-  fieldValues.set(`${base}_no_glyph`,  { rawValue: isSingle   ? "☒" : "☐",       dataType: "text" });
-}
-```
+### Change (additive only)
+Insert one new safety-pass block in `supabase/functions/generate-document/index.ts`, immediately after the "Remain Unpaid" pass and before the "Owner-Occupied" pass (~line 3777). The block:
 
-These are global (not per-property `_N`) tags, so no entry is needed in `RE851D_INDEXED_TAGS`.
+- Anchors on text `Are there multiple properties on the loan` (global, not per-property).
+- Picks the next 2 glyph runs (`☐|☑|☒`) within a 4 KB window using the same `glyphRunRe` regex used by sibling passes.
+- Skips any glyph that overlaps an already-queued rewrite (`rewrites` / `consumed`).
+- Forces YES/NO based on `sortedPropIndices.length`: `>1` → YES ☑ NO ☐; `==1` → YES ☐ NO ☑.
+- Logs `RE851D multiple-properties YES/NO anchored: count=N isMultiple=…`.
 
-### Field dictionary entries (migration)
-Insert four rows (idempotent, `ON CONFLICT (field_key) DO NOTHING`), section `property`:
+The original publisher (lines 929–937) and dictionary rows remain primary; this pass is a pure fallback.
 
-| field_key | label | data_type |
-|---|---|---|
-| `pr_p_multipleProperties_yes` | Multiple Properties – YES | boolean |
-| `pr_p_multipleProperties_no` | Multiple Properties – NO | boolean |
-| `pr_p_multipleProperties_yes_glyph` | Multiple Properties – YES Glyph | text |
-| `pr_p_multipleProperties_no_glyph` | Multiple Properties – NO Glyph | text |
-
-### Template tag mapping (to author into RE851D `.docx`)
-Glyph approach (recommended, mirrors other RE851D pairs):
-```
-{{pr_p_multipleProperties_yes_glyph}} YES   {{pr_p_multipleProperties_no_glyph}} NO
-```
-Conditional alternative:
-```
-{{#if pr_p_multipleProperties_yes}}☒{{else}}☐{{/if}} YES
-{{#if pr_p_multipleProperties_no}}☒{{else}}☐{{/if}} NO
-```
+### Out of scope
+- No template, UI, schema, API, packet, or other-template changes.
+- No new field_dictionary rows.
+- No changes to the publisher, anti-fallback shield, glyph→SDT converter, or any unrelated RE851D pass.
 
 ### Acceptance
-- 2+ properties → YES `☒`, NO `☐`
-- 1 property → YES `☐`, NO `☒`
-- 0 properties → both unchecked
-- No other RE851D logic, schema, UI, or template-generation flow modified
-
-### Memory
-Add `mem://features/document-generation/re851d-multiple-properties-checkbox` describing the publisher and dictionary keys.
+- Loan DL-2026-0235 (3 properties) → YES ☑, NO ☐.
+- Single-property deal → YES ☐, NO ☑.
+- Zero-property deal → unchanged (no rewrite).
+- All other RE851D outputs identical to current.
 
 ### Files modified
-- `supabase/functions/generate-document/index.ts` (insert ~12 lines after line 924)
-- `supabase/migrations/<new>.sql` (4 dictionary inserts)
+1. `supabase/functions/generate-document/index.ts` — insert ~55-line safety pass block in the existing RE851D post-rewrite section (~line 3777).
+2. Memory: append safety-pass note to `mem://features/document-generation/re851d-multiple-properties-checkbox`.
