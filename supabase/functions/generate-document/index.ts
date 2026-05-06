@@ -2618,7 +2618,15 @@ async function generateSingleDocument(
           if (pIdx === 1) {
             // Bare aliases for templates referencing keys without _N
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_yes", { rawValue: b.paidByLoan ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_no", { rawValue: b.paidByLoan ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_yes_glyph", { rawValue: b.paidByLoan ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_no_glyph", { rawValue: b.paidByLoan ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_yes", { rawValue: b.delinq60 ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_no", { rawValue: b.delinq60 ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_yes_glyph", { rawValue: b.delinq60 ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinqu60day_no_glyph", { rawValue: b.delinq60 ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_yes", { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_no", { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
