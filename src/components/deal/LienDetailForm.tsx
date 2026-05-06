@@ -412,8 +412,29 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           {renderCheckbox('sltUnderModification', 'Under Modification / FB Plan')}
 
-          {renderCheckbox('sltForeclosure', 'Foreclosure')}
-          {lien.sltForeclosure === 'true' && renderField('sltForeclosureDate', 'Date Filed', { type: 'date' })}
+          <div className="flex items-center gap-3">
+            <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltForeclosure}>
+              <div className="flex items-center gap-2 min-w-[140px] shrink-0">
+                <Checkbox id="sltForeclosure" checked={lien.sltForeclosure === 'true'} onCheckedChange={(checked) => onChange('sltForeclosure', checked ? 'true' : 'false')} disabled={disabled} />
+                <Label htmlFor="sltForeclosure" className="text-sm text-foreground">Foreclosure</Label>
+              </div>
+            </DirtyFieldWrapper>
+            {lien.sltForeclosure === 'true' && (
+              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltForeclosureDate} className="flex-1">
+                <Popover open={datePickerStates['sltForeclosureDate'] || false} onOpenChange={(open) => setDatePickerStates(prev => ({ ...prev, sltForeclosureDate: open }))}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn('h-7 text-sm w-full justify-start text-left font-normal', !lien.sltForeclosureDate && 'text-muted-foreground')} disabled={disabled}>
+                      {lien.sltForeclosureDate && safeParseDateStr(lien.sltForeclosureDate) ? format(safeParseDateStr(lien.sltForeclosureDate)!, 'MM/dd/yyyy') : 'MM/DD/YYYY'}
+                      <CalendarIcon className="ml-auto h-3.5 w-3.5" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0 z-[9999]" align="start">
+                    <EnhancedCalendar mode="single" selected={safeParseDateStr(lien.sltForeclosureDate)} onSelect={(date) => { if (date) onChange('sltForeclosureDate', format(date, 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, sltForeclosureDate: false })); }} onClear={() => { onChange('sltForeclosureDate', ''); setDatePickerStates(prev => ({ ...prev, sltForeclosureDate: false })); }} onToday={() => { onChange('sltForeclosureDate', format(new Date(), 'yyyy-MM-dd')); setDatePickerStates(prev => ({ ...prev, sltForeclosureDate: false })); }} initialFocus />
+                  </PopoverContent>
+                </Popover>
+              </DirtyFieldWrapper>
+            )}
+          </div>
 
           {renderCheckbox('sltPaidOff', 'Paid Off')}
 
