@@ -2560,11 +2560,12 @@ async function generateSingleDocument(
           if (pm) {
             const pIdx = parseInt(pm[1], 10);
             if (!perProp[pIdx]) {
-              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [], hasLien: false, allPaidOff: true };
+              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [], hasLien: false, allPaidOff: true, anyPaidOff: false };
             }
             const b = perProp[pIdx];
             b.hasLien = true;
             if (!paidOff) b.allPaidOff = false;
+            if (paidOff) b.anyPaidOff = true;
             if (paidByLoan) b.paidByLoan = true;
             if (has60) b.delinq60 = true;
             if (currentDelinq) b.currentDelinq = true;
