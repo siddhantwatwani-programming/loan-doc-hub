@@ -6028,19 +6028,36 @@ async function generateSingleDocument(
                 // find the next 3 glyph runs (☐/☑/☑) within window in raw xml order
                 const slice = xml.slice(rawWinStart, rawWinEnd);
                 const glyphRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
+                const labels = ["YES", "NO", "Unknown"];
                 let gIdx = 0;
                 let gm: RegExpExecArray | null;
+                let labelsInjected = 0;
                 while ((gm = glyphRe.exec(slice)) !== null && gIdx < 3) {
                   const want = states[gIdx] ? "\u2611" : "\u2610";
+                  const start = rawWinStart + gm.index;
+                  const end = start + gm[0].length;
                   if (gm[2] !== want) {
-                    const start = rawWinStart + gm.index;
-                    const end = start + gm[0].length;
                     inserts.push({ at: -end, html: `${gm[1]}${want}${gm[3]}|||REPLACE|||${start}` });
+                  }
+                  // Label-presence check: look at XML after the glyph run, up to the
+                  // next </w:p> (bounded ~400 chars), strip tags, and search for
+                  // the expected label token.
+                  const tailEndCap = Math.min(xml.length, end + 400);
+                  const pEnd = xml.indexOf("</w:p>", end);
+                  const tailEnd = pEnd > 0 ? Math.min(pEnd, tailEndCap) : tailEndCap;
+                  const tail = xml.slice(end, tailEnd).replace(/<[^>]+>/g, "").toUpperCase();
+                  const lbl = labels[gIdx];
+                  if (!tail.includes(lbl.toUpperCase())) {
+                    const labelRun =
+                      `<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>` +
+                      `<w:t xml:space="preserve"> ${xmlEsc(lbl)}   </w:t></w:r>`;
+                    inserts.push({ at: end, html: labelRun });
+                    labelsInjected += 1;
                   }
                   gIdx += 1;
                 }
                 debugLog(
-                  `[generate-document] RE851D enc post-render P${region.k} ${tagPrefix === "pr_li_ant" ? "ANT" : "REM"} S${bSlot}: balloon=${isYes ? "YES" : isNo ? "NO" : "UNK"}`,
+                  `[generate-document] RE851D enc post-render P${region.k} ${tagPrefix === "pr_li_ant" ? "ANT" : "REM"} S${bSlot}: balloon=${isYes ? "YES" : isNo ? "NO" : "UNK"} labelsInjected=${labelsInjected}`,
                 );
               }
             }
