@@ -131,6 +131,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'property', label: 'Related Property', visible: true },
   { id: 'holder', label: 'Lien Holder', visible: true },
+  { id: 'anticipated', label: 'Anticipated', visible: true },
   { id: 'loanTypeDropdown', label: 'Loan Type', visible: true },
   { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
   { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
