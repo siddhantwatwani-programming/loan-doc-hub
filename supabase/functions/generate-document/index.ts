@@ -3067,6 +3067,9 @@ async function generateSingleDocument(
           "pr_li_currentDelinqu_N",
           "pr_li_sourceOfPayment_N",
           "pr_li_delinquHowMany_N",
+          "pr_li_encumbranceOfRecord_N",
+          "pr_li_encumbranceOfRecord_N_yes", "pr_li_encumbranceOfRecord_N_no",
+          "pr_li_encumbranceOfRecord_N_yes_glyph", "pr_li_encumbranceOfRecord_N_no_glyph",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
           // RE851D propertytax dotted-form _N tags. Order is critical: longer
           // matches FIRST so "delinquent_amount_N" wins before "delinquent_N".
