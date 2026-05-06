@@ -2628,6 +2628,25 @@ async function generateSingleDocument(
             fieldValues.set(pPropKey, { rawValue: String(b.howMany), dataType: "number" });
           }
 
+          // ── pr_p_* per-property compatibility aliases ──
+          // Some RE851D template variants use the older property-questionnaire
+          // tag family (pr_p_*) instead of the newer pr_li_* family. Mirror the
+          // same per-property values to those tags so existing templates render
+          // without any template edits. Strict: only sets aliases, never reads.
+          const mirrorPP = (base: string, val: boolean) => {
+            fieldValues.set(`pr_p_${base}_${pIdx}`,           { rawValue: val ? "true" : "", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_yes`,       { rawValue: val ? "true" : "false", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_no`,        { rawValue: val ? "false" : "true", dataType: "boolean" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_yes_glyph`, { rawValue: val ? "☒" : "☐", dataType: "text" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_no_glyph`,  { rawValue: val ? "☐" : "☒", dataType: "text" });
+          };
+          mirrorPP("encumbranceOfRecord", encOfRecord);
+          mirrorPP("delinqu60day", b.delinq60);
+          mirrorPP("currentDelinqu", b.currentDelinq);
+          mirrorPP("paidByLoan", b.paidByLoan);
+          fieldValues.set(`pr_p_sourceOfPaymen_${pIdx}`, { rawValue: b.source.join("\n"), dataType: "text" });
+          fieldValues.set(`pr_p_sourceOfPayment_${pIdx}`, { rawValue: b.source.join("\n"), dataType: "text" });
+
           if (pIdx === 1) {
             // Bare aliases for templates referencing keys without _N
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
