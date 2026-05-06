@@ -297,6 +297,24 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       || currentPropertyId
       || (propertyOptions[0]?.id ?? 'unassigned');
 
+    // Enforce only ONE "This Loan" anticipated lien per property
+    if (lienData.anticipated === 'This Loan') {
+      const dup = allLiens.find(l =>
+        l.id !== prefix &&
+        l.anticipated === 'This Loan' &&
+        (l.property || 'unassigned') === resolvedProperty
+      );
+      if (dup) {
+        const { toast } = await import('@/hooks/use-toast');
+        toast({
+          title: 'Only one "This Loan" allowed per property',
+          description: 'This property already has a lien marked as "This Loan". Change the existing one first.',
+          variant: 'destructive',
+        });
+        return false;
+      }
+    }
+
     const boundLienData: LienData = {
       ...lienData,
       property: resolvedProperty,
@@ -320,7 +338,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       setModalOpen(false);
     }
     return success;
-  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId, propertyOptions]);
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId, propertyOptions, allLiens]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
