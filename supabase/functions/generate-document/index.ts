@@ -2487,6 +2487,7 @@ async function generateSingleDocument(
           source: string[];
           hasLien: boolean;
           allPaidOff: boolean;
+          anyPaidOff: boolean;
         }> = {};
 
         const truthy = (v: unknown) => {
@@ -2524,7 +2525,7 @@ async function generateSingleDocument(
           // Spec: Q1 = paid_off (slt_paid_off checkbox)
           const paidOff = truthy(getLienVal(prefix, "slt_paid_off", "sltPaidOff"));
           const source = getLienVal(prefix, "source_of_payment", "sourceOfPayment").trim();
-          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" howMany="${howManyRaw}" remBal="${remBalRaw}" paidOff=${paidOff} has60=${has60} currentDelinq=${currentDelinq} source="${source}"`);
+          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" howMany="${howManyRaw}" remBal="${remBalRaw}" paidOff=${paidOff} has60=${has60} currentDelinq=${currentDelinq} source="${source}" (Q1 uses anyPaidOff per property)`);
 
           // Per-lien-index aliases
           const setBool = (k: string, v: boolean) =>
@@ -2559,11 +2560,12 @@ async function generateSingleDocument(
           if (pm) {
             const pIdx = parseInt(pm[1], 10);
             if (!perProp[pIdx]) {
-              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [], hasLien: false, allPaidOff: true };
+              perProp[pIdx] = { paidByLoan: false, delinq60: false, howMany: 0, currentDelinq: false, source: [], hasLien: false, allPaidOff: true, anyPaidOff: false };
             }
             const b = perProp[pIdx];
             b.hasLien = true;
             if (!paidOff) b.allPaidOff = false;
+            if (paidOff) b.anyPaidOff = true;
             if (paidByLoan) b.paidByLoan = true;
             if (has60) b.delinq60 = true;
             if (currentDelinq) b.currentDelinq = true;
@@ -2601,8 +2603,8 @@ async function generateSingleDocument(
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
           // Q1: Encumbrances of record? — YES iff the property has at least one
-          // lien AND every matching lien is flagged Paid Off (slt_paid_off).
-          const encOfRecord = b.hasLien && b.allPaidOff;
+          // lien flagged Paid Off (slt_paid_off). Per spec: any paid-off lien → YES.
+          const encOfRecord = b.hasLien && b.anyPaidOff;
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}`,           { rawValue: encOfRecord ? "true" : "", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes`,       { rawValue: encOfRecord ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no`,        { rawValue: encOfRecord ? "false" : "true", dataType: "boolean" });
