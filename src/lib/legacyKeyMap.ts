@@ -682,6 +682,8 @@ export const LEGACY_TO_DB_KEY: Record<string, string> = {
   'lien.slt_unable_to_verify': 'li_slt_unableToVerify',
   'lien.slt_lender_notified': 'li_slt_lenderNotified',
   'lien.slt_lender_notified_date': 'li_slt_lenderNotifiedDate',
+  'lien.slt_borrower_notified': 'li_slt_borrowerNotified',
+  'lien.slt_borrower_notified_date': 'li_slt_borrowerNotifiedDate',
   'lien.currently_delinquent_amount': 'li_gd_currentlyDelinquentAmount',
   'lien.source_of_information': 'lien1.source_of_information',
 
