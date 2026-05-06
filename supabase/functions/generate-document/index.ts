@@ -255,6 +255,7 @@ async function generateSingleDocument(
       'pr_p_floodZone': 'flood_zone',
       'pr_p_pledgedEquity': 'pledged_equity',
       'pr_p_performedBy': 'appraisal_performed_by',
+      'pr_p_performeBy': 'appraisal_performed_by',
     };
 
     if (isTemplate885) {
