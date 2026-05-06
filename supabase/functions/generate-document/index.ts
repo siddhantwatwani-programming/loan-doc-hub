@@ -576,7 +576,7 @@ async function generateSingleDocument(
           setIfEmpty("lender1.investor_questionnaire_due", iqDueChecked ? "true" : "false");
           setIfEmpty("lender.investor_questionnaire_due", iqDueChecked ? "true" : "false");
           // Pre-rendered checkbox glyph for templates that prefer a single placeholder
-          setIfEmpty("ld_p_investorQuestiDueCheckbox", iqDueChecked ? "☒" : "☐");
+          setIfEmpty("ld_p_investorQuestiDueCheckbox", iqDueChecked ? "☑" : "☐");
 
           debugLog(`[generate-document] Injected lender contact fields from participant (contact ${lc.contact_id}), lenderName="${lFullName}"`);
         }
@@ -988,8 +988,8 @@ async function generateSingleDocument(
         const base = "pr_p_multipleProperties";
         fieldValues.set(`${base}_yes`,       { rawValue: isMultiple ? "true" : "false", dataType: "boolean" });
         fieldValues.set(`${base}_no`,        { rawValue: isSingle   ? "true" : "false", dataType: "boolean" });
-        fieldValues.set(`${base}_yes_glyph`, { rawValue: isMultiple ? "☒" : "☐",       dataType: "text" });
-        fieldValues.set(`${base}_no_glyph`,  { rawValue: isSingle   ? "☒" : "☐",       dataType: "text" });
+        fieldValues.set(`${base}_yes_glyph`, { rawValue: isMultiple ? "☑" : "☐",       dataType: "text" });
+        fieldValues.set(`${base}_no_glyph`,  { rawValue: isSingle   ? "☑" : "☐",       dataType: "text" });
       }
 
       // ── RE851D: Build property-address → property-index map ──
@@ -1235,7 +1235,7 @@ async function generateSingleDocument(
               });
               // Glyph alias for templates using static check-mark fallbacks.
               fieldValues.set(`pr_p_propertyTyp_${idx}_${t}_glyph`, {
-                rawValue: isMatch ? "☒" : "☐",
+                rawValue: isMatch ? "☑" : "☐",
                 dataType: "text",
               });
             }
@@ -1331,7 +1331,7 @@ async function generateSingleDocument(
                 dataType: "boolean",
               });
               fieldValues.set(`${t}_${idx}_glyph`, {
-                rawValue: isMatch ? "☒" : "☐",
+                rawValue: isMatch ? "☑" : "☐",
                 dataType: "text",
               });
               if (idx === 1) {
@@ -1340,7 +1340,7 @@ async function generateSingleDocument(
                   dataType: "boolean",
                 });
                 fieldValues.set(`${t}_glyph`, {
-                  rawValue: isMatch ? "☒" : "☐",
+                  rawValue: isMatch ? "☑" : "☐",
                   dataType: "text",
                 });
               }
@@ -1361,7 +1361,7 @@ async function generateSingleDocument(
         // ── RE851D: per-property Owner-Occupied Yes/No checkbox booleans ──
         // New 4-value vocabulary: "Owner Occupied" | "Tenant / Other" | "Vacant" | "NA".
         // Only "Owner Occupied" => Yes; everything else (including empty) => No.
-        // Aliases are always published so empty values render as ☐ Yes / ☒ No.
+        // Aliases are always published so empty values render as ☐ Yes / ☑ No.
         {
           const occRaw = String(
             fieldValues.get(`pr_p_occupancySt_${idx}`)?.rawValue ||
@@ -1375,8 +1375,8 @@ async function generateSingleDocument(
           const isNo = !isYes;
           fieldValues.set(`pr_p_occupancySt_${idx}_yes`, { rawValue: isYes ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_p_occupancySt_${idx}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
-          fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
-          fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_p_occupancySt_${idx}_yes_glyph`, { rawValue: isYes ? "☑" : "☐", dataType: "text" });
+          fieldValues.set(`pr_p_occupancySt_${idx}_no_glyph`, { rawValue: isNo ? "☑" : "☐", dataType: "text" });
           // Per-property normalized occupancy string for RE851D template.
           // Preserve the actual CSR value so downstream safety passes and
           // template conditionals can distinguish all 4 cases:
@@ -1613,7 +1613,7 @@ async function generateSingleDocument(
         // ── RE851D: per-property TAX DELINQUENT Yes/No checkbox booleans ──
         // After the propertytax bridge + per-index publisher, emit boolean +
         // glyph aliases so any {{propertytax_delinquent_N_yes}}-style tag in
-        // the template resolves correctly. true → YES ☒ / false → NO ☒.
+        // the template resolves correctly. true → YES ☑ / false → NO ☑.
         {
           const delRaw = String(
             fieldValues.get(`propertytax_delinquent_${idx}`)?.rawValue ||
@@ -1632,10 +1632,10 @@ async function generateSingleDocument(
                 fieldValues.set(`${base}_no`, { rawValue: isNo ? "true" : "false", dataType: "boolean" });
               }
               if (!fieldValues.has(`${base}_yes_glyph`)) {
-                fieldValues.set(`${base}_yes_glyph`, { rawValue: isYes ? "☒" : "☐", dataType: "text" });
+                fieldValues.set(`${base}_yes_glyph`, { rawValue: isYes ? "☑" : "☐", dataType: "text" });
               }
               if (!fieldValues.has(`${base}_no_glyph`)) {
-                fieldValues.set(`${base}_no_glyph`, { rawValue: isNo ? "☒" : "☐", dataType: "text" });
+                fieldValues.set(`${base}_no_glyph`, { rawValue: isNo ? "☑" : "☐", dataType: "text" });
               }
             }
           }
@@ -1704,13 +1704,13 @@ async function generateSingleDocument(
         // Map base name -> default glyph value for the *_yes_glyph / *_no_glyph slot.
         const GLYPH_DEFAULTS_NO_CHECKED: Record<string, string> = {
           "pr_li_encumbranceOfRecord_yes_glyph": "☐",
-          "pr_li_encumbranceOfRecord_no_glyph":  "☒",
+          "pr_li_encumbranceOfRecord_no_glyph":  "☑",
           "pr_li_delinqu60day_yes_glyph":        "☐",
-          "pr_li_delinqu60day_no_glyph":         "☒",
+          "pr_li_delinqu60day_no_glyph":         "☑",
           "pr_li_currentDelinqu_yes_glyph":      "☐",
-          "pr_li_currentDelinqu_no_glyph":       "☒",
+          "pr_li_currentDelinqu_no_glyph":       "☑",
           "pr_li_delinquencyPaidByLoan_yes_glyph":"☐",
-          "pr_li_delinquencyPaidByLoan_no_glyph": "☒",
+          "pr_li_delinquencyPaidByLoan_no_glyph": "☑",
         };
         // Suffixes that take the property index in the MIDDLE
         // (e.g. pr_li_currentDelinqu_<N>_yes_glyph), not at the end.
@@ -2596,19 +2596,19 @@ async function generateSingleDocument(
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes`, paidByLoan);
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_no`, !paidByLoan);
-          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes_glyph`, paidByLoan ? "☒" : "☐");
-          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_no_glyph`, paidByLoan ? "☐" : "☒");
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes_glyph`, paidByLoan ? "☑" : "☐");
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_no_glyph`, paidByLoan ? "☐" : "☑");
           setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
           setBool(`pr_li_delinqu60day_${lienIdx}_yes`, has60);
           setBool(`pr_li_delinqu60day_${lienIdx}_no`, !has60);
-          setText(`pr_li_delinqu60day_${lienIdx}_yes_glyph`, has60 ? "☒" : "☐");
-          setText(`pr_li_delinqu60day_${lienIdx}_no_glyph`, has60 ? "☐" : "☒");
+          setText(`pr_li_delinqu60day_${lienIdx}_yes_glyph`, has60 ? "☑" : "☐");
+          setText(`pr_li_delinqu60day_${lienIdx}_no_glyph`, has60 ? "☐" : "☑");
           setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
-          // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☒ NO)
+          // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☑ NO)
           setBool(`pr_li_currentDelinqu_${lienIdx}_yes`, currentDelinq);
           setBool(`pr_li_currentDelinqu_${lienIdx}_no`, !currentDelinq);
-          setText(`pr_li_currentDelinqu_${lienIdx}_yes_glyph`, currentDelinq ? "☒" : "☐");
-          setText(`pr_li_currentDelinqu_${lienIdx}_no_glyph`, currentDelinq ? "☐" : "☒");
+          setText(`pr_li_currentDelinqu_${lienIdx}_yes_glyph`, currentDelinq ? "☑" : "☐");
+          setText(`pr_li_currentDelinqu_${lienIdx}_no_glyph`, currentDelinq ? "☐" : "☑");
           setText(`pr_li_delinquHowMany_${lienIdx}`,
             Number.isFinite(howManyNum) && howManyNum > 0 ? String(howManyNum) : (howManyRaw || ""),
             "number");
@@ -2647,19 +2647,19 @@ async function generateSingleDocument(
           setBoolP(`pr_li_delinquencyPaidByLoan_${pIdx}`, b.paidByLoan);
           fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_yes`, { rawValue: b.paidByLoan ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_no`, { rawValue: b.paidByLoan ? "false" : "true", dataType: "boolean" });
-          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_yes_glyph`, { rawValue: b.paidByLoan ? "☒" : "☐", dataType: "text" });
-          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_no_glyph`, { rawValue: b.paidByLoan ? "☐" : "☒", dataType: "text" });
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_yes_glyph`, { rawValue: b.paidByLoan ? "☑" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_no_glyph`, { rawValue: b.paidByLoan ? "☐" : "☑", dataType: "text" });
           setBoolP(`pr_li_delinqu60day_${pIdx}`, b.delinq60);
           fieldValues.set(`pr_li_delinqu60day_${pIdx}_yes`, { rawValue: b.delinq60 ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_delinqu60day_${pIdx}_no`, { rawValue: b.delinq60 ? "false" : "true", dataType: "boolean" });
-          fieldValues.set(`pr_li_delinqu60day_${pIdx}_yes_glyph`, { rawValue: b.delinq60 ? "☒" : "☐", dataType: "text" });
-          fieldValues.set(`pr_li_delinqu60day_${pIdx}_no_glyph`, { rawValue: b.delinq60 ? "☐" : "☒", dataType: "text" });
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_yes_glyph`, { rawValue: b.delinq60 ? "☑" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_no_glyph`, { rawValue: b.delinq60 ? "☐" : "☑", dataType: "text" });
           setBoolP(`pr_li_currentDelinqu_${pIdx}`, b.currentDelinq);
           // Yes/No + glyph aliases per-property index
           fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes`, { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no`, { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
-          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes_glyph`, { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
-          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no_glyph`, { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes_glyph`, { rawValue: b.currentDelinq ? "☑" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_currentDelinqu_${pIdx}_no_glyph`, { rawValue: b.currentDelinq ? "☐" : "☑", dataType: "text" });
           setTextP(`pr_li_delinquHowMany_${pIdx}`, b.howMany > 0 ? String(b.howMany) : "", "number");
           setTextP(`pr_li_sourceOfPayment_${pIdx}`, b.source.join("\n"));
           // Q1: Encumbrances of record? — YES iff the property has at least one
@@ -2668,8 +2668,8 @@ async function generateSingleDocument(
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}`,           { rawValue: encOfRecord ? "true" : "", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes`,       { rawValue: encOfRecord ? "true" : "false", dataType: "boolean" });
           fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no`,        { rawValue: encOfRecord ? "false" : "true", dataType: "boolean" });
-          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes_glyph`, { rawValue: encOfRecord ? "☒" : "☐", dataType: "text" });
-          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no_glyph`,  { rawValue: encOfRecord ? "☐" : "☒", dataType: "text" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes_glyph`, { rawValue: encOfRecord ? "☑" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_no_glyph`,  { rawValue: encOfRecord ? "☐" : "☑", dataType: "text" });
           // Also fill pr_p_delinquHowMany_N if the property-tax block didn't set it
           const pPropKey = `pr_p_delinquHowMany_${pIdx}`;
           const existing = fieldValues.get(pPropKey)?.rawValue;
@@ -2686,8 +2686,8 @@ async function generateSingleDocument(
             fieldValues.set(`pr_p_${base}_${pIdx}`,           { rawValue: val ? "true" : "", dataType: "boolean" });
             fieldValues.set(`pr_p_${base}_${pIdx}_yes`,       { rawValue: val ? "true" : "false", dataType: "boolean" });
             fieldValues.set(`pr_p_${base}_${pIdx}_no`,        { rawValue: val ? "false" : "true", dataType: "boolean" });
-            fieldValues.set(`pr_p_${base}_${pIdx}_yes_glyph`, { rawValue: val ? "☒" : "☐", dataType: "text" });
-            fieldValues.set(`pr_p_${base}_${pIdx}_no_glyph`,  { rawValue: val ? "☐" : "☒", dataType: "text" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_yes_glyph`, { rawValue: val ? "☑" : "☐", dataType: "text" });
+            fieldValues.set(`pr_p_${base}_${pIdx}_no_glyph`,  { rawValue: val ? "☐" : "☑", dataType: "text" });
           };
           mirrorPP("encumbranceOfRecord", encOfRecord);
           mirrorPP("delinqu60day", b.delinq60);
@@ -2701,18 +2701,18 @@ async function generateSingleDocument(
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_delinquencyPaidByLoan_yes", { rawValue: b.paidByLoan ? "true" : "false", dataType: "boolean" });
             fieldValues.set("pr_li_delinquencyPaidByLoan_no", { rawValue: b.paidByLoan ? "false" : "true", dataType: "boolean" });
-            fieldValues.set("pr_li_delinquencyPaidByLoan_yes_glyph", { rawValue: b.paidByLoan ? "☒" : "☐", dataType: "text" });
-            fieldValues.set("pr_li_delinquencyPaidByLoan_no_glyph", { rawValue: b.paidByLoan ? "☐" : "☒", dataType: "text" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_yes_glyph", { rawValue: b.paidByLoan ? "☑" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_no_glyph", { rawValue: b.paidByLoan ? "☐" : "☑", dataType: "text" });
             fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_delinqu60day_yes", { rawValue: b.delinq60 ? "true" : "false", dataType: "boolean" });
             fieldValues.set("pr_li_delinqu60day_no", { rawValue: b.delinq60 ? "false" : "true", dataType: "boolean" });
-            fieldValues.set("pr_li_delinqu60day_yes_glyph", { rawValue: b.delinq60 ? "☒" : "☐", dataType: "text" });
-            fieldValues.set("pr_li_delinqu60day_no_glyph", { rawValue: b.delinq60 ? "☐" : "☒", dataType: "text" });
+            fieldValues.set("pr_li_delinqu60day_yes_glyph", { rawValue: b.delinq60 ? "☑" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinqu60day_no_glyph", { rawValue: b.delinq60 ? "☐" : "☑", dataType: "text" });
             fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_yes", { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_no", { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
-            fieldValues.set("pr_li_currentDelinqu_yes_glyph", { rawValue: b.currentDelinq ? "☒" : "☐", dataType: "text" });
-            fieldValues.set("pr_li_currentDelinqu_no_glyph", { rawValue: b.currentDelinq ? "☐" : "☒", dataType: "text" });
+            fieldValues.set("pr_li_currentDelinqu_yes_glyph", { rawValue: b.currentDelinq ? "☑" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_currentDelinqu_no_glyph", { rawValue: b.currentDelinq ? "☐" : "☑", dataType: "text" });
             fieldValues.set("pr_li_delinquHowMany", { rawValue: b.howMany > 0 ? String(b.howMany) : "", dataType: "number" });
             fieldValues.set("pr_li_sourceOfPayment", { rawValue: b.source.join("\n"), dataType: "text" });
           }
@@ -3933,7 +3933,7 @@ async function generateSingleDocument(
           // Strictly scoped to detected PROPERTY #K regions; bounded look-ahead.
           if (regions.props.length > 0) {
             const questionRe = /Do any of these payments remain unpaid/gi;
-            const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
             let qm: RegExpExecArray | null;
             while ((qm = questionRe.exec(xml)) !== null) {
               const qStart = qm.index;
@@ -4008,12 +4008,12 @@ async function generateSingleDocument(
           // following the question text to property count: >1 → YES ☑ NO ☐;
           // ==1 → YES ☐ NO ☑. The merge-tag publisher
           // (pr_p_multipleProperties_*_glyph) remains primary; this pass only
-          // fires when the next two glyph runs are still raw ☐/☑/☒.
+          // fires when the next two glyph runs are still raw ☐/☑/☑.
           {
             const propCount = [...propertyIndices].sort((a, b) => a - b).slice(0, 5).length;
             const isMultipleQ = propCount > 1;
             const multiQRe = /Are there multiple properties on the loan/gi;
-            const multiGlyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            const multiGlyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
             let mqm: RegExpExecArray | null;
             while ((mqm = multiQRe.exec(xml)) !== null) {
               const qStart = mqm.index;
@@ -4067,7 +4067,7 @@ async function generateSingleDocument(
           // Vacant, NA, empty) => YES ☐ / NO ☑.
           if (regions.props.length > 0) {
             const ownerOccRe = /Owner[\s\u00A0\-]?Occupied/gi;
-            const glyphRunRe2 = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+            const glyphRunRe2 = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
             // Match a "Yes" or "No" label sitting alone (or with surrounding
             // whitespace) inside a single <w:t>…</w:t> run. We anchor on these
             // text runs to find the immediately-preceding glyph run.
@@ -4287,9 +4287,9 @@ async function generateSingleDocument(
 
     // ── RE851D POST-RENDER OWNER OCCUPIED safety pass ──
     // Some authored RE851D templates carry inline conditional checkbox glyphs
-    // (e.g. {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☒{{else}}☐{{/if}})
+    // (e.g. {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☑{{else}}☐{{/if}})
     // that, depending on template variants and run fragmentation, may leave
-    // both Yes ☑/☒ and No ☑/☒ checked. After full template rendering, walk
+    // both Yes ☑/☑ and No ☑/☑ checked. After full template rendering, walk
     // each PROPERTY block and force exactly one mutually-exclusive pair
     // anchored to the literal "Yes" / "No" labels following "OWNER OCCUPIED",
     // using pr_p_occupanc_K as the source of truth. Strictly RE851D-scoped.
@@ -4382,9 +4382,9 @@ async function generateSingleDocument(
           }
 
           const ownerRe = /OWNER\s+OCCUPIED/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*No\s*<\/w:t>/gi;
-          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☑]?\s*Yes\s*<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*[☐☑☑]?\s*No\s*<\/w:t>/gi;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
@@ -4398,7 +4398,7 @@ async function generateSingleDocument(
               `$1${val}$2`,
             );
             next = next.replace(
-              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>)/,
               `$1${glyph}$3`,
             );
             return next;
@@ -4566,8 +4566,8 @@ async function generateSingleDocument(
         let didMutate3 = false;
 
         const sdtCheckboxReM = /<w:sdt\b[\s\S]*?<\/w:sdt>/g;
-        const glyphRunReM = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
-        const inlineGlyphInWtReM = /<w:t(?:\s[^>]*)?>[^<]*([☐☑☒])[^<]*<\/w:t>/g;
+        const glyphRunReM = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
+        const inlineGlyphInWtReM = /<w:t(?:\s[^>]*)?>[^<]*([☐☑☑])[^<]*<\/w:t>/g;
 
         const rewriteSdtCheckedM = (block: string, checked: boolean): string => {
           if (!/<w14:checkbox\b/.test(block)) return block;
@@ -4769,8 +4769,8 @@ async function generateSingleDocument(
               const openTagEnd = xml.indexOf(">", wtOpen);
               if (openTagEnd === -1 || openTagEnd > labelXml) return;
               const inner = xml.slice(openTagEnd + 1, wtCloseTagStart);
-              if (!/[☐☑☒]/.test(inner)) return;
-              const newInner = inner.replace(/[☐☑☒]/g, glyph);
+              if (!/[☐☑☑]/.test(inner)) return;
+              const newInner = inner.replace(/[☐☑☑]/g, glyph);
               if (newInner === inner) return;
               if (overlaps(openTagEnd + 1, wtCloseTagStart)) return;
               inlineRewrites.push({
@@ -4903,7 +4903,7 @@ async function generateSingleDocument(
           // checkbox glyph or other inline characters within the same <w:t>.
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
-          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
@@ -4917,7 +4917,7 @@ async function generateSingleDocument(
               `$1${val}$2`,
             );
             next = next.replace(
-              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>)/,
               `$1${glyph}$3`,
             );
             return next;
@@ -5120,7 +5120,7 @@ async function generateSingleDocument(
           const questionRe = /cure the delinquency|paid by this loan/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
-          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
@@ -5134,7 +5134,7 @@ async function generateSingleDocument(
               `$1${val}$2`,
             );
             next = next.replace(
-              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>)/,
               `$1${glyph}$3`,
             );
             return next;
@@ -5329,7 +5329,7 @@ async function generateSingleDocument(
           const questionRe = /payments?\s+more\s+than\s+60\s*[-\s]?\s*days?\s+late|60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen|60\s+days?\s+late/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
-          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
@@ -5343,7 +5343,7 @@ async function generateSingleDocument(
               `$1${val}$2`,
             );
             next = next.replace(
-              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>)/,
               `$1${glyph}$3`,
             );
             return next;
@@ -5538,7 +5538,7 @@ async function generateSingleDocument(
           const questionRe = /Are there any encumbrances of record|encumbrances of record/gi;
           const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
           const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
-          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
           type Rewrite = { start: number; end: number; replacement: string };
@@ -5552,7 +5552,7 @@ async function generateSingleDocument(
               `$1${val}$2`,
             );
             next = next.replace(
-              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>)/,
               `$1${glyph}$3`,
             );
             return next;
@@ -5891,9 +5891,9 @@ async function generateSingleDocument(
                 const isNo = truthy(fieldValues.get(noK)?.rawValue);
                 const isUnk = truthy(fieldValues.get(unkK)?.rawValue) || (!isYes && !isNo);
                 const states = [isYes, isNo, isUnk];
-                // find the next 3 glyph runs (☐/☑/☒) within window in raw xml order
+                // find the next 3 glyph runs (☐/☑/☑) within window in raw xml order
                 const slice = xml.slice(rawWinStart, rawWinEnd);
-                const glyphRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+                const glyphRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☑])(<\/w:t>\s*<\/w:r>)/g;
                 let gIdx = 0;
                 let gm: RegExpExecArray | null;
                 while ((gm = glyphRe.exec(slice)) !== null && gIdx < 3) {
