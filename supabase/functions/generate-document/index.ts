@@ -1717,7 +1717,12 @@ async function generateSingleDocument(
           for (const base of SHIELD_BASES) {
             const key = `${base}_${idx}`;
             if (!fieldValues.has(key)) {
-              fieldValues.set(key, { rawValue: "", dataType: "text" });
+              const glyphDefault = GLYPH_DEFAULTS_NO_CHECKED[base];
+              if (glyphDefault !== undefined) {
+                fieldValues.set(key, { rawValue: glyphDefault, dataType: "text" });
+              } else {
+                fieldValues.set(key, { rawValue: "", dataType: "text" });
+              }
               blankedThisIdx = true;
             }
           }
