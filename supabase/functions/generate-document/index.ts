@@ -4288,6 +4288,189 @@ async function generateSingleDocument(
       }
     }
 
+    // ── RE851D POST-RENDER "Multiple / Additional Securing Property" YES/NO safety pass ──
+    // The mapped RE851D template uses several different label texts and
+    // checkbox arrangements for this question across PROPERTY blocks:
+    //   - "Are there multiple properties on the loan"
+    //   - "IS THERE ADDITIONAL SECURING PROPERTY?"
+    // Some occurrences also have only static "☐ YES ☐ NO" with no merge tag,
+    // so the pre-render publisher cannot reach them. After processDocx wraps
+    // bare glyphs in <w:sdt> blocks with intrinsic <w14:checked> state, walk
+    // each occurrence and force exactly one mutually-exclusive YES/NO pair
+    // based on the property count detected in fieldValues. Strictly
+    // RE851D-scoped; only the YES/NO pair immediately following the question
+    // is touched.
+    if (/851d/i.test(template.name || "")) {
+      try {
+        // Derive property count from fieldValues (property{N}.* keys).
+        const _propIdxSet = new Set<number>();
+        for (const [k] of fieldValues.entries()) {
+          const m = k.match(/^property(\d+)\./i);
+          if (m) _propIdxSet.add(parseInt(m[1], 10));
+        }
+        // If any property records exist, the count is the number of distinct
+        // indices; if none were detected, default to 1 (matches publisher
+        // semantics elsewhere).
+        const propCount = _propIdxSet.size > 0 ? _propIdxSet.size : 1;
+        const isMultipleQ = propCount > 1;
+
+        const decoder3 = new TextDecoder("utf-8");
+        const encoder3 = new TextEncoder();
+        const unzipped3 = fflate.unzipSync(processedDocx);
+        const rezip3: fflate.Zippable = {};
+        let didMutate3 = false;
+
+        // Match either supported question text. Also accept the template's
+        // current variant ("IS THERE ADDITIONAL SECURING PROPERTY") which the
+        // earlier in-render safety pass did not anchor on.
+        const questionRe = /(?:Are there multiple properties on the loan|IS\s+THERE\s+ADDITIONAL\s+SECURING\s+PROPERTY)/gi;
+        const yesLabelReM = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*YES\s*<\/w:t>/gi;
+        const noLabelReM  = /<w:t(?:\s[^>]*)?>\s*[☐☑☒]?\s*NO\s*<\/w:t>/gi;
+        const glyphRunReM = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+        const sdtCheckboxReM = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
+
+        const rewriteSdtCheckedM = (block: string, checked: boolean): string => {
+          const val = checked ? "1" : "0";
+          const glyph = checked ? "\u2611" : "\u2610";
+          let next = block.replace(
+            /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
+            `$1${val}$2`,
+          );
+          next = next.replace(
+            /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+            `$1${glyph}$3`,
+          );
+          return next;
+        };
+
+        for (const [filename, bytes] of Object.entries(unzipped3)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip3[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = decoder3.decode(bytes);
+          if (
+            !/Are there multiple properties on the loan/i.test(xml) &&
+            !/ADDITIONAL\s+SECURING\s+PROPERTY/i.test(xml)
+          ) {
+            rezip3[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+
+          type Ctrl3 = { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] };
+          const collectControls = (winStart: number, winEnd: number): Ctrl3[] => {
+            const ctrls: Ctrl3[] = [];
+            const slice = xml.slice(winStart, winEnd);
+            const sdtRe = new RegExp(sdtCheckboxReM.source, "g");
+            let sm: RegExpExecArray | null;
+            while ((sm = sdtRe.exec(slice)) !== null) {
+              ctrls.push({
+                idx: winStart + sm.index,
+                end: winStart + sm.index + sm[0].length,
+                kind: "sdt",
+                m: [sm[0]],
+              });
+            }
+            const gRe = new RegExp(glyphRunReM.source, "g");
+            let gm: RegExpExecArray | null;
+            while ((gm = gRe.exec(slice)) !== null) {
+              const s = winStart + gm.index;
+              const e = winStart + gm.index + gm[0].length;
+              if (ctrls.some((c) => c.kind === "sdt" && s >= c.idx && e <= c.end)) continue;
+              ctrls.push({ idx: s, end: e, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] });
+            }
+            ctrls.sort((a, b) => a.idx - b.idx);
+            return ctrls;
+          };
+
+          type Rewrite3 = { start: number; end: number; replacement: string };
+          const rewrites: Rewrite3[] = [];
+
+          questionRe.lastIndex = 0;
+          let qm: RegExpExecArray | null;
+          let occurrence = 0;
+          while ((qm = questionRe.exec(xml)) !== null) {
+            occurrence += 1;
+            const qStart = qm.index;
+            // Bound the search window to the next question or +3KB.
+            const tmpQ = new RegExp(questionRe.source, "gi");
+            tmpQ.lastIndex = qStart + qm[0].length;
+            const nextQ = tmpQ.exec(xml);
+            const winEnd = Math.min(nextQ ? nextQ.index : xml.length, qStart + 3000);
+
+            yesLabelReM.lastIndex = qStart;
+            noLabelReM.lastIndex = qStart;
+            const yL = yesLabelReM.exec(xml);
+            const nL = noLabelReM.exec(xml);
+            if (!yL || !nL) continue;
+            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+
+            const ctrls = collectControls(qStart, winEnd);
+            if (ctrls.length < 2) continue;
+
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start);
+            const sortByDist = (labelIdx: number) =>
+              ctrls
+                .filter((c) => !overlaps(c.idx, c.end))
+                .map((c) => ({ c, d: Math.abs(labelIdx >= c.end ? labelIdx - c.end : c.idx - labelIdx) }))
+                .sort((a, b) => a.d - b.d);
+
+            const yesCands = sortByDist(yL.index);
+            const noCands = sortByDist(nL.index);
+            if (yesCands.length === 0 || noCands.length === 0) continue;
+
+            const yC = yesCands[0].c;
+            const nCSel = noCands.find((x) => x.c.idx !== yC.idx);
+            if (!nCSel) continue;
+            const nC = nCSel.c;
+
+            const yesChecked = isMultipleQ;
+            const noChecked = !isMultipleQ;
+
+            const yesReplacement =
+              yC.kind === "sdt"
+                ? rewriteSdtCheckedM(yC.m[0], yesChecked)
+                : `${yC.m[1]}${yesChecked ? "\u2611" : "\u2610"}${yC.m[3]}`;
+            const noReplacement =
+              nC.kind === "sdt"
+                ? rewriteSdtCheckedM(nC.m[0], noChecked)
+                : `${nC.m[1]}${noChecked ? "\u2611" : "\u2610"}${nC.m[3]}`;
+
+            rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
+            rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(
+              `[generate-document] RE851D multi-properties post-render occ#${occurrence}: propCount=${propCount} => YES=${yesChecked ? "☑" : "☐"} NO=${noChecked ? "☑" : "☐"}`
+            );
+          }
+
+          if (rewrites.length > 0) {
+            rewrites.sort((a, b) => b.start - a.start);
+            for (const r of rewrites) {
+              xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+            }
+            rezip3[filename] = [encoder3.encode(xml), { level: 0 }];
+            didMutate3 = true;
+          } else {
+            rezip3[filename] = [bytes, { level: 0 }];
+          }
+        }
+
+        if (didMutate3) {
+          processedDocx = new Uint8Array(fflate.zipSync(rezip3));
+        }
+      } catch (postErrM) {
+        console.error(
+          `[generate-document] RE851D post-render multiple-properties pass failed (continuing):`,
+          postErrM instanceof Error ? postErrM.message : String(postErrM)
+        );
+      }
+    }
+
     // ── RE851D POST-RENDER "Remain Unpaid" YES/NO safety pass ──
     // Mirrors the Owner-Occupied post-render pass. After processDocx wraps
     // standalone glyphs in <w:sdt> blocks with intrinsic <w14:checked> state,

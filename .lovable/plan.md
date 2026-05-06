@@ -1,59 +1,93 @@
 ## Findings
 
-I reviewed the uploaded mapped template and generated RE851D output, plus the current document-generation code and live CSR data for loan `DL-2026-0235`.
+I reviewed the current RE851D generator code, the uploaded mapped template `Re851d_v1 (1) (2)(9)`, the generated `Re851d_v10`, and the saved CSR data for loan `DL-2026-0235`.
 
-Root cause:
+Key findings:
 
-- The template uses `{{#if (eq pr_p_performeBy_N "Broker")}}...{{/if}}` correctly inside each PROPERTY section.
-- The `_N -> _1/_2/_3...` preprocessor already includes `pr_p_performeBy_N` in its indexed tag allowlist.
-- The live CSR data currently has:
-  - `property1` Performed By = `Broker`
-  - `property2` Performed By = `Third Party`
-  - no saved Performed By value found for properties 3-5 in the database query
-- The generator publishes `pr_p_performedBy_1` and mirrors to legacy misspelled `pr_p_performeBy_1`, but it only publishes the misspelled alias when the canonical `pr_p_performedBy_N` exists.
-- The CSR field dictionary key is already the legacy key `pr_p_performeBy`, so for composite keys like `property2::field_id`, the bridge creates `property2.appraisal_performed_by` but does not reliably create canonical `pr_p_performedBy_2`. As a result, the mirror path can miss `pr_p_performeBy_2`.
-- The anti-fallback shield does not currently include `pr_p_performeBy` / `pr_p_performedBy`, so a missing `pr_p_performeBy_2` can fall back to the base `pr_p_performeBy` value from Property #1 (`Broker`), causing every PROPERTY block to render “BPO Performed by Broker” / “N/A”.
+- The CSR data does have multiple property records. Current saved property prefixes are `property1`, `property2`, and `property3`, so the expected result is:
+  ```text
+  YES = checked
+  NO  = unchecked
+  ```
+- The generator already publishes these global aliases:
+  - `pr_p_multipleProperties_yes`
+  - `pr_p_multipleProperties_no`
+  - `pr_p_multipleProperties_yes_glyph`
+  - `pr_p_multipleProperties_no_glyph`
+- The mapped template does not use one single consistent pattern for this checkbox. It contains several variants across the property blocks, including:
+  - Property #1: `☐ {{pr_p_multipleProperties_yes_glyph}} YES {{pr_p_multipleProperties_no_glyph}} NO`
+  - Property #2: `☐ YES ☐ NO` followed by the glyph tags on separate lines
+  - Property #3/#4/#5: plain static `YES ☐ / NO ☐` or `☐ YES ☐ NO` with no merge tags near the text
+- The existing safety pass anchors only on this exact question text:
+  ```text
+  Are there multiple properties on the loan
+  ```
+  But the actual uploaded template uses:
+  ```text
+  IS THERE ADDITIONAL SECURING PROPERTY?
+  ```
+  Therefore the current safety pass never fires for the uploaded template.
+- Because standalone checkbox glyphs are converted into Word checkbox controls after merge rendering, this should be fixed as a post-render safety pass that can update both visible glyphs and the internal Word checkbox checked state.
 
 ## Plan
 
-1. Update only `supabase/functions/generate-document/index.ts` in the existing RE851D multi-property publisher.
+I will make one focused backend-only change in `supabase/functions/generate-document/index.ts`.
 
-2. Make Performed By publishing explicit and bidirectional per property:
-   - For each `propertyK`, read the source value from `propertyK.appraisal_performed_by`.
-   - Publish both aliases:
-     - `pr_p_performedBy_K`
-     - `pr_p_performeBy_K`
-   - Do this per index only; no cross-property fallback.
+1. Keep the existing publisher unchanged.
+   - Continue computing property count from the detected CSR property records.
+   - Continue publishing `pr_p_multipleProperties_yes/_no/_glyph` as it does now.
+   - No schema, UI, API, packet, or template changes.
 
-3. Add Performed By to the existing RE851D anti-fallback shield:
-   - Add `pr_p_performedBy`
-   - Add `pr_p_performeBy`
-   - This ensures missing values for Property #K become blank instead of falling back to Property #1/base values.
+2. Add a RE851D post-render safety pass after `processDocx(...)`.
+   - Strictly gated to RE851D templates.
+   - It will scan rendered DOCX XML for both supported labels:
+     ```text
+     Are there multiple properties on the loan
+     IS THERE ADDITIONAL SECURING PROPERTY?
+     ```
+   - It will find the local YES and NO checkbox controls around each label.
+   - It will force the pair from property count:
+     ```text
+     property count > 1  => YES ☑, NO ☐
+     property count == 1 => YES ☐, NO ☑
+     ```
 
-4. Add Performed By keys to the RE851D `effectiveValidFieldKeys` suffixed-key seed:
-   - `pr_p_performedBy_1..5`
-   - `pr_p_performeBy_1..5`
-   - This makes the conditional resolver treat each indexed tag as an exact field key and prevents resolver fallback to the unsuffixed field.
+3. Support both template styles already present in the uploaded mapped file.
+   - `☐ YES ☐ NO`
+   - `YES ☐ / NO ☐`
+   - merge-tag glyph variants where `{{pr_p_multipleProperties_yes_glyph}}` and `{{pr_p_multipleProperties_no_glyph}}` render separately from the YES/NO labels
+   - Word checkbox SDT controls generated from those glyphs
 
-5. Keep the template logic unchanged:
-   - `{{#if (eq pr_p_performeBy_N "Broker")}}BPO Performed by Broker{{/if}}`
-   - `{{#if (eq pr_p_performeBy_N "Broker")}}N/A{{/if}}`
-   - The preprocessor will continue to rewrite `_N` to `_1`, `_2`, `_3`, `_4`, `_5` based on the PROPERTY section.
+4. Avoid unrelated checkbox changes.
+   - The pass will be bounded to a short local window after the specific question label.
+   - It will only touch the nearest YES/NO pair for that question.
+   - It will not modify owner occupied, encumbrance, delinquency, property type, servicing, amortization, or any other checkbox logic.
 
-6. Update the existing project memory for RE851D Performed By mapping to record the no-fallback requirement.
+5. Update the existing RE851D multiple-properties memory note to record the new accepted labels and post-render enforcement behavior.
+
+## Template guidance
+
+You should not need to change the template for this fix.
+
+That said, the clean recommended template pattern is:
+
+```text
+IS THERE ADDITIONAL SECURING PROPERTY?
+{{pr_p_multipleProperties_yes_glyph}} YES   {{pr_p_multipleProperties_no_glyph}} NO
+```
+
+The fix will still handle the current uploaded template variants, including the sections that currently only have static `☐ YES ☐ NO` without the merge tags.
 
 ## Expected result
 
-For loan `DL-2026-0235` with current data:
+For `DL-2026-0235`, since the CSR currently has more than one property, every RE851D occurrence of the additional/multiple securing property YES/NO pair should render as:
 
 ```text
-Property #1 pr_p_performeBy_1 = Broker      -> BPO Performed by Broker / N/A prints
-Property #2 pr_p_performeBy_2 = Third Party -> conditional false, blank output
-Property #3 pr_p_performeBy_3 = blank/missing -> conditional false, blank output
-Property #4 pr_p_performeBy_4 = blank/missing -> conditional false, blank output
-Property #5 pr_p_performeBy_5 = blank/missing -> conditional false, blank output
+☑ YES   ☐ NO
 ```
 
-If Property #3 is later set to `Broker`, then only Property #3 will print the Broker text; it will not affect any other PROPERTY section.
+If a future loan has only one property, it should render as:
 
-No UI, schema, API, template, unrelated document-generation logic, or database migration changes are planned.
+```text
+☐ YES   ☑ NO
+```
