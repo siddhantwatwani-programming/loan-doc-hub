@@ -245,6 +245,19 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             <span className="font-semibold text-sm text-primary">Lien Details</span>
           </div>
 
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.thisLoan}>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="thisLoan"
+                checked={lien.thisLoan === 'true'}
+                onCheckedChange={(checked) => handleThisLoanChange(!!checked)}
+                disabled={disabled}
+              />
+              <Label htmlFor="thisLoan" className="text-sm text-foreground">This Loan</Label>
+            </div>
+          </DirtyFieldWrapper>
+
+
           <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sourceOfInformation}>
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Source of Information</Label>
