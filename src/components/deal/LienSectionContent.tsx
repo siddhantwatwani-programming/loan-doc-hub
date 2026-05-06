@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
@@ -8,6 +8,7 @@ import { LienModal } from './LienModal';
 import { LienDetailForm } from './LienDetailForm';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
+import { distributePayoff, computeEquity, formatOrdinal, toNumber } from '@/lib/lienCalculationEngine';
 
 interface LienSectionContentProps {
   values: Record<string, string>;
