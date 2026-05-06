@@ -3566,7 +3566,7 @@ async function generateSingleDocument(
             out[filename] = bytes;
             continue;
           }
-          let xml = decoder.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (!xml.includes("_N")) {
             out[filename] = bytes;
             continue;
@@ -4439,7 +4439,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder2.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.indexOf("OWNER OCCUPIED") === -1 && xml.indexOf("Owner Occupied") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -4635,7 +4635,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder2.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render owner-occupied safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -4721,7 +4721,7 @@ async function generateSingleDocument(
             rezip3[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
 
           // Build a visible-text projection with an offset map back into xml.
           // This handles Word splitting visible text across multiple <w:t>
@@ -4915,7 +4915,7 @@ async function generateSingleDocument(
             for (const r of allRewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip3[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip3[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate3 = true;
           } else {
             rezip3[filename] = [bytes, { level: 0 }];
@@ -4975,7 +4975,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.toLowerCase().indexOf("remain unpaid") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5138,7 +5138,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render remain-unpaid safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5194,7 +5194,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           const xmlLowerCD = xml.toLowerCase();
           if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
@@ -5349,7 +5349,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render cure-delinquency safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5403,7 +5403,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           const xmlLower60 = xml.toLowerCase();
           if (xmlLower60.indexOf("60 day") === -1 && xmlLower60.indexOf("60-day") === -1 && xmlLower60.indexOf("sixty day") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
@@ -5558,7 +5558,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render 60-day safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5613,7 +5613,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.toLowerCase().indexOf("encumbrances of record") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5767,7 +5767,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render encumbrance-of-record safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5842,7 +5842,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder4.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.indexOf("ENCUMBRANCE") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -6067,7 +6067,7 @@ async function generateSingleDocument(
           for (const r of replacements) {
             xml = xml.slice(0, r.start) + r.body + xml.slice(r.end);
           }
-          rezip[filename] = [encoder4.encode(xml), { level: 0 }];
+          rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
           didMutate = true;
           console.log(
             `[generate-document] RE851D post-render encumbrance pass: ${pureInserts.length} value cells filled, ${replacements.length} balloon glyphs forced in ${filename}`,
