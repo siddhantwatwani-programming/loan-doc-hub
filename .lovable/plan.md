@@ -1,83 +1,89 @@
-## RE885 Broker Information — Field Alignment Fix
+## RE851D — Why the lien-based questionnaire is blank in `Re851d_v27`
 
-### Root Cause (Confirmed)
+### Deep analysis (what actually happened)
 
-The misalignment is **in the Word template itself**, not in the data publisher.
+Comparing the template `Re851d_v1(1)(2)(11).docx` against the generated `Re851d_v27.docx`, the lien-based questionnaire fields per property break into two distinct symptom groups:
 
-Looking at the uploaded template snapshot (image 2), the broker row is authored as **inline flowing text on a single line above the label row**:
+**Group A — Text-only fields (working):**
+- `B./G./L. If YES, how many?` → renders `4`, `34`, blank for properties 1, 2, 3+
+- `E./J. If NO, source of funds…` → renders `Adwait`, `dfgd`, blank
+
+These prove the per-property publisher in `supabase/functions/generate-document/index.ts` (lines 2467–2670) IS running and IS bucketing liens to the correct property index, AND the `_N → _1, _2, …` literal rewrite (line 3146) IS firing for these tags.
+
+**Group B — YES/NO glyph fields (broken):**
+- Q1 `Are there any encumbrances of record?` → `YES … NO` (no glyph at all)
+- Q2 `Over last 12 months > 60 days late?` → `YES … NO` (no glyph)
+- Q4 `Do any of these payments remain unpaid?` → `YES … NO` (no glyph)
+- Q5 `If YES, will loan cure the delinquency?` → `YES … NO` (no glyph)
+
+In the template each YES/NO line is authored as one inline run, e.g.:
 
 ```
-{{bk_p_company}}    {{bk_p_brokerLicens}}    {{bk_p_firstName}}{{bk_p_lastName}}    {{bk_p_brokerLicens}}
-   Name of Broker         License #          Broker's Representative      License #
-{{bk_p_brokerAddres}}
-   Broker's Address
+<w:t xml:space="preserve">{{pr_li_encumbranceOfRecord_N_yes_glyph}} YES</w:t>
 ```
 
-Because these tags share a single paragraph separated by spaces/tabs, once the values render at different lengths (e.g. `Mob`, `45677`, `Amal Singh`, `45677`) the tab stops shift and everything collapses left, exactly as shown in image 1.
+In the generated XML for Property #1 the same run becomes:
 
-The data side is already correct:
-- `bk_p_company`, `bk_p_brokerLicens`, `bk_p_brokerAddres`, `bk_p_fullName`, `bk_p_repLicense`, `bk_p_brokerRepres` are all published in `supabase/functions/generate-document/index.ts` (lines 614–641). No code change is needed for the values to exist.
-
-This cannot be fixed reliably from code — Word inline runs with variable‑length text will always re-flow. The only robust fix is to restructure the four broker cells as a real DOCX table.
-
-### Plan
-
-#### 1. Template change (RE885.docx) — required, this is the actual fix
-
-Replace the current inline broker block with a 4‑column fixed‑width table directly above the label row, then merge the label row into the same table so labels and values share column geometry.
-
-Recommended structure (single table, 2 rows × 4 columns, fixed column widths):
-
-```text
-| {{bk_p_company}}     | {{bk_p_brokerLicens}} | {{bk_p_fullName}}        | {{bk_p_repLicense}} |
-| Name of Broker       | License #             | Broker's Representative  | License #           |
+```
+<w:t xml:space="preserve"> YES</w:t>
 ```
 
-Then a second table (1 row × 1 column, full width) for the address:
+So the merge tag IS being consumed, but it resolves to empty string instead of `☐` / `☒`. The bare ` YES` / ` NO` labels remain because they were literal text in the same run.
 
-```text
-| {{bk_p_brokerAddres}} |
-| Broker's Address      |
-```
+### Why these glyph tags resolve to empty
 
-Important authoring rules inside Word:
-- Use **fixed column widths** (DXA), not "auto fit to contents".
-- Set table width = content width (e.g. 9360 DXA on US Letter with 1" margins).
-- Each cell width must match the table's `columnWidths`.
-- Remove all manual tabs / multiple spaces between the four tags.
-- Keep cell borders only on the bottom (to preserve the underline look from the original).
-- Use `{{bk_p_fullName}}` for the representative cell (already published) instead of `{{bk_p_firstName}}{{bk_p_lastName}}` — this removes the inline‑concatenation source of drift.
-- Use `{{bk_p_repLicense}}` for the second License # column (already published) instead of repeating `{{bk_p_brokerLicens}}` — the duplicate is what makes both license columns shift identically.
+1. The publisher writes the per-property glyph alias correctly:
+   ```
+   fieldValues.set(`pr_li_encumbranceOfRecord_${pIdx}_yes_glyph`, { rawValue: "☒"|"☐", dataType: "text" })
+   ```
+   (index.ts lines 2619–2623, 2598–2613).
 
-This table-based authoring is the same pattern already used elsewhere in the RE885 template (e.g. signature block) and is the only layout that survives variable-length data.
+2. The `_N` rewrite turns `{{pr_li_encumbranceOfRecord_N_yes_glyph}}` into `{{pr_li_encumbranceOfRecord_1_yes_glyph}}` for the Property #1 region (RE851D_INDEXED_TAGS includes these aliases — index.ts lines 3175–3188).
 
-#### 2. Code side — minimal safety patch only
+3. BUT the merge-tag resolver (`tag-parser.ts` → `resolveFieldKeyWithMap`) treats `pr_li_encumbranceOfRecord_1_yes_glyph` as an unknown key (it does not exist in `field_dictionary`). It then resolves the key through the canonical/legacy fallback chain. The chain collapses the synthetic suffixes (`_1_yes_glyph`) onto the closest known canonical key — which is the bare `pr_li_encumbranceOfRecord` boolean, not the `…_yes_glyph` text alias. The bare key has `rawValue = "true" | ""` (boolean), so when the resolver formats it as text it returns an empty string for the glyph slot.
 
-In `supabase/functions/generate-document/index.ts`, the broker publisher (around lines 614–641) already sets every needed key. The only small adjustment to make the new template render cleanly:
+   Evidence: the same pattern works in other RE851D blocks ONLY because the post-render "safety passes" (index.ts ~3869–3946 for "remain unpaid", ~5439 for "encumbrances of record", ~5021 for "cure the delinquency") rewrite static `☐`/`☒` runs after the question text. Those passes require glyph-only runs in the template, e.g. a single `<w:t>☐</w:t>` followed by a separate `<w:t> YES</w:t>` run. In `Re851d_v1(1)(2)(11)` the template authored the glyph and the YES label as ONE run, so the safety passes' glyphRunRe (`<w:r>…<w:t>[☐☑☒]</w:t></w:r>`) does not match and never fires. The rewrite path therefore depends entirely on merge-tag resolution, which (per #3) collapses to empty.
 
-- Stop appending `\u00A0` to `bk_p_firstName` / `bk_p_lastName` **only when** `bk_p_fullName` is the tag in use. Since the new template uses `bk_p_fullName`, leave the existing first/last NBSP behavior intact for backward compatibility with other templates — no change required.
-- No new aliases. No schema change. No save/update API change.
+4. The `RE851D anti-fallback shield` (index.ts lines 1654–1696) only protects `pr_p_*` / `ln_p_*` bases. It does NOT shield `pr_li_encumbranceOfRecord`, `pr_li_delinqu60day`, `pr_li_currentDelinqu`, or `pr_li_delinquencyPaidByLoan`, so the resolver's fallback collapse goes uncaught.
 
-So the code change is effectively **none** — the existing publishers are already correct.
+5. Property tax block uses an `{{#if propertytax.delinquent}}…{{/if}}` conditional that does not consult lien data and is therefore unrelated to the spec — it is producing the `☑ YES ☐ NO` you see for "ARE TAXES DELINQUENT?" but does nothing for the lien questionnaire.
 
-#### 3. Validation
+### Do you need to change the template?
 
-After the template is updated:
-- Generate RE885 with short data (`Mob` / `45677`) and long data (`Some Long Brokerage LLC` / `CA-DRE-01234567`) to confirm columns no longer drift.
-- Confirm:
-  - Broker company sits exactly under "Name of Broker"
-  - Broker license sits under the first "License #"
-  - Representative full name sits under "Broker's Representative"
-  - Rep license sits under the second "License #"
-  - Address sits under "Broker's Address" on its own row
-- No change to wording, field keys, or document content.
+**No template change is required.** The template tags (`pr_li_encumbranceOfRecord_N_yes_glyph`, `pr_li_delinqu60day_N_*`, `pr_li_currentDelinqu_N_*`, `pr_li_delinquencyPaidByLoan_N_*`, `pr_li_delinquHowMany_N`, `pr_li_sourceOfPayment_N`) are already the correct keys this backend supports.
 
-### Files Touched
+The fix is entirely in `supabase/functions/generate-document/index.ts` to stop the canonical-key collapse that wipes out the four glyph aliases.
 
-- **Template only** — `RE885.docx` in the template library (uploaded via the Template Management page).
-- **No code changes** in `supabase/functions/generate-document/index.ts`.
-- **No schema changes**, no UI changes, no save/update API changes.
+### Plan (code-only)
 
-### Why not "fix it in code"
+1. **Extend the RE851D anti-fallback shield** (index.ts ~line 1654 `SHIELD_BASES`) to include the lien-derived bases:
+   - `pr_li_encumbranceOfRecord`, `pr_li_encumbranceOfRecord_yes`, `pr_li_encumbranceOfRecord_no`, `pr_li_encumbranceOfRecord_yes_glyph`, `pr_li_encumbranceOfRecord_no_glyph`
+   - same five-suffix family for: `pr_li_delinqu60day`, `pr_li_currentDelinqu`, `pr_li_delinquencyPaidByLoan`
+   - `pr_li_delinquHowMany`, `pr_li_sourceOfPayment`
+   For every property index `1..5` write an empty-string `text` placeholder if the publisher didn't already populate it. This blocks the resolver from falling back to the bare boolean key.
 
-Code-side workarounds (forced widths via `\u00A0` padding, fixed‑length string padding, injecting tabs) cannot make Word inline text behave like a fixed grid — Word recomputes tab stops based on the actual rendered run width per font/size. A real table is the only deterministic fix and is exactly what the requirement document calls out as Fix 1 (Critical) and Fix 4 (Fixed Column Widths).
+2. **Force `_yes_glyph` / `_no_glyph` aliases to publish a glyph even when the lien bucket is empty.** In the per-property publish block (index.ts ~line 2588) emit defaults when `perProp[pIdx]` is missing for indices `1..MAX_PROPERTIES`:
+   - `_yes_glyph = "☐"`, `_no_glyph = "☒"` (i.e. NO checked) for Q1/Q2/Q4/Q5 when no lien data exists for that property. This matches the spec's mutual-exclusivity rule and keeps both checkboxes from going blank.
+
+3. **Add a per-property safety pass that handles merge-tag-style runs**, mirroring the existing "remain unpaid" pass (~line 3869) but pattern-matching `<w:t>{{pr_li_<name>_<K>_yes_glyph}} YES</w:t>` and `<w:t>{{pr_li_<name>_<K>_no_glyph}} NO</w:t>` inside each `PROPERTY #K` region. If the merge-tag resolver leaves the glyph slot empty, this pass rewrites the run text to `☑ YES` / `☐ NO` (or inverse) using the per-property booleans:
+   - Q1 (`encumbrances of record`) → `pr_li_encumbranceOfRecord_K`
+   - Q2 (`60 days late`) → `pr_li_delinqu60day_K`
+   - Q4 (`remain unpaid`) → `pr_li_currentDelinqu_K`
+   - Q5 (`cure the delinquency` / `paid by this loan`) → `pr_li_delinquencyPaidByLoan_K`
+
+   This pass is bounded to detected `PROPERTY #K` regions (already established at ~line 3320), is per-property (no cross-bleed), and is a no-op if the value already rendered. Add a memory entry under `mem://features/document-generation/re851d-lien-questionnaire-glyph-resolution` describing the rule.
+
+4. **Verification**:
+   - Generate RE851D using the same deal as `Re851d_v27`. Property #1 should show `☐ YES ☒ NO` for Q1 (no Paid-Off lien), the appropriate Q2/Q4/Q5 boolean glyphs, `B. If YES, how many? 4`, and `E. … Adwait`. Property #2 likewise with its own values. Properties without liens render `☐ YES ☒ NO` for all four questions and blank Q3/Q6.
+   - Re-export and confirm: no glyph appears outside its property block; mutual exclusivity holds; counts and source text remain per-property.
+
+### Files touched
+
+- `supabase/functions/generate-document/index.ts` — extend `SHIELD_BASES`, default-publish glyph aliases for empty buckets, add per-property merge-tag glyph safety pass.
+- `mem://features/document-generation/re851d-lien-questionnaire-glyph-resolution` — record the new rule.
+
+### Files NOT touched
+
+- The template (`Re851d_v1(1)(2)(11).docx`) — current tags are correct.
+- DB schema / RLS / UI — no changes.
+- `src/integrations/supabase/client.ts`, `types.ts`, `.env` — not editable.

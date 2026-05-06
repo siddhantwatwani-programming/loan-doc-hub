@@ -1678,14 +1678,51 @@ async function generateSingleDocument(
           "property_type_sfr_zoned", "property_type_commercial",
           "property_type_land_zoned", "property_type_land_income",
           "property_type_other", "property_type_other_text",
+          // RE851D lien-derived per-property questionnaire (Q1, Q2, Q3, Q4, Q5, Q6).
+          // Without these in the shield, an unpublished _N entry falls back through
+          // the canonical-key resolver onto the bare boolean key (e.g.
+          // pr_li_encumbranceOfRecord), which formats to "" for _yes_glyph slots
+          // and erases the YES/NO checkbox glyph in the generated document.
+          "pr_li_encumbranceOfRecord",
+          "pr_li_encumbranceOfRecord_yes", "pr_li_encumbranceOfRecord_no",
+          "pr_li_encumbranceOfRecord_yes_glyph", "pr_li_encumbranceOfRecord_no_glyph",
+          "pr_li_delinqu60day",
+          "pr_li_delinqu60day_yes", "pr_li_delinqu60day_no",
+          "pr_li_delinqu60day_yes_glyph", "pr_li_delinqu60day_no_glyph",
+          "pr_li_currentDelinqu",
+          "pr_li_currentDelinqu_yes", "pr_li_currentDelinqu_no",
+          "pr_li_currentDelinqu_yes_glyph", "pr_li_currentDelinqu_no_glyph",
+          "pr_li_delinquencyPaidByLoan",
+          "pr_li_delinquencyPaidByLoan_yes", "pr_li_delinquencyPaidByLoan_no",
+          "pr_li_delinquencyPaidByLoan_yes_glyph", "pr_li_delinquencyPaidByLoan_no_glyph",
+          "pr_li_delinquHowMany",
+          "pr_li_sourceOfPayment",
         ];
+        // Default-fill: per RE851D spec mutual exclusivity, when no lien data exists
+        // for a property the four YES/NO questions render NO checked. Apply this to
+        // the glyph aliases ONLY (booleans stay false). Numeric/text aliases stay "".
+        const GLYPH_DEFAULTS_NO_CHECKED: Record<string, string> = {
+          "pr_li_encumbranceOfRecord_yes_glyph": "☐",
+          "pr_li_encumbranceOfRecord_no_glyph":  "☒",
+          "pr_li_delinqu60day_yes_glyph":        "☐",
+          "pr_li_delinqu60day_no_glyph":         "☒",
+          "pr_li_currentDelinqu_yes_glyph":      "☐",
+          "pr_li_currentDelinqu_no_glyph":       "☒",
+          "pr_li_delinquencyPaidByLoan_yes_glyph":"☐",
+          "pr_li_delinquencyPaidByLoan_no_glyph": "☒",
+        };
         const blanked: number[] = [];
         for (let idx = 1; idx <= MAX_PROPERTIES; idx++) {
           let blankedThisIdx = false;
           for (const base of SHIELD_BASES) {
             const key = `${base}_${idx}`;
             if (!fieldValues.has(key)) {
-              fieldValues.set(key, { rawValue: "", dataType: "text" });
+              const glyphDefault = GLYPH_DEFAULTS_NO_CHECKED[base];
+              if (glyphDefault !== undefined) {
+                fieldValues.set(key, { rawValue: glyphDefault, dataType: "text" });
+              } else {
+                fieldValues.set(key, { rawValue: "", dataType: "text" });
+              }
               blankedThisIdx = true;
             }
           }
