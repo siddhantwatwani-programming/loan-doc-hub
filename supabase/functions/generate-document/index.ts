@@ -2518,8 +2518,19 @@ async function generateSingleDocument(
           const howManyNum = parseInt(howManyRaw, 10);
           // Spec: Q2 strictly = (delinquencies_how_many > 0)
           const has60 = Number.isFinite(howManyNum) && howManyNum > 0;
-          // Spec: Q4 strictly = (new_remaining_balance > 0)
-          const remBalRaw = getLienVal(prefix, "new_remaining_balance", "newRemainingBalance", "remaining_balance");
+          // Spec: Q4 = "Do any of these payments remain unpaid?" — TRUE when any
+          // remaining-balance-style field on the lien is > 0. The visible UI label
+          // "Remaining Balance" persists to existing_payoff_amount; "Anticipated
+          // Balance (if new lien)" persists to new_remaining_balance; "If
+          // Delinquent" amount persists to currently_delinquent_amount. Honor all
+          // three so user-entered data wins regardless of which field they used.
+          const remBalRaw = getLienVal(
+            prefix,
+            "existing_payoff_amount", "existingPayoffAmount",
+            "new_remaining_balance", "newRemainingBalance",
+            "remaining_balance",
+            "currently_delinquent_amount", "currentlyDelinquentAmount",
+          );
           const remBalNum = parseMoney(remBalRaw);
           const currentDelinq = Number.isFinite(remBalNum) && remBalNum > 0;
           // Spec: Q1 = paid_off (slt_paid_off checkbox)
