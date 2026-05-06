@@ -6092,8 +6092,14 @@ async function generateSingleDocument(
     if (__re851dPassCache) {
       try {
         const flushZip: fflate.Zippable = {};
+        const flushEncoder = new TextEncoder();
         for (const [k, v] of Object.entries(__re851dPassCache)) {
-          flushZip[k] = [v, { level: 0 }];
+          if (__xmlDirty.has(k)) {
+            // Re-encode the cached mutated string exactly once.
+            flushZip[k] = [flushEncoder.encode(__xmlStrCache[k]), { level: 0 }];
+          } else {
+            flushZip[k] = [v, { level: 0 }];
+          }
         }
         processedDocx = new Uint8Array(fflate.zipSync(flushZip));
       } catch (flushErr) {
