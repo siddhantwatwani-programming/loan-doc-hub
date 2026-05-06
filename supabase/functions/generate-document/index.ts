@@ -4353,6 +4353,30 @@ async function generateSingleDocument(
       console.log(`[RE885] DOCX Render: ${Math.round(performance.now() - tRenderStart)} ms (output=${processedDocx.length} bytes)`);
     }
 
+    // ── RE851D post-render unzip/zip cache ──
+    // The 7 RE851D safety passes below each independently unzipped & rezipped
+    // the full DOCX. On 5-property documents (~4 MB document.xml) that 7×
+    // round-trip exhausted the edge function's CPU/memory budget. This shared
+    // cache makes them all share a single in-memory representation; the final
+    // rezip happens once, just before upload.
+    let __re851dPassCache: Record<string, Uint8Array> | null = null;
+    const __passUnzip = (buf: Uint8Array): Record<string, Uint8Array> => {
+      if (__re851dPassCache) return __re851dPassCache;
+      __re851dPassCache = fflate.unzipSync(buf);
+      return __re851dPassCache;
+    };
+    const __passZip = (rezip: fflate.Zippable): Uint8Array => {
+      if (!__re851dPassCache) __re851dPassCache = {};
+      for (const [k, v] of Object.entries(rezip)) {
+        const bytes = Array.isArray(v) ? (v as [Uint8Array, unknown])[0] : (v as Uint8Array);
+        __re851dPassCache[k] = bytes;
+      }
+      // Return current processedDocx unchanged — passes only call unzip on
+      // processedDocx, and __passUnzip ignores the buffer when the cache is
+      // populated. Avoids an O(N) zip per pass.
+      return processedDocx;
+    };
+
     // ── RE851D POST-RENDER OWNER OCCUPIED safety pass ──
     // Some authored RE851D templates carry inline conditional checkbox glyphs
     // (e.g. {{#if (eq pr_p_occupanc_N "Owner Occupied")}}☑{{else}}☐{{/if}})
@@ -4374,7 +4398,7 @@ async function generateSingleDocument(
 
         const decoder2 = new TextDecoder("utf-8");
         const encoder2 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -4594,7 +4618,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -4629,7 +4653,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped3 = fflate.unzipSync(processedDocx);
+        const unzipped3 = __passUnzip(processedDocx);
         const rezip3: fflate.Zippable = {};
         let didMutate3 = false;
 
@@ -4871,7 +4895,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate3) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip3));
+          processedDocx = __passZip(rezip3);
         }
       } catch (postErrM) {
         console.error(
@@ -4910,7 +4934,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5097,7 +5121,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5129,7 +5153,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5308,7 +5332,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5338,7 +5362,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5517,7 +5541,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5548,7 +5572,7 @@ async function generateSingleDocument(
 
         const decoder3 = new TextDecoder("utf-8");
         const encoder3 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -5726,7 +5750,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -5745,7 +5769,7 @@ async function generateSingleDocument(
       try {
         const decoder4 = new TextDecoder("utf-8");
         const encoder4 = new TextEncoder();
-        const unzipped = fflate.unzipSync(processedDocx);
+        const unzipped = __passUnzip(processedDocx);
         const rezip: fflate.Zippable = {};
         let didMutate = false;
 
@@ -6009,7 +6033,7 @@ async function generateSingleDocument(
         }
 
         if (didMutate) {
-          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+          processedDocx = __passZip(rezip);
         }
       } catch (postErr) {
         console.error(
@@ -6019,6 +6043,24 @@ async function generateSingleDocument(
       }
     }
 
+
+    // ── RE851D post-render flush ──
+    // If any RE851D safety pass mutated the in-memory cache, rezip exactly
+    // once now (instead of once per pass) before upload.
+    if (__re851dPassCache) {
+      try {
+        const flushZip: fflate.Zippable = {};
+        for (const [k, v] of Object.entries(__re851dPassCache)) {
+          flushZip[k] = [v, { level: 0 }];
+        }
+        processedDocx = new Uint8Array(fflate.zipSync(flushZip));
+      } catch (flushErr) {
+        console.error(
+          `[generate-document] RE851D post-render flush failed:`,
+          flushErr instanceof Error ? flushErr.message : String(flushErr),
+        );
+      }
+    }
 
     // 6. Calculate version number
     const { data: existingDocs } = await supabase
