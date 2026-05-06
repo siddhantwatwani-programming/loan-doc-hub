@@ -286,11 +286,19 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
     const equityKey = currentPropertyId ? `${currentPropertyId}.` : 'liens.';
     const protective = equity.protectiveEquity ? equity.protectiveEquity.toFixed(2) : '';
     const total = equity.totalEquity ? equity.totalEquity.toFixed(2) : '';
+    const seniorT = equity.seniorTotal ? equity.seniorTotal.toFixed(2) : '';
+    const juniorT = equity.juniorTotal ? equity.juniorTotal.toFixed(2) : '';
     if ((values[`${equityKey}protective_equity`] || '') !== protective) {
       updates.push([`${equityKey}protective_equity`, protective]);
     }
     if ((values[`${equityKey}total_equity`] || '') !== total) {
       updates.push([`${equityKey}total_equity`, total]);
+    }
+    if ((values[`${equityKey}senior_liens_total`] || '') !== seniorT) {
+      updates.push([`${equityKey}senior_liens_total`, seniorT]);
+    }
+    if ((values[`${equityKey}junior_liens_total`] || '') !== juniorT) {
+      updates.push([`${equityKey}junior_liens_total`, juniorT]);
     }
 
     if (!updates.length) return;
