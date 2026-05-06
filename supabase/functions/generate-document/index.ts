@@ -3186,6 +3186,20 @@ async function generateSingleDocument(
           "pr_li_encumbranceOfRecord_N",
           "pr_li_encumbranceOfRecord_N_yes", "pr_li_encumbranceOfRecord_N_no",
           "pr_li_encumbranceOfRecord_N_yes_glyph", "pr_li_encumbranceOfRecord_N_no_glyph",
+          // pr_p_* compatibility aliases for older RE851D template variants
+          "pr_p_encumbranceOfRecord_N_yes_glyph", "pr_p_encumbranceOfRecord_N_no_glyph",
+          "pr_p_encumbranceOfRecord_N_yes", "pr_p_encumbranceOfRecord_N_no",
+          "pr_p_encumbranceOfRecord_N",
+          "pr_p_delinqu60day_N_yes_glyph", "pr_p_delinqu60day_N_no_glyph",
+          "pr_p_delinqu60day_N_yes", "pr_p_delinqu60day_N_no",
+          "pr_p_delinqu60day_N",
+          "pr_p_currentDelinqu_N_yes_glyph", "pr_p_currentDelinqu_N_no_glyph",
+          "pr_p_currentDelinqu_N_yes", "pr_p_currentDelinqu_N_no",
+          "pr_p_currentDelinqu_N",
+          "pr_p_paidByLoan_N_yes_glyph", "pr_p_paidByLoan_N_no_glyph",
+          "pr_p_paidByLoan_N_yes", "pr_p_paidByLoan_N_no",
+          "pr_p_paidByLoan_N",
+          "pr_p_sourceOfPaymen_N", "pr_p_sourceOfPayment_N",
           "ln_p_loanToValueRatio_N", "propertytax_annual_payment_N",
           // RE851D propertytax dotted-form _N tags. Order is critical: longer
           // matches FIRST so "delinquent_amount_N" wins before "delinquent_N".
