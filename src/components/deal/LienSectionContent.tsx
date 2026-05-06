@@ -338,7 +338,7 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       setModalOpen(false);
     }
     return success;
-  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId, propertyOptions]);
+  }, [editingLien, values, onValueChange, onPersist, setSelectedLienPrefix, currentPropertyId, propertyOptions, allLiens]);
 
   const handleDeleteLien = useCallback((lien: LienData) => {
     if (onRemoveValuesByPrefix) {
