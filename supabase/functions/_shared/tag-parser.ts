@@ -3736,7 +3736,14 @@ export function replaceMergeTags(
 
   __mark('postReplaceCleanup');
 
-  // Final pass: convert any remaining checkbox glyphs (☐/☑/☒) in <w:r>
+  // Glyph standardization: replace any ballot-box-with-X (☒) with check
+  // (☑) so the "checked" state renders consistently across all generated
+  // documents. Logic unchanged — display glyph only.
+  if (result.indexOf('\u2612') !== -1) {
+    result = result.replace(/\u2612/g, '\u2611');
+  }
+
+  // Final pass: convert any remaining checkbox glyphs (☐/☑) in <w:r>
   // elements into native Word SDT checkboxes so they are editable/clickable.
   result = convertGlyphsToSdtCheckboxes(result);
   __mark('convertGlyphsToSdt');
