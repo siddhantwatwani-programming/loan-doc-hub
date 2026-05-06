@@ -1701,6 +1701,7 @@ async function generateSingleDocument(
         // Default-fill: per RE851D spec mutual exclusivity, when no lien data exists
         // for a property the four YES/NO questions render NO checked. Apply this to
         // the glyph aliases ONLY (booleans stay false). Numeric/text aliases stay "".
+        // Map base name -> default glyph value for the *_yes_glyph / *_no_glyph slot.
         const GLYPH_DEFAULTS_NO_CHECKED: Record<string, string> = {
           "pr_li_encumbranceOfRecord_yes_glyph": "☐",
           "pr_li_encumbranceOfRecord_no_glyph":  "☒",
@@ -1711,11 +1712,22 @@ async function generateSingleDocument(
           "pr_li_delinquencyPaidByLoan_yes_glyph":"☐",
           "pr_li_delinquencyPaidByLoan_no_glyph": "☒",
         };
+        // Suffixes that take the property index in the MIDDLE
+        // (e.g. pr_li_currentDelinqu_<N>_yes_glyph), not at the end.
+        const MIDDLE_INDEX_SUFFIXES = ["_yes_glyph", "_no_glyph", "_yes", "_no"];
         const blanked: number[] = [];
         for (let idx = 1; idx <= MAX_PROPERTIES; idx++) {
           let blankedThisIdx = false;
           for (const base of SHIELD_BASES) {
-            const key = `${base}_${idx}`;
+            // Determine the canonical per-index key for this base.
+            let key: string;
+            const middleSuffix = MIDDLE_INDEX_SUFFIXES.find((s) => base.endsWith(s));
+            if (middleSuffix) {
+              const stem = base.slice(0, -middleSuffix.length);
+              key = `${stem}_${idx}${middleSuffix}`;
+            } else {
+              key = `${base}_${idx}`;
+            }
             if (!fieldValues.has(key)) {
               const glyphDefault = GLYPH_DEFAULTS_NO_CHECKED[base];
               if (glyphDefault !== undefined) {
