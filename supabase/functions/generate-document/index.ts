@@ -1744,6 +1744,19 @@ async function generateSingleDocument(
         if (blanked.length > 0) {
           debugLog(`[generate-document] RE851D anti-fallback shield: blanked unpublished _N tags for indices [${blanked.join(", ")}]`);
         }
+        // ── RE851D bare performBy hard-blank ──
+        // If a `pr_p_performeBy_N` literal survives ALL rewrites (worst case:
+        // tag splits the safety pass cannot stitch), the resolver will fall
+        // back via canonical_key to the bare unsuffixed `pr_p_performeBy` /
+        // `pr_p_performedBy` field — which holds property #1's value and would
+        // make every PROPERTY block render Property #1's "Broker" output. To
+        // make the conditional render blank in that worst case (matching the
+        // spec: non-Broker / unresolved -> blank), force the bare key to "".
+        // This is RE851D-only and runs after per-index publishers, so the
+        // legitimate `_1`..`_5` entries are already in place and unaffected.
+        for (const bareKey of ["pr_p_performeBy", "pr_p_performedBy"]) {
+          fieldValues.set(bareKey, { rawValue: "", dataType: "text" });
+        }
       }
 
       // ── RE851D final encumbrance state log ──
