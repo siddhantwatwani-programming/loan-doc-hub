@@ -3861,7 +3861,7 @@ async function generateSingleDocument(
           // (pr_p_multipleProperties_*_glyph) remains primary; this pass only
           // fires when the next two glyph runs are still raw ☐/☑/☒.
           {
-            const propCount = sortedPropIndices.length;
+            const propCount = [...propertyIndices].sort((a, b) => a - b).slice(0, 5).length;
             const isMultipleQ = propCount > 1;
             const multiQRe = /Are there multiple properties on the loan/gi;
             const multiGlyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
