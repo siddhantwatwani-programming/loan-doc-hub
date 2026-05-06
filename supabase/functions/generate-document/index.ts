@@ -3140,7 +3140,11 @@ async function generateSingleDocument(
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
           // Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
+          "pr_li_delinquencyPaidByLoan_N_yes_glyph", "pr_li_delinquencyPaidByLoan_N_no_glyph",
+          "pr_li_delinquencyPaidByLoan_N_yes", "pr_li_delinquencyPaidByLoan_N_no",
           "pr_li_delinquencyPaidByLoan_N",
+          "pr_li_delinqu60day_N_yes_glyph", "pr_li_delinqu60day_N_no_glyph",
+          "pr_li_delinqu60day_N_yes", "pr_li_delinqu60day_N_no",
           "pr_li_delinqu60day_N",
           "pr_li_currentDelinqu_N_yes_glyph", "pr_li_currentDelinqu_N_no_glyph",
           "pr_li_currentDelinqu_N_yes", "pr_li_currentDelinqu_N_no",
