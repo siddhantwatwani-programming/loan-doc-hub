@@ -398,14 +398,14 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
 
           <div className="flex items-center gap-3">
             <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquent}>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-[140px] shrink-0">
                 <Checkbox id="sltDelinquent" checked={lien.sltDelinquent === 'true'} onCheckedChange={(checked) => onChange('sltDelinquent', checked ? 'true' : 'false')} disabled={disabled} />
                 <Label htmlFor="sltDelinquent" className="text-sm text-foreground">Delinquent</Label>
               </div>
             </DirtyFieldWrapper>
             {lien.sltDelinquent === 'true' && (
-              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquentDays}>
-                <Input value={lien.sltDelinquentDays} onChange={(e) => onChange('sltDelinquentDays', e.target.value)} disabled={disabled} className="h-7 text-sm w-28" placeholder="# of Days" />
+              <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltDelinquentDays} className="flex-1">
+                <Input value={lien.sltDelinquentDays} onChange={(e) => onChange('sltDelinquentDays', e.target.value)} disabled={disabled} className="h-7 text-sm w-full" placeholder="# of Days" />
               </DirtyFieldWrapper>
             )}
           </div>
