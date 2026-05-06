@@ -4794,10 +4794,11 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /Do any of these payments remain unpaid/gi;
-          // Labels may be "YES"/"NO" (uppercase as in the template) or "Yes"/"No".
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /Do any of these payments remain unpaid|payments\s+remain\s+unpaid/gi;
+          // Labels may be "YES"/"NO" or "Yes"/"No", optionally preceded by a
+          // checkbox glyph or other inline characters within the same <w:t>.
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
@@ -4866,22 +4867,24 @@ async function generateSingleDocument(
           };
 
           let qm: RegExpExecArray | null;
+          let scanned = 0;
           while ((qm = questionRe.exec(xml)) !== null) {
+            scanned++;
             const qStart = qm.index;
             const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
-            if (!region) continue;
+            if (!region) { console.log(`[generate-document] RE851D remain-unpaid: anchor@${qStart} not in any property region`); continue; }
             const winEnd = Math.min(region.end, qStart + 4096);
 
             yesLabelRe.lastIndex = qStart;
             noLabelRe.lastIndex = qStart;
             const yL = yesLabelRe.exec(xml);
             const nL = noLabelRe.exec(xml);
-            if (!yL || !nL) continue;
-            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+            if (!yL || !nL) { console.log(`[generate-document] RE851D remain-unpaid PROP#${region.k}: no Y/N labels (yL=${!!yL}, nL=${!!nL})`); continue; }
+            if (yL.index >= winEnd || nL.index >= winEnd) { console.log(`[generate-document] RE851D remain-unpaid PROP#${region.k}: Y/N labels outside window`); continue; }
 
             const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
             const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
-            if (!yC || !nC || yC.idx === nC.idx) continue;
+            if (!yC || !nC || yC.idx === nC.idx) { console.log(`[generate-document] RE851D remain-unpaid PROP#${region.k}: missing/duplicate controls (yC=${yC?.kind || "none"}, nC=${nC?.kind || "none"})`); continue; }
 
             const isYes = unpaidByIdx[region.k] === true;
             const yesChecked = isYes;
@@ -4889,7 +4892,7 @@ async function generateSingleDocument(
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) { console.log(`[generate-document] RE851D remain-unpaid PROP#${region.k}: overlap, skipping`); continue; }
 
             const yesReplacement =
               yC.kind === "sdt"
@@ -4902,7 +4905,9 @@ async function generateSingleDocument(
 
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(`[generate-document] RE851D remain-unpaid PROP#${region.k}: forced isYes=${isYes} (yC=${yC.kind}, nC=${nC.kind})`);
           }
+          console.log(`[generate-document] RE851D remain-unpaid: scanned ${scanned} anchor(s)`);
 
           if (rewrites.length > 0) {
             rewrites.sort((a, b) => b.start - a.start);
@@ -4966,7 +4971,8 @@ async function generateSingleDocument(
             continue;
           }
           let xml = decoder3.decode(bytes);
-          if (xml.toLowerCase().indexOf("cure the delinquency") === -1) {
+          const xmlLowerCD = xml.toLowerCase();
+          if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
@@ -5007,9 +5013,9 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /cure the delinquency/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /cure the delinquency|paid by this loan/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
@@ -5072,22 +5078,24 @@ async function generateSingleDocument(
           };
 
           let qm: RegExpExecArray | null;
+          let scanned = 0;
           while ((qm = questionRe.exec(xml)) !== null) {
+            scanned++;
             const qStart = qm.index;
             const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
-            if (!region) continue;
+            if (!region) { console.log(`[generate-document] RE851D cure-delinq: anchor@${qStart} not in any property region`); continue; }
             const winEnd = Math.min(region.end, qStart + 4096);
 
             yesLabelRe.lastIndex = qStart;
             noLabelRe.lastIndex = qStart;
             const yL = yesLabelRe.exec(xml);
             const nL = noLabelRe.exec(xml);
-            if (!yL || !nL) continue;
-            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+            if (!yL || !nL) { console.log(`[generate-document] RE851D cure-delinq PROP#${region.k}: no Y/N labels (yL=${!!yL}, nL=${!!nL})`); continue; }
+            if (yL.index >= winEnd || nL.index >= winEnd) { console.log(`[generate-document] RE851D cure-delinq PROP#${region.k}: Y/N labels outside window`); continue; }
 
             const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
             const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
-            if (!yC || !nC || yC.idx === nC.idx) continue;
+            if (!yC || !nC || yC.idx === nC.idx) { console.log(`[generate-document] RE851D cure-delinq PROP#${region.k}: missing/duplicate controls (yC=${yC?.kind || "none"}, nC=${nC?.kind || "none"})`); continue; }
 
             const isYes = cureByIdx[region.k] === true;
             const yesChecked = isYes;
@@ -5095,7 +5103,7 @@ async function generateSingleDocument(
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) { console.log(`[generate-document] RE851D cure-delinq PROP#${region.k}: overlap, skipping`); continue; }
 
             const yesReplacement =
               yC.kind === "sdt"
@@ -5108,7 +5116,9 @@ async function generateSingleDocument(
 
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(`[generate-document] RE851D cure-delinq PROP#${region.k}: forced isYes=${isYes} (yC=${yC.kind}, nC=${nC.kind})`);
           }
+          console.log(`[generate-document] RE851D cure-delinq: scanned ${scanned} anchor(s)`);
 
           if (rewrites.length > 0) {
             rewrites.sort((a, b) => b.start - a.start);
@@ -5136,7 +5146,215 @@ async function generateSingleDocument(
       }
     }
 
-    // ── RE851D POST-RENDER "Are there any encumbrances of record?" YES/NO safety pass ──
+    // ── RE851D POST-RENDER "60 day(s) or more delinquent" YES/NO safety pass ──
+    // Anchored to the Q2 question text per PROPERTY block.
+    // Driven by pr_li_delinqu60day_K (delinquencies_how_many > 0).
+    if (/851d/i.test(template.name || "")) {
+      try {
+        const truthy = (raw: unknown): boolean => {
+          if (raw === null || raw === undefined) return false;
+          if (typeof raw === "boolean") return raw;
+          if (typeof raw === "number") return raw !== 0;
+          const s = String(raw).trim().toLowerCase();
+          return ["true", "yes", "y", "1", "checked", "on"].includes(s);
+        };
+        const sixtyByIdx: Record<number, boolean> = {};
+        for (let k = 1; k <= 5; k++) {
+          const v = fieldValues.get(`pr_li_delinqu60day_${k}`);
+          sixtyByIdx[k] = truthy(v?.rawValue);
+        }
+
+        const decoder3 = new TextDecoder("utf-8");
+        const encoder3 = new TextEncoder();
+        const unzipped = fflate.unzipSync(processedDocx);
+        const rezip: fflate.Zippable = {};
+        let didMutate = false;
+
+        for (const [filename, bytes] of Object.entries(unzipped)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = decoder3.decode(bytes);
+          const xmlLower60 = xml.toLowerCase();
+          if (xmlLower60.indexOf("60 day") === -1 && xmlLower60.indexOf("60-day") === -1 && xmlLower60.indexOf("sixty day") === -1) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+
+          const propAnchors: number[] = [];
+          {
+            const map: number[] = [];
+            const buf: string[] = [];
+            let i = 0;
+            while (i < xml.length) {
+              if (xml[i] === "<") {
+                const e = xml.indexOf(">", i);
+                if (e === -1) break;
+                const prev = buf.length ? buf[buf.length - 1] : "";
+                if (prev !== " ") { buf.push(" "); map.push(i); }
+                i = e + 1; continue;
+              }
+              buf.push(xml[i]); map.push(i); i++;
+            }
+            const txt = buf.join("");
+            const re = /\bPROPERTY\s+INFORMATION\b/gi;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(txt)) !== null) {
+              propAnchors.push(map[m.index] ?? 0);
+              if (propAnchors.length >= 5) break;
+            }
+          }
+          if (propAnchors.length === 0) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          const propRanges: Array<{ k: number; start: number; end: number }> = [];
+          for (let pi = 0; pi < propAnchors.length; pi++) {
+            propRanges.push({
+              k: pi + 1,
+              start: propAnchors[pi],
+              end: pi + 1 < propAnchors.length ? propAnchors[pi + 1] : xml.length,
+            });
+          }
+
+          const questionRe = /60[\s\-]?day(?:s)?\s+or\s+more\s+delinquent|60[\s\-]?day(?:s)?\s+delinquen|sixty\s+day(?:s)?\s+delinquen/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
+          const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+          const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
+
+          type Rewrite = { start: number; end: number; replacement: string };
+          const rewrites: Rewrite[] = [];
+
+          const rewriteSdtChecked = (block: string, checked: boolean): string => {
+            const val = checked ? "1" : "0";
+            const glyph = checked ? "\u2611" : "\u2610";
+            let next = block.replace(
+              /(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/,
+              `$1${val}$2`,
+            );
+            next = next.replace(
+              /(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/,
+              `$1${glyph}$3`,
+            );
+            return next;
+          };
+
+          const findControlNear = (
+            labelStart: number,
+            labelEnd: number,
+            regionStart: number,
+            regionEnd: number,
+          ):
+            | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+            | null => {
+            const maxBack = 2500;
+            const scanStart = Math.max(regionStart, labelStart - maxBack);
+            const before = xml.slice(scanStart, labelStart);
+            let last:
+              | { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] }
+              | null = null;
+            const sdtRe = new RegExp(sdtCheckboxRe.source, "g");
+            let sm: RegExpExecArray | null;
+            while ((sm = sdtRe.exec(before)) !== null) {
+              last = { idx: scanStart + sm.index, end: scanStart + sm.index + sm[0].length, kind: "sdt", m: [sm[0]] };
+            }
+            if (last) return last;
+            const gRe = new RegExp(glyphRunRe.source, "g");
+            let gm: RegExpExecArray | null;
+            while ((gm = gRe.exec(before)) !== null) {
+              last = { idx: scanStart + gm.index, end: scanStart + gm.index + gm[0].length, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] };
+            }
+            if (last) return last;
+            const fwdEnd = Math.min(regionEnd, labelEnd + 300);
+            const after = xml.slice(labelEnd, fwdEnd);
+            const sdtRe2 = new RegExp(sdtCheckboxRe.source, "g");
+            const sm2 = sdtRe2.exec(after);
+            if (sm2) {
+              return { idx: labelEnd + sm2.index, end: labelEnd + sm2.index + sm2[0].length, kind: "sdt", m: [sm2[0]] };
+            }
+            const gRe2 = new RegExp(glyphRunRe.source, "g");
+            const gm2 = gRe2.exec(after);
+            if (gm2) {
+              return { idx: labelEnd + gm2.index, end: labelEnd + gm2.index + gm2[0].length, kind: "glyph", m: [gm2[0], gm2[1], gm2[2], gm2[3]] };
+            }
+            return null;
+          };
+
+          let qm: RegExpExecArray | null;
+          let scanned = 0;
+          while ((qm = questionRe.exec(xml)) !== null) {
+            scanned++;
+            const qStart = qm.index;
+            const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
+            if (!region) { console.log(`[generate-document] RE851D 60-day: anchor@${qStart} not in any property region`); continue; }
+            const winEnd = Math.min(region.end, qStart + 4096);
+
+            yesLabelRe.lastIndex = qStart;
+            noLabelRe.lastIndex = qStart;
+            const yL = yesLabelRe.exec(xml);
+            const nL = noLabelRe.exec(xml);
+            if (!yL || !nL) { console.log(`[generate-document] RE851D 60-day PROP#${region.k}: no Y/N labels`); continue; }
+            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+
+            const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
+            const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
+            if (!yC || !nC || yC.idx === nC.idx) { console.log(`[generate-document] RE851D 60-day PROP#${region.k}: missing/duplicate controls`); continue; }
+
+            const isYes = sixtyByIdx[region.k] === true;
+            const yesChecked = isYes;
+            const noChecked = !isYes;
+
+            const overlaps = (s: number, e: number) =>
+              rewrites.some((r) => s < r.end && e > r.start);
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+
+            const yesReplacement =
+              yC.kind === "sdt"
+                ? rewriteSdtChecked(yC.m[0], yesChecked)
+                : `${yC.m[1]}${yesChecked ? "\u2611" : "\u2610"}${yC.m[3]}`;
+            const noReplacement =
+              nC.kind === "sdt"
+                ? rewriteSdtChecked(nC.m[0], noChecked)
+                : `${nC.m[1]}${noChecked ? "\u2611" : "\u2610"}${nC.m[3]}`;
+
+            rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
+            rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(`[generate-document] RE851D 60-day PROP#${region.k}: forced isYes=${isYes}`);
+          }
+          console.log(`[generate-document] RE851D 60-day: scanned ${scanned} anchor(s)`);
+
+          if (rewrites.length > 0) {
+            rewrites.sort((a, b) => b.start - a.start);
+            for (const r of rewrites) {
+              xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+            }
+            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            didMutate = true;
+            console.log(
+              `[generate-document] RE851D post-render 60-day safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
+            );
+          } else {
+            rezip[filename] = [bytes, { level: 0 }];
+          }
+        }
+
+        if (didMutate) {
+          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+        }
+      } catch (postErr) {
+        console.error(
+          `[generate-document] RE851D post-render 60-day pass failed (continuing):`,
+          postErr instanceof Error ? postErr.message : String(postErr)
+        );
+      }
+    }
+
     // Template uses static ??? + ☐ glyphs (no merge tag) per PROPERTY block.
     // Driven by pr_li_encumbranceOfRecord_K (paid_off rule):
     //   true  → YES ☑ / NO ☐    false → YES ☐ / NO ☑
@@ -5213,9 +5431,9 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /Are there any encumbrances of record/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /Are there any encumbrances of record|encumbrances of record/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
@@ -5278,22 +5496,24 @@ async function generateSingleDocument(
           };
 
           let qm: RegExpExecArray | null;
+          let scanned = 0;
           while ((qm = questionRe.exec(xml)) !== null) {
+            scanned++;
             const qStart = qm.index;
             const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
-            if (!region) continue;
+            if (!region) { console.log(`[generate-document] RE851D enc-of-record: anchor@${qStart} not in any property region`); continue; }
             const winEnd = Math.min(region.end, qStart + 4096);
 
             yesLabelRe.lastIndex = qStart;
             noLabelRe.lastIndex = qStart;
             const yL = yesLabelRe.exec(xml);
             const nL = noLabelRe.exec(xml);
-            if (!yL || !nL) continue;
-            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+            if (!yL || !nL) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: no Y/N labels (yL=${!!yL}, nL=${!!nL})`); continue; }
+            if (yL.index >= winEnd || nL.index >= winEnd) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: Y/N labels outside window`); continue; }
 
             const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
             const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
-            if (!yC || !nC || yC.idx === nC.idx) continue;
+            if (!yC || !nC || yC.idx === nC.idx) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: missing/duplicate controls (yC=${yC?.kind || "none"}, nC=${nC?.kind || "none"})`); continue; }
 
             const isYes = encByIdx[region.k] === true;
             const yesChecked = isYes;
@@ -5301,7 +5521,7 @@ async function generateSingleDocument(
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: overlap, skipping`); continue; }
 
             const yesReplacement =
               yC.kind === "sdt"
@@ -5314,7 +5534,9 @@ async function generateSingleDocument(
 
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: forced isYes=${isYes} (yC=${yC.kind}, nC=${nC.kind})`);
           }
+          console.log(`[generate-document] RE851D enc-of-record: scanned ${scanned} anchor(s)`);
 
           if (rewrites.length > 0) {
             rewrites.sort((a, b) => b.start - a.start);
