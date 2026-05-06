@@ -4794,10 +4794,11 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /Do any of these payments remain unpaid/gi;
-          // Labels may be "YES"/"NO" (uppercase as in the template) or "Yes"/"No".
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /Do any of these payments remain unpaid|payments\s+remain\s+unpaid/gi;
+          // Labels may be "YES"/"NO" or "Yes"/"No", optionally preceded by a
+          // checkbox glyph or other inline characters within the same <w:t>.
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
@@ -5007,9 +5008,9 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /cure the delinquency/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /cure the delinquency|paid by this loan/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
@@ -5213,9 +5214,9 @@ async function generateSingleDocument(
             });
           }
 
-          const questionRe = /Are there any encumbrances of record/gi;
-          const yesLabelRe = /<w:t(?:\s[^>]*)?>\s*Y\s*E\s*S\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*Yes\s*<\/w:t>/gi;
-          const noLabelRe = /<w:t(?:\s[^>]*)?>\s*N\s*O\s*<\/w:t>|<w:t(?:\s[^>]*)?>\s*No\s*<\/w:t>/gi;
+          const questionRe = /Are there any encumbrances of record|encumbrances of record/gi;
+          const yesLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+          const noLabelRe = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
           const glyphRunRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
           const sdtCheckboxRe = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
 
