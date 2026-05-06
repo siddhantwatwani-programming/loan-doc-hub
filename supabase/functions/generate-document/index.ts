@@ -3073,6 +3073,10 @@ async function generateSingleDocument(
           "pr_li_ant_balloonYes_N_S", "pr_li_ant_balloonYes_N",
           "pr_li_ant_balloonNo_N_S", "pr_li_ant_balloonNo_N",
           "pr_li_ant_balloonUnknown_N_S", "pr_li_ant_balloonUnknown_N",
+          // Per-property "Performed By" — both canonical and legacy-misspelled
+          // aliases so PROPERTY #K blocks rewrite _N → _K and each property
+          // renders its own appraisal_performed_by value.
+          "pr_p_performedBy_N", "pr_p_performeBy_N",
         ];
         // Tags that appear in the repeating PART 1 / PART 2 row blocks.
         // PART 1 (LOAN TO VALUE RATIO table) and PART 2 (SECURING PROPERTIES
