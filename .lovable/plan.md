@@ -1,41 +1,56 @@
-## Problem
+## RE851D – Multiple Properties Yes/No Checkbox
 
-In RE851D, `{{#if (eq pr_p_performeBy_N "Broker")}}…{{/if}}` resolves to the same value across PROPERTY #1–#5 (or to no property at all) instead of using each property's own `appraisal_performed_by`.
+### Edge function publisher
+File: `supabase/functions/generate-document/index.ts`
 
-## Root cause
-
-The publisher already emits per-property values:
-- `pr_p_performedBy_1..5` (canonical, from `property{N}.appraisal_performed_by`, line 997–1002)
-- `pr_p_performeBy_1..5` (legacy misspelling mirror, line 1003–1011)
-
-But the per-property region rewriter that converts `_N` → `_K` inside each `PROPERTY #K` block only rewrites tags listed in `RE851D_INDEXED_TAGS` (line 2995, applied at line 3494). Neither `pr_p_performeBy_N` nor `pr_p_performedBy_N` is in that list. Result: the literal `_N` survives in every PROPERTY block, so the `(eq pr_p_performeBy_N "Broker")` helper compares against whatever single key happens to resolve (or nothing), making all properties render identically.
-
-## Fix (additive, single file)
-
-**File:** `supabase/functions/generate-document/index.ts`
-
-In the `RE851D_INDEXED_TAGS` array (ends at line 3076), append:
+Inside the existing RE851D template-gated block (`if (/851d/i.test(template.name || ""))`), immediately after `sortedPropIndices` is computed (line 924), insert:
 
 ```ts
-// Per-property "Performed By" — both canonical and legacy-misspelled
-// aliases so PROPERTY #K blocks rewrite _N → _K and each property
-// renders its own appraisal_performed_by value.
-"pr_p_performedBy_N", "pr_p_performeBy_N",
+// ── RE851D: Multiple Properties Yes/No checkboxes ──
+// YES if >1 property, NO if exactly 1.
+{
+  const isMultiple = sortedPropIndices.length > 1;
+  const isSingle   = sortedPropIndices.length === 1;
+  const base = "pr_p_multipleProperties";
+  fieldValues.set(`${base}_yes`,       { rawValue: isMultiple ? "true" : "false", dataType: "boolean" });
+  fieldValues.set(`${base}_no`,        { rawValue: isSingle   ? "true" : "false", dataType: "boolean" });
+  fieldValues.set(`${base}_yes_glyph`, { rawValue: isMultiple ? "☒" : "☐",       dataType: "text" });
+  fieldValues.set(`${base}_no_glyph`,  { rawValue: isSingle   ? "☒" : "☐",       dataType: "text" });
+}
 ```
 
-That's the entire change. The existing publisher already emits the per-index values, and the existing region rewriter handles `_N`→`_K` conversion for any tag listed here. No template, schema, UI, API, or other generation logic is touched.
+These are global (not per-property `_N`) tags, so no entry is needed in `RE851D_INDEXED_TAGS`.
 
-## Acceptance criteria
+### Field dictionary entries (migration)
+Insert four rows (idempotent, `ON CONFLICT (field_key) DO NOTHING`), section `property`:
 
-- Each PROPERTY #1–#5 renders its own "Performed By" value.
-- Property with "Other" produces blank `(eq … "Broker")` output; property with "Broker" produces "BPO Performed by Broker" / "N/A".
-- No cross-property bleed; no fallback to a single shared value.
-- All other RE851D behavior unchanged.
+| field_key | label | data_type |
+|---|---|---|
+| `pr_p_multipleProperties_yes` | Multiple Properties – YES | boolean |
+| `pr_p_multipleProperties_no` | Multiple Properties – NO | boolean |
+| `pr_p_multipleProperties_yes_glyph` | Multiple Properties – YES Glyph | text |
+| `pr_p_multipleProperties_no_glyph` | Multiple Properties – NO Glyph | text |
 
-## Files modified
+### Template tag mapping (to author into RE851D `.docx`)
+Glyph approach (recommended, mirrors other RE851D pairs):
+```
+{{pr_p_multipleProperties_yes_glyph}} YES   {{pr_p_multipleProperties_no_glyph}} NO
+```
+Conditional alternative:
+```
+{{#if pr_p_multipleProperties_yes}}☒{{else}}☐{{/if}} YES
+{{#if pr_p_multipleProperties_no}}☒{{else}}☐{{/if}} NO
+```
 
-- `supabase/functions/generate-document/index.ts` — 2 entries appended to `RE851D_INDEXED_TAGS`.
+### Acceptance
+- 2+ properties → YES `☒`, NO `☐`
+- 1 property → YES `☐`, NO `☒`
+- 0 properties → both unchecked
+- No other RE851D logic, schema, UI, or template-generation flow modified
 
-## Memory
+### Memory
+Add `mem://features/document-generation/re851d-multiple-properties-checkbox` describing the publisher and dictionary keys.
 
-Existing memory file `mem://features/document-generation/re851d-performed-by-mapping` will be updated to note the per-property `_N`→`_K` rewrite is now wired via `RE851D_INDEXED_TAGS`.
+### Files modified
+- `supabase/functions/generate-document/index.ts` (insert ~12 lines after line 924)
+- `supabase/migrations/<new>.sql` (4 dictionary inserts)

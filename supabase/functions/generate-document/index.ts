@@ -923,6 +923,19 @@ async function generateSingleDocument(
 
       const sortedPropIndices = [...propertyIndices].sort((a, b) => a - b).slice(0, MAX_PROPERTIES);
 
+      // ── RE851D: Multiple Properties Yes/No checkboxes ──
+      // YES if >1 property, NO if exactly 1. Publishes boolean + glyph aliases
+      // following the same convention as other RE851D yes/no pairs.
+      {
+        const isMultiple = sortedPropIndices.length > 1;
+        const isSingle   = sortedPropIndices.length === 1;
+        const base = "pr_p_multipleProperties";
+        fieldValues.set(`${base}_yes`,       { rawValue: isMultiple ? "true" : "false", dataType: "boolean" });
+        fieldValues.set(`${base}_no`,        { rawValue: isSingle   ? "true" : "false", dataType: "boolean" });
+        fieldValues.set(`${base}_yes_glyph`, { rawValue: isMultiple ? "☒" : "☐",       dataType: "text" });
+        fieldValues.set(`${base}_no_glyph`,  { rawValue: isSingle   ? "☒" : "☐",       dataType: "text" });
+      }
+
       // ── RE851D: Build property-address → property-index map ──
       // Used to route propertytax{N} rows to their associated property by the
       // tax row's `.property` field (which carries the property's address).
