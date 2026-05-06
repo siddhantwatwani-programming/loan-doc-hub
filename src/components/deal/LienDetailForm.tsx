@@ -267,8 +267,6 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               </Select>
             </div>
           </DirtyFieldWrapper>
-          {(lien.anticipated === 'This Loan' || lien.anticipated === 'Other') && renderCurrency('anticipatedAmount', 'Amount')}
-
           <DirtyFieldWrapper fieldKey="lien1.existing">
             <div className="flex items-center gap-3">
               <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Existing</Label>
