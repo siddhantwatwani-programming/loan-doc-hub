@@ -2525,7 +2525,7 @@ async function generateSingleDocument(
           // Spec: Q1 = paid_off (slt_paid_off checkbox)
           const paidOff = truthy(getLienVal(prefix, "slt_paid_off", "sltPaidOff"));
           const source = getLienVal(prefix, "source_of_payment", "sourceOfPayment").trim();
-          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" howMany="${howManyRaw}" remBal="${remBalRaw}" paidOff=${paidOff} has60=${has60} currentDelinq=${currentDelinq} source="${source}"`);
+          debugLog(`[generate-document] RE851D lien delinquency src ${prefix}: paidByLoan="${paidByLoanRaw}" howMany="${howManyRaw}" remBal="${remBalRaw}" paidOff=${paidOff} has60=${has60} currentDelinq=${currentDelinq} source="${source}" (Q1 uses anyPaidOff per property)`);
 
           // Per-lien-index aliases
           const setBool = (k: string, v: boolean) =>
