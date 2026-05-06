@@ -3566,7 +3566,7 @@ async function generateSingleDocument(
             out[filename] = bytes;
             continue;
           }
-          let xml = decoder.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (!xml.includes("_N")) {
             out[filename] = bytes;
             continue;
@@ -4360,15 +4360,43 @@ async function generateSingleDocument(
     // cache makes them all share a single in-memory representation; the final
     // rezip happens once, just before upload.
     let __re851dPassCache: Record<string, Uint8Array> | null = null;
+    // Decoded-XML cache for content-bearing parts. Each part is decoded at
+    // most ONCE across all 7 RE851D safety passes, and re-encoded at most
+    // ONCE (at the final flush). Eliminates ~6× redundant 4 MB
+    // decode/encode round-trips on 5-property documents.
+    const __xmlStrCache: Record<string, string> = {};
+    const __xmlDirty: Set<string> = new Set();
     const __passUnzip = (buf: Uint8Array): Record<string, Uint8Array> => {
       if (__re851dPassCache) return __re851dPassCache;
       __re851dPassCache = fflate.unzipSync(buf);
       return __re851dPassCache;
     };
+    // Decode once per filename; subsequent passes reuse the cached string.
+    const __xmlGet = (filename: string, bytes: Uint8Array): string => {
+      let s = __xmlStrCache[filename];
+      if (s === undefined) {
+        s = new TextDecoder("utf-8").decode(bytes);
+        __xmlStrCache[filename] = s;
+      }
+      return s;
+    };
+    // Mark a content part as mutated and update the cached string. Returns
+    // a placeholder Uint8Array so callers can keep their existing rezip
+    // shape; the final flush re-encodes dirty strings exactly once.
+    const __xmlSet = (filename: string, xml: string): Uint8Array => {
+      __xmlStrCache[filename] = xml;
+      __xmlDirty.add(filename);
+      // Return existing bytes (or empty); the value is discarded by the
+      // final flush, which uses the cached string instead.
+      return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
     const __passZip = (rezip: fflate.Zippable): Uint8Array => {
       if (!__re851dPassCache) __re851dPassCache = {};
       for (const [k, v] of Object.entries(rezip)) {
         const bytes = Array.isArray(v) ? (v as [Uint8Array, unknown])[0] : (v as Uint8Array);
+        // Skip placeholder bytes returned by __xmlSet — the cached string
+        // is the source of truth for dirty content parts.
+        if (__xmlDirty.has(k) && bytes.length === 0) continue;
         __re851dPassCache[k] = bytes;
       }
       // Return current processedDocx unchanged — passes only call unzip on
@@ -4411,7 +4439,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder2.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.indexOf("OWNER OCCUPIED") === -1 && xml.indexOf("Owner Occupied") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -4607,7 +4635,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder2.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render owner-occupied safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -4693,7 +4721,7 @@ async function generateSingleDocument(
             rezip3[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
 
           // Build a visible-text projection with an offset map back into xml.
           // This handles Word splitting visible text across multiple <w:t>
@@ -4887,7 +4915,7 @@ async function generateSingleDocument(
             for (const r of allRewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip3[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip3[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate3 = true;
           } else {
             rezip3[filename] = [bytes, { level: 0 }];
@@ -4947,7 +4975,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.toLowerCase().indexOf("remain unpaid") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5110,7 +5138,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render remain-unpaid safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5166,7 +5194,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           const xmlLowerCD = xml.toLowerCase();
           if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
@@ -5321,7 +5349,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render cure-delinquency safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5375,7 +5403,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           const xmlLower60 = xml.toLowerCase();
           if (xmlLower60.indexOf("60 day") === -1 && xmlLower60.indexOf("60-day") === -1 && xmlLower60.indexOf("sixty day") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
@@ -5530,7 +5558,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render 60-day safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5585,7 +5613,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder3.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.toLowerCase().indexOf("encumbrances of record") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5739,7 +5767,7 @@ async function generateSingleDocument(
             for (const r of rewrites) {
               xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
             }
-            rezip[filename] = [encoder3.encode(xml), { level: 0 }];
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
             didMutate = true;
             console.log(
               `[generate-document] RE851D post-render encumbrance-of-record safety pass: ${rewrites.length / 2} pairs forced in ${filename}`
@@ -5814,7 +5842,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
-          let xml = decoder4.decode(bytes);
+          let xml = __xmlGet(filename, bytes);
           if (xml.indexOf("ENCUMBRANCE") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -6039,7 +6067,7 @@ async function generateSingleDocument(
           for (const r of replacements) {
             xml = xml.slice(0, r.start) + r.body + xml.slice(r.end);
           }
-          rezip[filename] = [encoder4.encode(xml), { level: 0 }];
+          rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
           didMutate = true;
           console.log(
             `[generate-document] RE851D post-render encumbrance pass: ${pureInserts.length} value cells filled, ${replacements.length} balloon glyphs forced in ${filename}`,
@@ -6064,8 +6092,14 @@ async function generateSingleDocument(
     if (__re851dPassCache) {
       try {
         const flushZip: fflate.Zippable = {};
+        const flushEncoder = new TextEncoder();
         for (const [k, v] of Object.entries(__re851dPassCache)) {
-          flushZip[k] = [v, { level: 0 }];
+          if (__xmlDirty.has(k)) {
+            // Re-encode the cached mutated string exactly once.
+            flushZip[k] = [flushEncoder.encode(__xmlStrCache[k]), { level: 0 }];
+          } else {
+            flushZip[k] = [v, { level: 0 }];
+          }
         }
         processedDocx = new Uint8Array(fflate.zipSync(flushZip));
       } catch (flushErr) {
