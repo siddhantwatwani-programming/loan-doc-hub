@@ -2533,7 +2533,15 @@ async function generateSingleDocument(
             fieldValues.set(k, { rawValue: v, dataType: dt });
 
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
+          setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes`, paidByLoan);
+          setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_no`, !paidByLoan);
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes_glyph`, paidByLoan ? "☒" : "☐");
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_no_glyph`, paidByLoan ? "☐" : "☒");
           setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
+          setBool(`pr_li_delinqu60day_${lienIdx}_yes`, has60);
+          setBool(`pr_li_delinqu60day_${lienIdx}_no`, !has60);
+          setText(`pr_li_delinqu60day_${lienIdx}_yes_glyph`, has60 ? "☒" : "☐");
+          setText(`pr_li_delinqu60day_${lienIdx}_no_glyph`, has60 ? "☐" : "☒");
           setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
           // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☒ NO)
           setBool(`pr_li_currentDelinqu_${lienIdx}_yes`, currentDelinq);
@@ -2575,7 +2583,15 @@ async function generateSingleDocument(
             fieldValues.set(k, { rawValue: v, dataType: dt });
           };
           setBoolP(`pr_li_delinquencyPaidByLoan_${pIdx}`, b.paidByLoan);
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_yes`, { rawValue: b.paidByLoan ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_no`, { rawValue: b.paidByLoan ? "false" : "true", dataType: "boolean" });
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_yes_glyph`, { rawValue: b.paidByLoan ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_delinquencyPaidByLoan_${pIdx}_no_glyph`, { rawValue: b.paidByLoan ? "☐" : "☒", dataType: "text" });
           setBoolP(`pr_li_delinqu60day_${pIdx}`, b.delinq60);
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_yes`, { rawValue: b.delinq60 ? "true" : "false", dataType: "boolean" });
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_no`, { rawValue: b.delinq60 ? "false" : "true", dataType: "boolean" });
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_yes_glyph`, { rawValue: b.delinq60 ? "☒" : "☐", dataType: "text" });
+          fieldValues.set(`pr_li_delinqu60day_${pIdx}_no_glyph`, { rawValue: b.delinq60 ? "☐" : "☒", dataType: "text" });
           setBoolP(`pr_li_currentDelinqu_${pIdx}`, b.currentDelinq);
           // Yes/No + glyph aliases per-property index
           fieldValues.set(`pr_li_currentDelinqu_${pIdx}_yes`, { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
@@ -2602,7 +2618,15 @@ async function generateSingleDocument(
           if (pIdx === 1) {
             // Bare aliases for templates referencing keys without _N
             fieldValues.set("pr_li_delinquencyPaidByLoan", { rawValue: b.paidByLoan ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_yes", { rawValue: b.paidByLoan ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_no", { rawValue: b.paidByLoan ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_yes_glyph", { rawValue: b.paidByLoan ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinquencyPaidByLoan_no_glyph", { rawValue: b.paidByLoan ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_delinqu60day", { rawValue: b.delinq60 ? "true" : "", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_yes", { rawValue: b.delinq60 ? "true" : "false", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_no", { rawValue: b.delinq60 ? "false" : "true", dataType: "boolean" });
+            fieldValues.set("pr_li_delinqu60day_yes_glyph", { rawValue: b.delinq60 ? "☒" : "☐", dataType: "text" });
+            fieldValues.set("pr_li_delinqu60day_no_glyph", { rawValue: b.delinq60 ? "☐" : "☒", dataType: "text" });
             fieldValues.set("pr_li_currentDelinqu", { rawValue: b.currentDelinq ? "true" : "", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_yes", { rawValue: b.currentDelinq ? "true" : "false", dataType: "boolean" });
             fieldValues.set("pr_li_currentDelinqu_no", { rawValue: b.currentDelinq ? "false" : "true", dataType: "boolean" });
@@ -3116,7 +3140,11 @@ async function generateSingleDocument(
           "pr_p_zoning_N", "pr_p_floodZone_N", "pr_p_pledgedEquity_N",
           "pr_p_delinquHowMany_N",
           // Lien-delinquency block (CSR Property → Liens, RE851D delinquency questions)
+          "pr_li_delinquencyPaidByLoan_N_yes_glyph", "pr_li_delinquencyPaidByLoan_N_no_glyph",
+          "pr_li_delinquencyPaidByLoan_N_yes", "pr_li_delinquencyPaidByLoan_N_no",
           "pr_li_delinquencyPaidByLoan_N",
+          "pr_li_delinqu60day_N_yes_glyph", "pr_li_delinqu60day_N_no_glyph",
+          "pr_li_delinqu60day_N_yes", "pr_li_delinqu60day_N_no",
           "pr_li_delinqu60day_N",
           "pr_li_currentDelinqu_N_yes_glyph", "pr_li_currentDelinqu_N_no_glyph",
           "pr_li_currentDelinqu_N_yes", "pr_li_currentDelinqu_N_no",
@@ -4094,7 +4122,12 @@ async function generateSingleDocument(
         "propertytax_delinquent_amount", "propertytax.delinquent_amount",
         "propertytax_source_of_information", "propertytax.source_of_information",
         // Lien-derived per-property aliases used by the questionnaire blocks.
-        "pr_li_delinquencyPaidByLoan", "pr_li_delinqu60day",
+        "pr_li_delinquencyPaidByLoan", "pr_li_delinquencyPaidByLoan_yes",
+        "pr_li_delinquencyPaidByLoan_no", "pr_li_delinquencyPaidByLoan_yes_glyph",
+        "pr_li_delinquencyPaidByLoan_no_glyph",
+        "pr_li_delinqu60day", "pr_li_delinqu60day_yes",
+        "pr_li_delinqu60day_no", "pr_li_delinqu60day_yes_glyph",
+        "pr_li_delinqu60day_no_glyph",
         "pr_li_currentDelinqu", "pr_li_currentDelinqu_yes",
         "pr_li_currentDelinqu_no", "pr_li_currentDelinqu_yes_glyph",
         "pr_li_currentDelinqu_no_glyph",

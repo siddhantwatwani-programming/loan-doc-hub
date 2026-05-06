@@ -1,51 +1,68 @@
-Plan to fix RE851D field population without changing existing UI, database schema, APIs, or unrelated document flows.
+## RE851D — Fix YES/NO checkboxes for delinqu60day & delinquencyPaidByLoan
 
-Scope
-- Only update the RE851D-specific logic inside the existing `generate-document` backend function and, only if required, shared parser behavior strictly scoped to RE851D template handling.
-- Do not modify forms, UI layout, database schema, saved CSR data, or non-RE851D generation behavior.
+### Root cause
 
-Findings from inspection
-- The uploaded RE851D template uses generic `_N` placeholders throughout Part 1, Part 2, and Property #1-#5 blocks, for example `{{pr_p_address_N}}`, `{{pr_p_appraiseValue_N}}`, `{{ln_p_remainingEncumbrance_N}}`, `{{propertytax.annual_payment_N}}`, and `{{pr_li_*_N}}`.
-- The generation logs show a concrete failure before rendering: `RE851D _N preprocessing failed ... sortedPropIndices is not defined`. This means the template `_N` rewrite is failing and the original template continues with literal `_N` tags, which then resolve blank.
-- The current RE851D publisher already attempts to emit per-property aliases such as `pr_p_address_1`, `pr_p_address_2`, `ln_p_remainingEncumbrance_1`, etc., but the preprocessing failure prevents template tags from being rewritten to those suffixed keys.
-- The current template has mixed tag quality: some tags are correctly `_N`, some are unsuffixed inside property blocks (`{{propertytax.source_of_information}}`, `{{pr_p_squareFeet}}`, `{{pr_p_yearBuilt}}`), and some conditionals/glyphs are malformed. The fix should be defensive and RE851D-scoped.
+In `supabase/functions/generate-document/index.ts` the RE851D delinquency publisher (around lines 2530–2615) emits per-lien and per-property aliases for four questionnaire fields:
 
-Implementation steps
-1. Repair RE851D `_N` preprocessing variable scope
-   - Define the property index list used by the preprocessing block in the same scope where the block runs, derived from the already-built `propertyIndices` set.
-   - Ensure the multiple-properties safety pass uses that local list instead of an out-of-scope variable.
-   - Keep fallback behavior safe: if no property data exists, only Property #1 can be considered, and no cross-property duplication should occur.
+- `pr_li_currentDelinqu_N` — publishes `_yes`, `_no`, `_yes_glyph`, `_no_glyph` ✅
+- `pr_li_encumbranceOfRecord_N` — publishes `_yes`, `_no`, `_yes_glyph`, `_no_glyph` ✅
+- `pr_li_delinqu60day_N` — publishes ONLY the bare boolean ❌
+- `pr_li_delinquencyPaidByLoan_N` — publishes ONLY the bare boolean ❌
 
-2. Expand RE851D valid-key seeding for all published per-property aliases
-   - Add all RE851D suffixed keys that are published by the RE851D mapper to `effectiveValidFieldKeys`, not just encumbrance totals.
-   - Include property fields, tax fields, property type flags, delinquency/questionnaire fields, glyph aliases, and loan-to-value aliases.
-   - This prevents the resolver from treating `*_1..*_5` as unknown and falling back to unsuffixed/canonical keys.
+The template (per the user’s screenshot) uses:
+- `{{pr_li_delinqu60day_N_yes_glyph}}` / `{{pr_li_delinqu60day_N_no_glyph}}`
+- `{{pr_li_delinquencyPaidByLoan_N_yes_glyph}}` / `{{pr_li_delinquencyPaidByLoan_N_no_glyph}}`
 
-3. Harden property/lien/tax publishing for strict N logic
-   - Confirm/preserve `PROPERTY #1 -> property1`, `PROPERTY #2 -> property2`, etc.
-   - Use only each property’s indexed keys for property data.
-   - Keep lien rollups filtered by `lienK.property` matching `propertyN` or that property’s address.
-   - Keep property tax routed through `propertytaxN` or address-based matching, with no cross-index fallback except the existing Property #1 legacy fallback.
+Because no value is published for those exact keys, they resolve to blank — leaving the static "YES" / "NO" labels with no ☒/☐ glyph next to them. The same gap exists in `RE851D_INDEXED_TAGS` (around lines 3119–3120), so the `_N → _K` template rewriter doesn't even rewrite those tags to per-property indices.
 
-4. Add RE851D-scoped handling for unsuffixed tags inside property blocks
-   - Extend the existing RE851D contextual bare-tag rewrite so unsuffixed property/tax tags inside Property #K blocks are rewritten to `_<K>` equivalents.
-   - Include the unsuffixed tags seen in the uploaded template, such as `propertytax.source_of_information`, `propertytax.delinquent`, `pr_p_squareFeet`, `pr_p_yearBuilt`, and related property fields.
-   - Keep this strictly inside detected Property #K regions so it cannot affect other documents.
+### Files changed
 
-5. Add missing per-property boolean/glyph aliases where the template expects them
-   - Ensure `pr_li_delinqu60day_N_yes_glyph/no_glyph`, `pr_li_delinquencyPaidByLoan_N_yes_glyph/no_glyph`, and related yes/no aliases are published per property where lien data exists.
-   - Preserve existing questionnaire logic and only fill aliases from CSR lien values.
+- `supabase/functions/generate-document/index.ts` (publishers + valid-key allowlist)
 
-6. Verification
-   - Run the existing document-generation path for the current RE851D deal/template if available.
-   - Check logs confirm no `_N preprocessing failed` error.
-   - Confirm output no longer contains literal `_N` placeholders for RE851D mapped fields.
-   - Spot-check Property #1-#5 mapping behavior: each property section uses its own property, lien, and tax values; no duplicate fallback from Property #1 into later sections.
+### Fix
 
-Acceptance criteria covered
-- RE851D dynamic fields populate when CSR data exists.
-- `_N` tags resolve as property-specific `_1.._5` aliases.
-- Property, lien, and property tax values are sourced from the correct CSR sections.
-- Lien-derived values are filtered by related property.
-- No blank fields caused by unresolved `_N` tags.
-- No cross-property duplication from unsuffixed fallback behavior.
+1. **Per-lien block (~line 2535–2546)** — alongside the existing `setBool(pr_li_delinquencyPaidByLoan_${lienIdx}, paidByLoan)` and `setBool(pr_li_delinqu60day_${lienIdx}, has60)`, also publish for each:
+   - `..._yes` (boolean = state)
+   - `..._no` (boolean = !state)
+   - `..._yes_glyph` (text = state ? "☒" : "☐")
+   - `..._no_glyph` (text = state ? "☐" : "☒")
+
+2. **Per-property block (~line 2577–2585)** — same four aliases for `pr_li_delinqu60day_${pIdx}` and `pr_li_delinquencyPaidByLoan_${pIdx}`, mirroring what `pr_li_currentDelinqu_${pIdx}` already does at lines 2581–2584.
+
+3. **Bare-alias block (~line 2602–2613, `pIdx === 1`)** — add `_yes`, `_no`, `_yes_glyph`, `_no_glyph` for `pr_li_delinqu60day` and `pr_li_delinquencyPaidByLoan` so unsuffixed templates also work.
+
+4. **`RE851D_INDEXED_TAGS` (~line 3119–3120)** — extend to include:
+   - `pr_li_delinqu60day_N_yes_glyph`, `pr_li_delinqu60day_N_no_glyph`, `pr_li_delinqu60day_N_yes`, `pr_li_delinqu60day_N_no`
+   - `pr_li_delinquencyPaidByLoan_N_yes_glyph`, `pr_li_delinquencyPaidByLoan_N_no_glyph`, `pr_li_delinquencyPaidByLoan_N_yes`, `pr_li_delinquencyPaidByLoan_N_no`
+
+   Order longest-first so the rewriter consumes `_N_yes_glyph` before `_N`.
+
+5. **`effectiveValidFieldKeys` / `SUFFIXED_BASES` (~line 4070+)** — add the same eight per-property bases (`_1.._5`) so the resolver treats them as direct hits rather than falling back to canonical lookup.
+
+### Behavior after fix
+
+Per property K (1..5):
+- `{{pr_li_delinqu60day_K_yes_glyph}}` → ☒ if any matching lien has `delinquencies_how_many > 0`, else ☐
+- `{{pr_li_delinqu60day_K_no_glyph}}` → opposite
+- `{{pr_li_delinquencyPaidByLoan_K_yes_glyph}}` → ☒ if any matching lien has `paid_by_loan` truthy, else ☐
+- `{{pr_li_delinquencyPaidByLoan_K_no_glyph}}` → opposite
+
+Mutually exclusive within each question. No cross-property leakage (publisher already filters by `lienK.property === "propertyN"`). Already-correct `pr_li_currentDelinqu_N` and `pr_li_encumbranceOfRecord_N` glyphs untouched.
+
+### Out of scope (preserved)
+
+- No template changes.
+- No field_dictionary changes.
+- No UI/schema changes.
+- `pr_li_delinquHowMany_N` and `pr_li_sourceOfPayment_N` already publish text values correctly.
+- All existing publishers, safety passes, and other RE851D logic untouched.
+
+### Verification (after switch to default mode)
+
+1. Redeploy `generate-document`.
+2. Generate RE851D for the test deal with multiple properties + liens.
+3. Confirm in the .docx:
+   - F (60-day late) shows ☒/☐ next to YES & NO based on `delinquencies_how_many > 0` per property.
+   - I (paid by loan) shows ☒/☐ based on `paid_by_loan` per property.
+   - H (current delinquency) and "encumbrances of record" continue to render correctly (regression check).
+   - Each PROPERTY #K block uses its own lien data.
