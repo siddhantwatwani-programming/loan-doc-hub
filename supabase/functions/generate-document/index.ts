@@ -2533,7 +2533,15 @@ async function generateSingleDocument(
             fieldValues.set(k, { rawValue: v, dataType: dt });
 
           setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}`, paidByLoan);
+          setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes`, paidByLoan);
+          setBool(`pr_li_delinquencyPaidByLoan_${lienIdx}_no`, !paidByLoan);
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_yes_glyph`, paidByLoan ? "☒" : "☐");
+          setText(`pr_li_delinquencyPaidByLoan_${lienIdx}_no_glyph`, paidByLoan ? "☐" : "☒");
           setBool(`pr_li_delinqu60day_${lienIdx}`, has60);
+          setBool(`pr_li_delinqu60day_${lienIdx}_yes`, has60);
+          setBool(`pr_li_delinqu60day_${lienIdx}_no`, !has60);
+          setText(`pr_li_delinqu60day_${lienIdx}_yes_glyph`, has60 ? "☒" : "☐");
+          setText(`pr_li_delinqu60day_${lienIdx}_no_glyph`, has60 ? "☐" : "☒");
           setBool(`pr_li_currentDelinqu_${lienIdx}`, currentDelinq);
           // Yes/No + glyph aliases (always published so unchecked → ☐ YES / ☒ NO)
           setBool(`pr_li_currentDelinqu_${lienIdx}_yes`, currentDelinq);
