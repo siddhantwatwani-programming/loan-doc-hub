@@ -2559,7 +2559,12 @@ async function generateSingleDocument(
             const pm = propRaw.match(/^property(\d+)$/);
             if (!pm) return;
             const pIdx = parseInt(pm[1], 10);
-            const isAnt = truthy2(fieldValues.get(`${prefix}.anticipated`)?.rawValue);
+            // Route to ANTICIPATED bucket for any non-empty/non-"no"/non-"false" value
+            // (the UI dropdown stores values like "This Loan", "Senior Lien", "Other"
+            // that all mean "expected/anticipated"; truthy2 only matched true/yes/1/on
+            // so those liens were incorrectly falling into the REMAINING bucket).
+            const antRaw = String(fieldValues.get(`${prefix}.anticipated`)?.rawValue ?? "").trim().toLowerCase();
+            const isAnt = antRaw !== "" && antRaw !== "no" && antRaw !== "false" && antRaw !== "0" && antRaw !== "off";
             const bucket = isAnt ? perPropAnt : perPropRem;
             if (!bucket[pIdx]) bucket[pIdx] = [];
             bucket[pIdx].push({ prefix });
