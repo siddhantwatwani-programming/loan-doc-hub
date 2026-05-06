@@ -4122,7 +4122,12 @@ async function generateSingleDocument(
         "propertytax_delinquent_amount", "propertytax.delinquent_amount",
         "propertytax_source_of_information", "propertytax.source_of_information",
         // Lien-derived per-property aliases used by the questionnaire blocks.
-        "pr_li_delinquencyPaidByLoan", "pr_li_delinqu60day",
+        "pr_li_delinquencyPaidByLoan", "pr_li_delinquencyPaidByLoan_yes",
+        "pr_li_delinquencyPaidByLoan_no", "pr_li_delinquencyPaidByLoan_yes_glyph",
+        "pr_li_delinquencyPaidByLoan_no_glyph",
+        "pr_li_delinqu60day", "pr_li_delinqu60day_yes",
+        "pr_li_delinqu60day_no", "pr_li_delinqu60day_yes_glyph",
+        "pr_li_delinqu60day_no_glyph",
         "pr_li_currentDelinqu", "pr_li_currentDelinqu_yes",
         "pr_li_currentDelinqu_no", "pr_li_currentDelinqu_yes_glyph",
         "pr_li_currentDelinqu_no_glyph",
