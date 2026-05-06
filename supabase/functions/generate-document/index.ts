@@ -4970,6 +4970,7 @@ async function generateSingleDocument(
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
+          let xml = decoder3.decode(bytes);
           const xmlLowerCD = xml.toLowerCase();
           if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
