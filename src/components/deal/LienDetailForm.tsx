@@ -375,7 +375,7 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
           </div>
 
           {renderField('lienPriorityNow', 'Lien Priority Now', { placeholder: 'e.g. 1st' })}
-          {renderField('lienPriorityAfter', 'Lien Priority After', { placeholder: 'e.g. 1st' })}
+          {renderField('lienPriorityAfter', 'Lien Priority After', { placeholder: 'auto', readOnly: true }, true)}
 
           {renderCurrency('originalBalance', 'Original Balance', isThisLoan)}
           {renderCurrency('currentBalance', 'Current Balance')}
