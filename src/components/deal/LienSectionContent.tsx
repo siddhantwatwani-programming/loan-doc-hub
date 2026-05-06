@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useDealNavigationOptional } from '@/contexts/DealNavigationContext';
 import { ArrowLeft } from 'lucide-react';
@@ -8,6 +8,7 @@ import { LienModal } from './LienModal';
 import { LienDetailForm } from './LienDetailForm';
 import { useDirtyFields } from '@/contexts/DirtyFieldsContext';
 import { DirtyFieldsProvider } from '@/contexts/DirtyFieldsContext';
+import { distributePayoff, computeEquity, formatOrdinal, toNumber } from '@/lib/lienCalculationEngine';
 
 interface LienSectionContentProps {
   values: Record<string, string>;
@@ -255,6 +256,50 @@ export const LienSectionContent: React.FC<LienSectionContentProps> = ({
       onValueChange('liens.answer_10a', expected10A);
     }
   }, [expected10A, current10A, onValueChange]);
+
+  // === Lien Calculation Engine: priority-after, balance-after, equity ===
+  const propertyValue = useMemo(() => {
+    if (!currentPropertyId) return 0;
+    return toNumber(values[`${currentPropertyId}.appraised_value`]);
+  }, [currentPropertyId, values]);
+
+  const lastWriteRef = useRef<string>('');
+  useEffect(() => {
+    if (!liensForProperty.length) return;
+    const distribution = distributePayoff(liensForProperty, propertyValue);
+    const equity = computeEquity(liensForProperty, propertyValue);
+
+    const updates: Array<[string, string]> = [];
+    for (const lien of liensForProperty) {
+      const r = distribution.get(lien.id);
+      if (!r) continue;
+      const newOrdinal = formatOrdinal(r.priorityAfter);
+      const newBalance = r.balanceAfter ? r.balanceAfter.toFixed(2) : '';
+      if ((lien.lienPriorityAfter || '') !== newOrdinal) {
+        updates.push([`${lien.id}.lien_priority_after`, newOrdinal]);
+      }
+      const curBA = (lien.balanceAfter || '').replace(/[^0-9.\-]/g, '');
+      if (curBA !== newBalance) {
+        updates.push([`${lien.id}.balance_after`, newBalance]);
+      }
+    }
+    const equityKey = currentPropertyId ? `${currentPropertyId}.` : 'liens.';
+    const protective = equity.protectiveEquity ? equity.protectiveEquity.toFixed(2) : '';
+    const total = equity.totalEquity ? equity.totalEquity.toFixed(2) : '';
+    if ((values[`${equityKey}protective_equity`] || '') !== protective) {
+      updates.push([`${equityKey}protective_equity`, protective]);
+    }
+    if ((values[`${equityKey}total_equity`] || '') !== total) {
+      updates.push([`${equityKey}total_equity`, total]);
+    }
+
+    if (!updates.length) return;
+    const sig = JSON.stringify(updates);
+    if (sig === lastWriteRef.current) return;
+    lastWriteRef.current = sig;
+    updates.forEach(([k, v]) => onValueChange(k, v));
+  }, [liensForProperty, propertyValue, currentPropertyId, values, onValueChange]);
+
   const totalLiens = liensForProperty.length;
   const totalPages = Math.max(1, Math.ceil(totalLiens / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);

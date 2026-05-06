@@ -131,6 +131,7 @@ const EXPORT_COLUMNS: ExportColumn[] = [
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'property', label: 'Related Property', visible: true },
   { id: 'holder', label: 'Lien Holder', visible: true },
+  { id: 'anticipated', label: 'Anticipated', visible: true },
   { id: 'loanTypeDropdown', label: 'Loan Type', visible: true },
   { id: 'lienPriorityNow', label: 'Lien Priority Now', visible: true },
   { id: 'lienPriorityAfter', label: 'Lien Priority After', visible: true },
@@ -182,13 +183,14 @@ export const LiensTableView: React.FC<LiensTableViewProps> = ({
     switch (columnId) {
       case 'property': return lien.property || 'Unassigned';
       case 'holder': return lien.holder || '-';
+      case 'anticipated': return lien.anticipated === 'This Loan' || lien.thisLoan === 'true' ? 'This Loan' : (lien.anticipated === 'Other' ? 'Other' : '-');
       case 'loanTypeDropdown': return lien.loanTypeDropdown || '-';
       case 'lienPriorityNow': return lien.lienPriorityNow || '-';
       case 'lienPriorityAfter': return lien.lienPriorityAfter || '-';
       case 'remainingNewLienPriority': return lien.remainingNewLienPriority || '-';
       case 'interestRate': return lien.interestRate ? `${lien.interestRate}%` : '-';
       case 'originalBalance': return formatCurrency(lien.originalBalance) || '-';
-      case 'balanceAfter': return lien.lienPriorityAfter || '-';
+      case 'balanceAfter': return formatCurrency(lien.balanceAfter) || '-';
       case 'currentBalance': return formatCurrency(lien.currentBalance) || '-';
       case 'regularPayment': return formatCurrency(lien.regularPayment) || '-';
       case 'recordingNumber': return lien.recordingNumber || '-';
