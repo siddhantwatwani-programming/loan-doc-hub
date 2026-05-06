@@ -5288,22 +5288,24 @@ async function generateSingleDocument(
           };
 
           let qm: RegExpExecArray | null;
+          let scanned = 0;
           while ((qm = questionRe.exec(xml)) !== null) {
+            scanned++;
             const qStart = qm.index;
             const region = propRanges.find((p) => qStart >= p.start && qStart < p.end);
-            if (!region) continue;
+            if (!region) { console.log(`[generate-document] RE851D enc-of-record: anchor@${qStart} not in any property region`); continue; }
             const winEnd = Math.min(region.end, qStart + 4096);
 
             yesLabelRe.lastIndex = qStart;
             noLabelRe.lastIndex = qStart;
             const yL = yesLabelRe.exec(xml);
             const nL = noLabelRe.exec(xml);
-            if (!yL || !nL) continue;
-            if (yL.index >= winEnd || nL.index >= winEnd) continue;
+            if (!yL || !nL) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: no Y/N labels (yL=${!!yL}, nL=${!!nL})`); continue; }
+            if (yL.index >= winEnd || nL.index >= winEnd) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: Y/N labels outside window`); continue; }
 
             const yC = findControlNear(yL.index, yL.index + yL[0].length, qStart, winEnd);
             const nC = findControlNear(nL.index, nL.index + nL[0].length, qStart, winEnd);
-            if (!yC || !nC || yC.idx === nC.idx) continue;
+            if (!yC || !nC || yC.idx === nC.idx) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: missing/duplicate controls (yC=${yC?.kind || "none"}, nC=${nC?.kind || "none"})`); continue; }
 
             const isYes = encByIdx[region.k] === true;
             const yesChecked = isYes;
@@ -5311,7 +5313,7 @@ async function generateSingleDocument(
 
             const overlaps = (s: number, e: number) =>
               rewrites.some((r) => s < r.end && e > r.start);
-            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+            if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) { console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: overlap, skipping`); continue; }
 
             const yesReplacement =
               yC.kind === "sdt"
@@ -5324,7 +5326,9 @@ async function generateSingleDocument(
 
             rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
             rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+            console.log(`[generate-document] RE851D enc-of-record PROP#${region.k}: forced isYes=${isYes} (yC=${yC.kind}, nC=${nC.kind})`);
           }
+          console.log(`[generate-document] RE851D enc-of-record: scanned ${scanned} anchor(s)`);
 
           if (rewrites.length > 0) {
             rewrites.sort((a, b) => b.start - a.start);
