@@ -3773,11 +3773,20 @@ async function generateSingleDocument(
                 } else {
                   replacement = tag.replace(/_N_S$/, `_${indexNum}_${slot}`);
                 }
-              } else if (indexNum > 5) {
-                // Beyond Property #5: blank by mapping to a guaranteed-empty key.
-                replacement = tag.replace(/_N$/, `_overflow${indexNum}`);
               } else {
-                replacement = tag.replace(/_N$/, `_${indexNum}`);
+                // Replace the property-index `_N` token. It may sit at the end
+                // of the tag (e.g. `pr_li_sourceOfPayment_N`) OR in the middle
+                // followed by a known glyph/yes/no suffix (e.g.
+                // `pr_li_currentDelinqu_N_yes_glyph`). Without this middle-
+                // position handling the glyph tags stay literal and the YES/NO
+                // checkboxes never resolve.
+                const idxToken = indexNum > 5 ? `_overflow${indexNum}` : `_${indexNum}`;
+                const middleSuffixRe = /_N(_yes_glyph|_no_glyph|_yes|_no)$/;
+                if (middleSuffixRe.test(tag)) {
+                  replacement = tag.replace(middleSuffixRe, `${idxToken}$1`);
+                } else {
+                  replacement = tag.replace(/_N$/, idxToken);
+                }
               }
               rewrites.push({ start, end, replacement });
               consumed.push([start, end]);
