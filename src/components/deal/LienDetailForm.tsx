@@ -31,7 +31,7 @@ interface LienDetailFormProps {
 
 const SOURCE_OF_INFORMATION_OPTIONS = ['Borrower', 'Broker', 'Lender', 'Title / Prelim', 'Public Record'];
 const LOAN_TYPE_DROPDOWN_OPTIONS = ['Conventional', 'Private Lender', 'Judgement', 'Other'];
-const EXISTING_DROPDOWN_OPTIONS = ['Payoff', 'Paydown', 'Will Remain'];
+const CONDITION_DROPDOWN_OPTIONS = ['Anticipated', 'Existing - Payoff', 'Remain - Paydown', 'Will Remain'];
 
 const getThisLoanAutofillValues = (loanValues: Record<string, string>) => ({
   account: loanValues['Terms.LoanNumber'] || loanValues['loan_terms.loan_number'] || '',
@@ -301,44 +301,30 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             </div>
           </DirtyFieldWrapper>
 
-          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.anticipated}>
+          <DirtyFieldWrapper fieldKey="lien1.condition">
             <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Anticipated</Label>
-              <Select
-                value={(lien.anticipated === 'This Loan' || lien.anticipated === 'Other') ? lien.anticipated : undefined}
-                onValueChange={(val) => onChange('anticipated', val)}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent className="bg-background border border-border z-[9999]">
-                  <SelectItem value="This Loan">This Loan</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </DirtyFieldWrapper>
-          <DirtyFieldWrapper fieldKey="lien1.existing">
-            <div className="flex items-center gap-3">
-              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Existing</Label>
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">Condition</Label>
               <Select
                 value={
-                  lien.existingPayoff === 'true' ? 'Payoff' :
-                  lien.existingPaydown === 'true' ? 'Paydown' :
-                  lien.existingRemain === 'true' ? 'Remain' : undefined
+                  lien.anticipated === 'true' || lien.anticipated === 'Anticipated' ? 'Anticipated' :
+                  lien.existingPayoff === 'true' ? 'Existing - Payoff' :
+                  lien.existingPaydown === 'true' ? 'Remain - Paydown' :
+                  lien.existingRemain === 'true' ? 'Will Remain' : undefined
                 }
                 onValueChange={(val) => {
-                  onChange('existingPayoff', val === 'Payoff' ? 'true' : 'false');
-                  onChange('existingPaydown', val === 'Paydown' ? 'true' : 'false');
-                  onChange('existingRemain', val === 'Remain' ? 'true' : 'false');
+                  onChange('anticipated', val === 'Anticipated' ? 'true' : 'false');
+                  onChange('existingPayoff', val === 'Existing - Payoff' ? 'true' : 'false');
+                  onChange('existingPaydown', val === 'Remain - Paydown' ? 'true' : 'false');
+                  onChange('existingRemain', val === 'Will Remain' ? 'true' : 'false');
                   // Auto-calc Remaining Balance based on selection
                   const cur = parseFloat(unformatCurrencyDisplay(lien.currentBalance || '')) || 0;
-                  if (val === 'Payoff') {
+                  if (val === 'Existing - Payoff') {
                     onChange('newRemainingBalance', '0.00');
                     onChange('existingPaydownAmount', '');
-                  } else if (val === 'Remain') {
+                  } else if (val === 'Will Remain') {
                     onChange('newRemainingBalance', cur ? cur.toFixed(2) : '');
                     onChange('existingPaydownAmount', '');
-                  } else if (val === 'Paydown') {
+                  } else if (val === 'Remain - Paydown') {
                     const pd = parseFloat(unformatCurrencyDisplay(lien.existingPaydownAmount || '')) || 0;
                     const remain = Math.max(0, cur - pd);
                     onChange('newRemainingBalance', remain ? remain.toFixed(2) : '');
@@ -348,9 +334,9 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
               >
                 <SelectTrigger className="h-7 text-sm flex-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent className="bg-background border border-border z-[9999]">
-                  <SelectItem value="Payoff">Payoff</SelectItem>
-                  <SelectItem value="Paydown">Paydown</SelectItem>
-                  <SelectItem value="Remain">Remain</SelectItem>
+                  {CONDITION_DROPDOWN_OPTIONS.map(opt => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
