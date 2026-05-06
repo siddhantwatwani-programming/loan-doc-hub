@@ -2559,7 +2559,12 @@ async function generateSingleDocument(
             const pm = propRaw.match(/^property(\d+)$/);
             if (!pm) return;
             const pIdx = parseInt(pm[1], 10);
-            const isAnt = truthy2(fieldValues.get(`${prefix}.anticipated`)?.rawValue);
+            // Route to ANTICIPATED bucket for any non-empty/non-"no"/non-"false" value
+            // (the UI dropdown stores values like "This Loan", "Senior Lien", "Other"
+            // that all mean "expected/anticipated"; truthy2 only matched true/yes/1/on
+            // so those liens were incorrectly falling into the REMAINING bucket).
+            const antRaw = String(fieldValues.get(`${prefix}.anticipated`)?.rawValue ?? "").trim().toLowerCase();
+            const isAnt = antRaw !== "" && antRaw !== "no" && antRaw !== "false" && antRaw !== "0" && antRaw !== "off";
             const bucket = isAnt ? perPropAnt : perPropRem;
             if (!bucket[pIdx]) bucket[pIdx] = [];
             bucket[pIdx].push({ prefix });
@@ -2593,7 +2598,7 @@ async function generateSingleDocument(
                 const isUnknown = !isYes && !isNo;
 
                 const fields: Array<[string, string, string]> = [
-                  ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "n"), "text"],
+                  ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "lien_priority_after", "n"), "text"],
                   ["interestRate", firstNonEmpty("interest_rate", "intRate"), "percent"],
                   ["beneficiary", firstNonEmpty("holder", "lienHolder", "beneficiary"), "text"],
                   ["originalAmount", firstNonEmpty("original_balance", "originalBalance"), "currency"],
@@ -4992,7 +4997,291 @@ async function generateSingleDocument(
       }
     }
 
-    debugLog(`[generate-document] Processed DOCX: ${processedDocx.length} bytes`);
+    // ── RE851D POST-RENDER "ENCUMBRANCE(S) REMAINING / EXPECTED OR ANTICIPATED" cell pass ──
+    // The template's encumbrance grids contain only static label cells with no merge
+    // tags in the value cells, so the existing in-render publishers (pr_li_rem_*_N_S /
+    // pr_li_ant_*_N_S) write keys nothing references. This pass label-anchors each
+    // known label cell within each PROPERTY block and appends a value paragraph at the
+    // end of that cell (per slot S=1,2) using values already published by the in-render
+    // publisher. Strictly additive: never overwrites an existing non-empty paragraph.
+    if (/851d/i.test(template.name || "")) {
+      try {
+        const decoder4 = new TextDecoder("utf-8");
+        const encoder4 = new TextEncoder();
+        const unzipped = fflate.unzipSync(processedDocx);
+        const rezip: fflate.Zippable = {};
+        let didMutate = false;
+
+        const xmlEsc = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const fmtVal = (key: string): string => {
+          const v = fieldValues.get(key);
+          if (!v || v.rawValue === null || v.rawValue === undefined || String(v.rawValue).trim() === "") return "";
+          let r = formatByDataType(v.rawValue, v.dataType);
+          // Cells already contain leading "$" / trailing "%" glyphs — strip ours so we
+          // don't duplicate them.
+          if (v.dataType === "currency" && r.startsWith("$")) r = r.substring(1).trim();
+          if (v.dataType === "percent" && r.endsWith("%")) r = r.slice(0, -1).trim();
+          return r;
+        };
+        const truthy = (raw: unknown): boolean => {
+          if (raw === null || raw === undefined) return false;
+          if (typeof raw === "boolean") return raw;
+          const s = String(raw).trim().toLowerCase();
+          return ["true", "yes", "y", "1", "on", "checked"].includes(s);
+        };
+
+        // Labels we recognize, mapped to the published value-key suffix.
+        // First-of-pair = slot 1 cell, second-of-pair = slot 2 cell (in document order
+        // within each ENCUMBRANCE section).
+        const ENC_LABELS: Array<{ rx: RegExp; suffix: string }> = [
+          { rx: /\bPRIORITY\s*\(1\s*ST\s*,\s*2\s*ND\s*,\s*ETC\.?\)/i, suffix: "priority" },
+          { rx: /\bBENEFICIARY\b/i, suffix: "beneficiary" },
+          { rx: /\bORIGINAL\s+AMOUNT\b/i, suffix: "originalAmount" },
+          { rx: /\bAPPROXIMATE\s+PRINCIPAL\s+BALANCE\b/i, suffix: "principalBalance" },
+          { rx: /\bMONTHLY\s+PAYMENT\b/i, suffix: "monthlyPayment" },
+          { rx: /\bMATURITY\s+DATE\b/i, suffix: "maturityDate" },
+          { rx: /\bIF\s+YES,\s*AMOUNT\b/i, suffix: "balloonAmount" },
+        ];
+
+        for (const [filename, bytes] of Object.entries(unzipped)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = decoder4.decode(bytes);
+          if (xml.indexOf("ENCUMBRANCE") === -1) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+
+          // Build visible-text projection with offset map back to xml positions.
+          const map: number[] = [];
+          const buf: string[] = [];
+          {
+            let i = 0;
+            while (i < xml.length) {
+              if (xml[i] === "<") {
+                const e = xml.indexOf(">", i);
+                if (e === -1) break;
+                i = e + 1;
+                continue;
+              }
+              buf.push(xml[i]);
+              map.push(i);
+              i++;
+            }
+          }
+          const txt = buf.join("");
+          const rawToVis = new Map<number, number>();
+          for (let v = 0; v < map.length; v++) rawToVis.set(map[v], v);
+
+          // Find PROPERTY anchors via "PROPERTY INFORMATION" headings.
+          const propAnchorsRaw: number[] = [];
+          {
+            const re = /\bPROPERTY\s+INFORMATION\b/gi;
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(txt)) !== null) {
+              propAnchorsRaw.push(map[m.index] ?? 0);
+              if (propAnchorsRaw.length >= 5) break;
+            }
+          }
+          if (propAnchorsRaw.length === 0) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          const propRanges: Array<{ k: number; start: number; end: number }> = [];
+          for (let pi = 0; pi < propAnchorsRaw.length; pi++) {
+            propRanges.push({
+              k: pi + 1,
+              start: propAnchorsRaw[pi],
+              end: pi + 1 < propAnchorsRaw.length ? propAnchorsRaw[pi + 1] : xml.length,
+            });
+          }
+
+          type Insert = { at: number; html: string };
+          const inserts: Insert[] = [];
+
+          // Helper: given a raw xml position inside a label, return the [tcStart, tcEnd]
+          // (positions of "<w:tc" start tag and the END index of the matching "</w:tc>").
+          const findEnclosingTc = (pos: number): { open: number; close: number } | null => {
+            const tcOpen = xml.lastIndexOf("<w:tc>", pos);
+            const tcOpenAttr = xml.lastIndexOf("<w:tc ", pos);
+            const open = Math.max(tcOpen, tcOpenAttr);
+            if (open < 0) return null;
+            const close = xml.indexOf("</w:tc>", pos);
+            if (close < 0) return null;
+            return { open, close };
+          };
+
+          // Detect whether a cell already contains a "value" beyond its label text.
+          // We treat the cell as already populated for this field if, after stripping
+          // tags, it contains anything beyond the matched label, "$", "%" and whitespace.
+          const cellAlreadyPopulated = (
+            tcOpen: number,
+            tcClose: number,
+            labelRx: RegExp,
+          ): boolean => {
+            const inner = xml.slice(tcOpen, tcClose);
+            const visible = inner.replace(/<[^>]+>/g, "");
+            const stripped = visible
+              .replace(labelRx, "")
+              .replace(/[$%]/g, "")
+              .replace(/\s+/g, "")
+              .trim();
+            return stripped.length > 0;
+          };
+
+          // Scan each property region for ENCUMBRANCE sections.
+          for (const region of propRanges) {
+            const visStart = rawToVis.get(map[propAnchorsRaw.indexOf(propAnchorsRaw.find(p => p === region.start)!)] ?? 0);
+            // Locate ENCUMBRANCE section headers in visible text within this region.
+            // We need the visible-text offsets corresponding to region.start..region.end.
+            // Find via simple substring search on visible text indexes whose mapped
+            // raw offset falls inside the region.
+            const sectionRe = /ENCUMBRANCE\(S\)\s+(REMAINING|EXPECTED\s+OR\s+ANTICIPATED)/gi;
+            let sm: RegExpExecArray | null;
+            while ((sm = sectionRe.exec(txt)) !== null) {
+              const rawAt = map[sm.index] ?? -1;
+              if (rawAt < region.start || rawAt >= region.end) continue;
+              const isAnt = /EXPECTED/i.test(sm[1]);
+              const tagPrefix = isAnt ? "pr_li_ant" : "pr_li_rem";
+
+              // Search window for this section: from header to the next section header
+              // OR end of property region OR ~6000 visible chars (whichever is closer).
+              const visHeaderEnd = sm.index + sm[0].length;
+              // find next ENCUMBRANCE section in same region (or end of region in vis)
+              const nextRe = /ENCUMBRANCE\(S\)\s+(REMAINING|EXPECTED\s+OR\s+ANTICIPATED)/gi;
+              nextRe.lastIndex = visHeaderEnd;
+              let visSecEnd = txt.length;
+              const nm = nextRe.exec(txt);
+              if (nm) {
+                const nmRaw = map[nm.index] ?? xml.length;
+                if (nmRaw <= region.end) visSecEnd = nm.index;
+              }
+              // Also bound by region end in raw → translate region.end to visible idx
+              // (rough): walk back to find largest map index <= region.end.
+              let visRegionEnd = txt.length;
+              // binary search via for-loop (map is monotonically increasing)
+              let lo = 0, hi = map.length - 1;
+              while (lo <= hi) {
+                const mid = (lo + hi) >> 1;
+                if (map[mid] <= region.end) lo = mid + 1; else hi = mid - 1;
+              }
+              visRegionEnd = lo;
+              const winEnd = Math.min(visSecEnd, visRegionEnd, visHeaderEnd + 6000);
+
+              // For each label, find first 2 occurrences within the section window
+              // → slots 1 and 2. Append value paragraph into the enclosing <w:tc>.
+              for (const { rx, suffix } of ENC_LABELS) {
+                const re = new RegExp(rx.source, "gi");
+                re.lastIndex = visHeaderEnd;
+                let occ = 0;
+                let lm: RegExpExecArray | null;
+                while ((lm = re.exec(txt)) !== null && occ < 2) {
+                  if (lm.index >= winEnd) break;
+                  const rawLabelAt = map[lm.index] ?? -1;
+                  if (rawLabelAt < region.start) continue;
+                  occ += 1;
+                  const slot = occ;
+                  const tc = findEnclosingTc(rawLabelAt);
+                  if (!tc) continue;
+                  const lookupKey = `${tagPrefix}_${suffix}_${region.k}_${slot}`;
+                  const value = fmtVal(lookupKey);
+                  if (!value) continue;
+                  if (cellAlreadyPopulated(tc.open, tc.close, rx)) continue;
+                  // Append a new <w:p> just before </w:tc>.
+                  const para =
+                    `<w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>` +
+                    `<w:t xml:space="preserve">${xmlEsc(value)}</w:t></w:r></w:p>`;
+                  inserts.push({ at: tc.close, html: para });
+                }
+              }
+
+              // BALLOON YES / NO / UNKNOWN glyph pass — anchored after "BALLOON PAYMENT?"
+              // up to two slots in document order.
+              const balloonAnchorRe = /BALLOON\s+PAYMENT\?/gi;
+              balloonAnchorRe.lastIndex = visHeaderEnd;
+              for (let bSlot = 1; bSlot <= 2; bSlot++) {
+                const bm = balloonAnchorRe.exec(txt);
+                if (!bm || bm.index >= winEnd) break;
+                // window after this BALLOON for ~600 visible chars to find Y/N/U glyphs
+                const winVisStart = bm.index + bm[0].length;
+                const winVisEnd = Math.min(winEnd, winVisStart + 600);
+                const rawWinStart = map[winVisStart] ?? -1;
+                const rawWinEnd = map[winVisEnd] ?? xml.length;
+                if (rawWinStart < 0) continue;
+                const yesK = `${tagPrefix}_balloonYes_${region.k}_${bSlot}`;
+                const noK = `${tagPrefix}_balloonNo_${region.k}_${bSlot}`;
+                const unkK = `${tagPrefix}_balloonUnknown_${region.k}_${bSlot}`;
+                const isYes = truthy(fieldValues.get(yesK)?.rawValue);
+                const isNo = truthy(fieldValues.get(noK)?.rawValue);
+                const isUnk = truthy(fieldValues.get(unkK)?.rawValue) || (!isYes && !isNo);
+                const states = [isYes, isNo, isUnk];
+                // find the next 3 glyph runs (☐/☑/☒) within window in raw xml order
+                const slice = xml.slice(rawWinStart, rawWinEnd);
+                const glyphRe = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+                let gIdx = 0;
+                let gm: RegExpExecArray | null;
+                while ((gm = glyphRe.exec(slice)) !== null && gIdx < 3) {
+                  const want = states[gIdx] ? "\u2611" : "\u2610";
+                  if (gm[2] !== want) {
+                    const start = rawWinStart + gm.index;
+                    const end = start + gm[0].length;
+                    inserts.push({ at: -end, html: `${gm[1]}${want}${gm[3]}|||REPLACE|||${start}` });
+                  }
+                  gIdx += 1;
+                }
+                debugLog(
+                  `[generate-document] RE851D enc post-render P${region.k} ${tagPrefix === "pr_li_ant" ? "ANT" : "REM"} S${bSlot}: balloon=${isYes ? "YES" : isNo ? "NO" : "UNK"}`,
+                );
+              }
+            }
+          }
+
+          if (inserts.length === 0) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          // Apply: split into pure inserts (at >= 0) and replacements (at < 0 with marker)
+          const pureInserts = inserts.filter(x => x.at >= 0).sort((a, b) => b.at - a.at);
+          for (const ins of pureInserts) {
+            xml = xml.slice(0, ins.at) + ins.html + xml.slice(ins.at);
+          }
+          const replacements = inserts
+            .filter(x => x.at < 0)
+            .map(x => {
+              const [body, tail] = x.html.split("|||REPLACE|||");
+              const start = parseInt(tail, 10);
+              const end = -x.at;
+              return { start, end, body };
+            })
+            .sort((a, b) => b.start - a.start);
+          for (const r of replacements) {
+            xml = xml.slice(0, r.start) + r.body + xml.slice(r.end);
+          }
+          rezip[filename] = [encoder4.encode(xml), { level: 0 }];
+          didMutate = true;
+          console.log(
+            `[generate-document] RE851D post-render encumbrance pass: ${pureInserts.length} value cells filled, ${replacements.length} balloon glyphs forced in ${filename}`,
+          );
+        }
+
+        if (didMutate) {
+          processedDocx = new Uint8Array(fflate.zipSync(rezip));
+        }
+      } catch (postErr) {
+        console.error(
+          `[generate-document] RE851D post-render encumbrance pass failed (continuing):`,
+          postErr instanceof Error ? postErr.message : String(postErr),
+        );
+      }
+    }
+
 
     // 6. Calculate version number
     const { data: existingDocs } = await supabase
