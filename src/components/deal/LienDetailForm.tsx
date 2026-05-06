@@ -410,7 +410,12 @@ export const LienDetailForm: React.FC<LienDetailFormProps> = ({
             )}
           </div>
 
-          {renderCheckbox('sltUnderModification', 'Under Modification / FB Plan')}
+          <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltUnderModification}>
+            <div className="flex items-center gap-2">
+              <Checkbox id="sltUnderModification" checked={lien.sltUnderModification === 'true'} onCheckedChange={(checked) => onChange('sltUnderModification', checked ? 'true' : 'false')} disabled={disabled} />
+              <Label htmlFor="sltUnderModification" className="text-sm text-foreground whitespace-nowrap">Under Modification / FB Plan</Label>
+            </div>
+          </DirtyFieldWrapper>
 
           <div className="flex items-center gap-3">
             <DirtyFieldWrapper fieldKey={DIRTY_KEY_MAP.sltForeclosure}>
