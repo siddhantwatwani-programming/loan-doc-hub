@@ -1612,6 +1612,7 @@ async function generateSingleDocument(
           "pr_p_protectiveEquity", "pr_p_descript", "pr_p_ltv", "pr_p_cltv",
           "pr_p_zoning", "pr_p_floodZone", "pr_p_pledgedEquity",
           "pr_p_delinquHowMany",
+          "pr_p_performedBy", "pr_p_performeBy",
           "ln_p_loanToValueRatio",
           "propertytax_annual_payment", "propertytax.annual_payment",
           "propertytax_delinquent", "propertytax.delinquent",
