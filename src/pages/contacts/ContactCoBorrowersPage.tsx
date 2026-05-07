@@ -163,7 +163,8 @@ const ContactCoBorrowersPage: React.FC = () => {
     if (isReadOnly) return false;
     // Mirror coborrower.* values to canonical top-level/contact_data keys so
     // the Co-borrowers grid populates after save (existing save API only).
-    const mirrored = mirrorPrefixedToCanonical(contactData, 'coborrower.');
+    const withSend = mirrorCoBorrowerSendFields(contactData);
+    const mirrored = mirrorPrefixedToCanonical(withSend, 'coborrower.');
     return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
