@@ -1610,23 +1610,8 @@ async function generateSingleDocument(
         }
       }
 
-      // ── RE851D final encumbrance state log ──
-      // One unconditional console line per generation summarizing exactly
-      // what processDocx will see for the lien-derived encumbrance keys.
-      // Critical for diagnosing "tag is in template but value is blank"
-      // reports without flipping DOC_GEN_DEBUG.
-      {
-        const fmt = (k: string) => {
-          const v = fieldValues.get(k);
-          if (!v) return "∅";
-          const raw = v.rawValue;
-          if (raw === "" || raw === null || raw === undefined) return "''";
-          return String(raw);
-        };
-        const exp = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
-        const rem = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
-        console.log(`[generate-document] RE851D final encumbrance state: expected=[${exp}], remaining=[${rem}]`);
-      }
+      // (RE851D final encumbrance state log moved to after the authoritative
+      // late pass — search for "RE851D final encumbrance state".)
     }
 
     // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
