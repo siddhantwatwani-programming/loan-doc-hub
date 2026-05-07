@@ -229,6 +229,13 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
             <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={getValue('agreementOnFileDate')}
+                onChange={(e) => handleChange('agreementOnFileDate', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm w-[140px]"
+              />
               <Checkbox id="borrower-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} />
               <Label htmlFor="borrower-agreementOnFile" className="text-sm font-normal">Agreement on File</Label>
             </div>
