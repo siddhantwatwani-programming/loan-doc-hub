@@ -5750,7 +5750,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          if (xml.toLowerCase().indexOf("encumbrances of record") === -1) {
+          if (__xmlGetLower(filename, xml).indexOf("encumbrances of record") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
