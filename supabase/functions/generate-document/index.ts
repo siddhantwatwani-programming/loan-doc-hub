@@ -4802,28 +4802,9 @@ async function generateSingleDocument(
           // Build a visible-text projection with an offset map back into xml.
           // This handles Word splitting visible text across multiple <w:t>
           // runs and intervening tags.
-          const buf: string[] = [];
-          const map: number[] = [];
-          {
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " " && prev !== "") {
-                  buf.push(" ");
-                  map.push(i);
-                }
-                i = e + 1;
-                continue;
-              }
-              buf.push(xml[i]);
-              map.push(i);
-              i++;
-            }
-          }
-          const txt = buf.join("");
+          const __vp2 = __getVisProj(filename, xml);
+          const txt = __vp2.txt;
+          const map = __vp2.map;
           const txtToXml = (ti: number) =>
             ti < 0 ? 0 : ti >= map.length ? xml.length : map[ti];
 
