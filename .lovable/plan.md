@@ -1,51 +1,49 @@
-## Issue
+## RE851D – Per-Property Encumbrance Mapping Fix
 
-In the generated RE851D document, the BALLOON PAYMENT? section renders the three checkboxes vertically:
+Update the per-property lien rollup in `supabase/functions/generate-document/index.ts` (lines ~1404–1517) so the Part 1 LTV table values follow the new Condition-based rules.
 
-```
-☑ YES
-☐
-☐
-```
+### Current behavior (incorrect)
+- **Expected** = sum of `lienK.anticipated_amount` for liens where `anticipated == true`
+- **Remaining** = sum of `lienK.new_remaining_balance` for ALL matched liens (including payoffs)
+- Doesn't read the `existingRemain / existingPaydown / existingPayoff` flags persisted by the Condition dropdown.
 
-Only the first checkbox has its label ("YES"). The 2nd ("NO") and 3rd ("Unknown") checkbox labels are missing, so the result looks blank instead of showing all three options on a single line as required.
+### New behavior (per spec)
+For each property index `idx`, walk the property-matched liens and classify by Condition flags persisted from `LienDetailForm` (`anticipated`, `existingRemain`, `existingPaydown`, `existingPayoff`):
 
-## Root Cause
+| Condition (UI)        | Persisted flag(s) true   | Bucket                | Field summed                |
+|-----------------------|--------------------------|-----------------------|-----------------------------|
+| Anticipated           | `anticipated`            | Expected Senior       | `original_balance`          |
+| Will Remain           | `existingRemain`         | Remaining Senior      | `current_balance`           |
+| Remain - Paydown      | `existingPaydown`        | Remaining Senior      | `current_balance`           |
+| Existing - Payoff     | `existingPayoff`         | EXCLUDED              | —                           |
 
-The template's Balloon cell contains three glyph runs (`☐`/`☑`) but only the first one is followed by a "YES" text run. The `NO` and `Unknown` text labels are not present in the template (or live in a separate run that the template never paired correctly). The current post-render pass in `supabase/functions/generate-document/index.ts` (≈ lines 6008-6045) only flips the checked/unchecked glyph — it never injects missing labels — so 2 of the 3 lines render as a bare `☐`.
+Total Senior Encumbrance = Remaining + Expected (already wired downstream).
 
-## Fix (single file: `supabase/functions/generate-document/index.ts`)
+### Code changes (single file: `supabase/functions/generate-document/index.ts`)
 
-Extend the existing balloon YES/NO/Unknown safety pass (only this block — no other passes touched, no other templates touched):
+1. **Lines ~1460–1482**: Replace the `isAnticipated → anticipated_amount` / unconditional `new_remaining_balance` block with:
+   - Read `${base}.anticipated`, `${base}.existingRemain`, `${base}.existingPaydown`, `${base}.existingPayoff` (lowercase truthy: `true/yes/y/1`).
+   - If `existingPayoff` → `continue` (skip entirely).
+   - If `anticipated` → parse `${base}.original_balance`, add to `lienExpectedSum`, set `lienExpectedHit`.
+   - If `existingRemain` OR `existingPaydown` → parse `${base}.current_balance`, add to `lienRemainingSum`, set `lienRemainingHit`.
+   - A lien with no condition flag set contributes nothing (no silent fallback).
 
-1. While walking the next 3 glyph runs after `BALLOON PAYMENT?` in document order, capture each glyph run's full match span and the immediately-following XML up to the next `<w:p>` boundary in the same window.
-2. For each of the 3 glyph slots, after rewriting the glyph to checked/unchecked state, **inspect the visible text already trailing that glyph run within its own paragraph**. If the expected label ("YES" for slot 0, "NO" for slot 1, "Unknown" for slot 2) is **not** already present (case-insensitive), append a sibling `<w:r>` with the label text immediately after the glyph's `</w:r>`:
+2. **Logging (lines ~1485–1492)**: Extend the existing `RE851D lien rollup` line to include per-lien classification (`liens=[1:exp,2:rem,3:skip-payoff]`) so production logs show the bucket each lien fell into. No new log call — just enrich the existing one.
 
-   ```xml
-   <w:r>
-     <w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
-     <w:t xml:space="preserve"> LABEL</w:t>
-   </w:r>
-   ```
+3. **Lines ~1493–1516** (publish to `ln_p_expectedEncumbrance_${idx}` / `ln_p_remainingEncumbrance_${idx}` and legacy `pr_p_expectedSenior_${idx}` / `pr_p_remainingSenior_${idx}`): unchanged. The downstream Total computation (~1519–1548) and `ln_p_totalEncumbrance_${idx}` / `ln_p_totalWithLoan_${idx}` publishers stay as-is — they already consume the two sums.
 
-3. Reuse the existing `inserts.push({ at: -end, html: ... })` machinery — the label injection is encoded as either:
-   - a pure insert (`at >= 0`) at the position immediately after the glyph run's `</w:r>` when no label is present, OR
-   - skipped entirely when the label already exists (so re-runs are idempotent).
+4. **Property-level isolation**: untouched. The existing `lienK.property` matching (norm address / `propertyN` prefix) at lines ~1447–1458 already enforces strict per-property filtering.
 
-4. Detection of "label already present": after the glyph run's closing `</w:r>`, take the substring up to the next `</w:p>` (bounded to ~400 chars), strip XML tags, uppercase, and check for `YES` / `NO` / `UNKNOWN` token presence.
+### Out of scope (not modified)
+- Template tags (`{{ln_p_remainingEncumbrance_N}}`, `{{ln_p_expectedEncumbrance_N}}`, `{{ln_p_totalEncumbrance_N}}`) — keys unchanged.
+- All other safety passes / Part 2 / questionnaire / balloon / multi-property logic.
+- UI, schema, RLS, dictionary, other documents.
+- The canonical-lien dedupe (`hasIndexedLien` block) stays intact.
 
-5. Logging: extend the existing `RE851D enc post-render` debug line to include `labelsInjected=[YES?,NO?,UNK?]` counts so regressions are visible.
-
-### Behavior preservation
-
-- Glyph state logic, key resolution, anchor detection, window bounds — all unchanged.
-- If template already has all three labels (some property variants do), nothing is injected.
-- Only the BALLOON YES/NO/Unknown pass is modified — no change to value-cell inserts (Principal/Monthly/Maturity/Amount), no change to other safety passes, other templates, UI, schema, dictionary, RLS, APIs, or DB.
-- Output remains byte-identical for documents whose template already contains all three labels.
-
-## Acceptance
-
-- After regenerating the user's RE851D, BALLOON PAYMENT? row reads `☑ YES   ☐ NO   ☐ Unknown` (single visual line per slot, all three labels visible) with the correct option checked.
-- 1-property and multi-property RE851D variants both render correctly.
-- Existing Principal/Monthly/Maturity/Amount cell population (the prior fix) is untouched.
-- No other templates regress.
+### Acceptance verification
+After deploy, generate RE851D for a deal with mixed conditions and confirm:
+- Per-property Remaining = Σ `current_balance` of `Will Remain` + `Remain - Paydown` liens on that property.
+- Per-property Expected = Σ `original_balance` of `Anticipated` liens on that property.
+- `Existing - Payoff` liens never contribute.
+- Total column = Remaining + Expected per row, independent across N properties.
+- Log line `RE851D lien rollup propertyN: liens=[…]` shows correct bucket per lien.
