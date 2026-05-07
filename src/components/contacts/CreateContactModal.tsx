@@ -991,7 +991,27 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
 
               <div className="pt-2 space-y-1">
-                {renderCheckbox('Agreement on File', 'agreement_on_file')}
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={form['agreement_on_file'] === 'true'}
+                    onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
+                  />
+                  <Label className="text-xs">Agreement on File</Label>
+                  <Input
+                    type="date"
+                    value={form['agreement_on_file_date'] || ''}
+                    onChange={(e) => set('agreement_on_file_date', e.target.value)}
+                    className="h-7 text-xs flex-1"
+                  />
+                </div>
+              </div>
+              <div className="pt-2 space-y-1">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
+                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
+                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
+                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
+                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
+                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
               </div>
             </div>
 
@@ -1089,7 +1109,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
         <DialogFooter className={contactType === 'lender' ? "shrink-0" : undefined}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice']) || !hasValidContactEmails(form)}>Create</Button>
+          <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'agreement_on_file_date', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice', 'send_pref.payment_confirmation', 'send_pref.coupon_book', 'send_pref.payment_statement']) || !hasValidContactEmails(form)}>Create</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

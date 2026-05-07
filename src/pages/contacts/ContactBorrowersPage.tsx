@@ -68,9 +68,15 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'delivery_email', label: 'Delivery Email', visible: false },
   { id: 'delivery_sms', label: 'Delivery SMS', visible: false },
   { id: 'agreement_on_file', label: 'Agreement on File', visible: false },
+  { id: 'agreement_on_file_date', label: 'Agreement Date', visible: false },
+  { id: 'send_pref.payment_confirmation', label: 'Send Payment Confirmation', visible: false },
+  { id: 'send_pref.coupon_book', label: 'Send Coupon Book', visible: false },
+  { id: 'send_pref.payment_statement', label: 'Send Payment Statement', visible: false },
+  { id: 'send_pref.late_notice', label: 'Send Late Notice', visible: false },
+  { id: 'send_pref.maturity_notice', label: 'Send Maturity Notice', visible: false },
 ];
 
-const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file']);
+const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'send_pref.payment_confirmation', 'send_pref.coupon_book', 'send_pref.payment_statement', 'send_pref.late_notice', 'send_pref.maturity_notice']);
 
 const BORROWER_FILTER_OPTIONS: FilterOption[] = [
   {
@@ -276,7 +282,7 @@ const ContactBorrowersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_borrowers_v6"
+        tableConfigKey="contact_borrowers_v7"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
         filterOptions={BORROWER_FILTER_OPTIONS}

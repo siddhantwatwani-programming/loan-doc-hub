@@ -174,11 +174,8 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.firstName}>
-            <div className="flex items-start gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">First</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First</Label>
               <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
@@ -232,6 +229,13 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.agreementOnFile}>
             <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={getValue('agreementOnFileDate')}
+                onChange={(e) => handleChange('agreementOnFileDate', e.target.value)}
+                disabled={disabled}
+                className="h-7 text-sm w-[140px]"
+              />
               <Checkbox id="borrower-agreementOnFile" checked={getBoolValue('agreementOnFile')} onCheckedChange={(checked) => handleChange('agreementOnFile', !!checked)} disabled={disabled} />
               <Label htmlFor="borrower-agreementOnFile" className="text-sm font-normal">Agreement on File</Label>
             </div>
@@ -293,22 +297,28 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendPaymentNotification}>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendPaymentConfirmation}>
                   <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-sendPaymentNotification" checked={getBoolValue('sendPaymentNotification')} onCheckedChange={(checked) => handleChange('sendPaymentNotification', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                    <Checkbox id="borrower-sendPaymentConfirmation" checked={getBoolValue('sendPaymentConfirmation')} onCheckedChange={(checked) => handleChange('sendPaymentConfirmation', !!checked)} disabled={disabled} />
+                    <Label htmlFor="borrower-sendPaymentConfirmation" className="text-sm font-normal">Payment Confirmation</Label>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendCouponBook}>
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox id="borrower-sendCouponBook" checked={getBoolValue('sendCouponBook')} onCheckedChange={(checked) => handleChange('sendCouponBook', !!checked)} disabled={disabled} />
+                    <Label htmlFor="borrower-sendCouponBook" className="text-sm font-normal">Coupon Book</Label>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendPaymentStatement}>
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox id="borrower-sendPaymentStatement" checked={getBoolValue('sendPaymentStatement')} onCheckedChange={(checked) => handleChange('sendPaymentStatement', !!checked)} disabled={disabled} />
+                    <Label htmlFor="borrower-sendPaymentStatement" className="text-sm font-normal">Payment Statement</Label>
                   </div>
                 </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendLateNotice}>
                   <div className="flex items-center gap-1.5">
                     <Checkbox id="borrower-sendLateNotice" checked={getBoolValue('sendLateNotice')} onCheckedChange={(checked) => handleChange('sendLateNotice', !!checked)} disabled={disabled} />
                     <Label htmlFor="borrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendBorrowerStatement}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="borrower-sendBorrowerStatement" checked={getBoolValue('sendBorrowerStatement')} onCheckedChange={(checked) => handleChange('sendBorrowerStatement', !!checked)} disabled={disabled} />
-                    <Label htmlFor="borrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
                   </div>
                 </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={FIELD_KEYS.sendMaturityNotice}>
