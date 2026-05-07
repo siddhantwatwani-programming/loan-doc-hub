@@ -4397,9 +4397,91 @@ async function generateSingleDocument(
     const __xmlSet = (filename: string, xml: string): Uint8Array => {
       __xmlStrCache[filename] = xml;
       __xmlDirty.add(filename);
+      // Drop any cached visible-text projection for this part — pass N+1
+      // must rebuild from the freshly mutated XML.
+      delete __visProjCache[filename];
       // Return existing bytes (or empty); the value is discarded by the
       // final flush, which uses the cached string instead.
       return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
+
+    // ── RE851D shared visible-text projection cache ──
+    // The 6 post-render safety passes that need to anchor on visible text
+    // each previously rebuilt a per-character `buf`/`map` projection of the
+    // entire (~3–4 MB on 5-property deals) word/document.xml. That repeated
+    // O(N) work was the dominant remaining CPU sink and pushed generation
+    // over the edge function CPU limit. This helper builds the projection
+    // once per (filename, xml-version) and reuses it. Bulk-slice segments
+    // replace per-char push() loops; PROPERTY INFORMATION anchors are also
+    // computed once and stored on the projection.
+    type __VisProj = {
+      txt: string;
+      map: number[];
+      propAnchorsRaw: number[];
+      propRanges: Array<{ k: number; start: number; end: number }>;
+    };
+    const __visProjCache: Record<string, __VisProj> = {};
+    const __getVisProj = (filename: string, xml: string): __VisProj => {
+      const cached = __visProjCache[filename];
+      if (cached) return cached;
+      const parts: string[] = [];
+      const segStarts: number[] = [];
+      const segLens: number[] = [];
+      let i = 0;
+      while (i < xml.length) {
+        const lt = xml.indexOf("<", i);
+        if (lt === -1) {
+          if (i < xml.length) {
+            parts.push(xml.slice(i));
+            segStarts.push(i);
+            segLens.push(xml.length - i);
+          }
+          break;
+        }
+        if (lt > i) {
+          parts.push(xml.slice(i, lt));
+          segStarts.push(i);
+          segLens.push(lt - i);
+        }
+        // Synthetic single space at the tag boundary, mapped to '<' offset.
+        parts.push(" ");
+        segStarts.push(lt);
+        segLens.push(0);
+        const gt = xml.indexOf(">", lt);
+        if (gt === -1) break;
+        i = gt + 1;
+      }
+      const txt = parts.join("");
+      const map = new Array<number>(txt.length);
+      let v = 0;
+      for (let s = 0; s < parts.length; s++) {
+        const part = parts[s];
+        const start = segStarts[s];
+        const len = segLens[s];
+        if (len === 0) {
+          map[v++] = start;
+        } else {
+          for (let k = 0; k < part.length; k++) map[v++] = start + k;
+        }
+      }
+      const propAnchorsRaw: number[] = [];
+      const propRe = /\bPROPERTY\s+INFORMATION\b/gi;
+      let m: RegExpExecArray | null;
+      while ((m = propRe.exec(txt)) !== null) {
+        propAnchorsRaw.push(map[m.index] ?? 0);
+        if (propAnchorsRaw.length >= 5) break;
+      }
+      const propRanges: __VisProj["propRanges"] = [];
+      for (let pi = 0; pi < propAnchorsRaw.length; pi++) {
+        propRanges.push({
+          k: pi + 1,
+          start: propAnchorsRaw[pi],
+          end: pi + 1 < propAnchorsRaw.length ? propAnchorsRaw[pi + 1] : xml.length,
+        });
+      }
+      const proj: __VisProj = { txt, map, propAnchorsRaw, propRanges };
+      __visProjCache[filename] = proj;
+      return proj;
     };
     const __passZip = (rezip: fflate.Zippable): Uint8Array => {
       if (!__re851dPassCache) __re851dPassCache = {};
