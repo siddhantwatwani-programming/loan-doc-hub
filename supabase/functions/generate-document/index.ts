@@ -2821,23 +2821,23 @@ async function generateSingleDocument(
               `remaining=${rem.toFixed(2)}, expected=${exp.toFixed(2)}, total=${tot.toFixed(2)}`
             );
           }
-        }
 
-        // ── RE851D final encumbrance state log (post late-pass) ──
-        // Proves to logs exactly what processDocx will see for the
-        // lien-derived encumbrance keys after the authoritative rollup ran.
-        {
-          const fmt = (k: string) => {
-            const v = fieldValues.get(k);
-            if (!v) return "∅";
-            const raw = v.rawValue;
-            if (raw === "" || raw === null || raw === undefined) return "''";
-            return String(raw);
-          };
-          const exp = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
-          const rem = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
-          const tot = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_totalEncumbrance_${i}`)}`).join(", ");
-          console.log(`[generate-document] RE851D final encumbrance state: expected=[${exp}], remaining=[${rem}], total=[${tot}]`);
+          // ── RE851D final encumbrance state log (post late-pass) ──
+          // Proves to logs exactly what processDocx will see for the
+          // lien-derived encumbrance keys after the authoritative rollup ran.
+          {
+            const fmt = (k: string) => {
+              const v = fieldValues.get(k);
+              if (!v) return "∅";
+              const raw = v.rawValue;
+              if (raw === "" || raw === null || raw === undefined) return "''";
+              return String(raw);
+            };
+            const expL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
+            const remL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
+            const totL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_totalEncumbrance_${i}`)}`).join(", ");
+            console.log(`[generate-document] RE851D final encumbrance state: expected=[${expL}], remaining=[${remL}], total=[${totL}]`);
+          }
         }
       }
 
