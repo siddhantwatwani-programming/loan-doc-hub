@@ -9,6 +9,34 @@ import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
 import { mirrorPrefixedToCanonical } from '@/lib/contactPrefixMirror';
 
+const COBORROWER_SEND_ALIASES: Array<[string, string]> = [
+  ['send_pref.payment_confirmation', 'coborrower.send_payment_confirmation'],
+  ['send_pref.coupon_book', 'coborrower.send_coupon_book'],
+  ['send_pref.payment_statement', 'coborrower.send_payment_statement'],
+  ['send_pref.late_notice', 'coborrower.send_late_notice'],
+  ['send_pref.maturity_notice', 'coborrower.send_maturity_notice'],
+];
+
+/** Hydrate `coborrower.send_*` from canonical `send_pref.*` so the detail form populates after reload. */
+function hydrateCoBorrowerSendFields(cd: Record<string, string>): Record<string, string> {
+  const out = { ...cd };
+  for (const [canonical, prefixed] of COBORROWER_SEND_ALIASES) {
+    if (out[canonical] !== undefined && (out[prefixed] === undefined || out[prefixed] === '')) {
+      out[prefixed] = out[canonical];
+    }
+  }
+  return out;
+}
+
+/** Mirror `coborrower.send_*` to canonical `send_pref.*` so the grid populates after save. */
+function mirrorCoBorrowerSendFields(cd: Record<string, string>): Record<string, string> {
+  const out = { ...cd };
+  for (const [canonical, prefixed] of COBORROWER_SEND_ALIASES) {
+    if (out[prefixed] !== undefined) out[canonical] = out[prefixed];
+  }
+  return out;
+}
+
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Borrower ID', visible: true },
   { id: 'borrower_type', label: 'Type', visible: true },
@@ -38,9 +66,14 @@ const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'delivery_email', label: 'Delivery Email', visible: false },
   { id: 'delivery_sms', label: 'Delivery SMS', visible: false },
   { id: 'agreement_on_file', label: 'Agreement on File', visible: false },
+  { id: 'send_pref.payment_confirmation', label: 'Payment Confirmation', visible: false },
+  { id: 'send_pref.coupon_book', label: 'Coupon Book', visible: false },
+  { id: 'send_pref.payment_statement', label: 'Payment Statement', visible: false },
+  { id: 'send_pref.late_notice', label: 'Late Notice', visible: false },
+  { id: 'send_pref.maturity_notice', label: 'Maturity Notice', visible: false },
 ];
 
-const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file']);
+const BOOLEAN_COLUMNS = new Set<string>(['delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'send_pref.payment_confirmation', 'send_pref.coupon_book', 'send_pref.payment_statement', 'send_pref.late_notice', 'send_pref.maturity_notice']);
 
 const FILTER_OPTIONS: FilterOption[] = [
   {
@@ -106,7 +139,7 @@ const ContactCoBorrowersPage: React.FC = () => {
           city: data.city || '',
           state: data.state || '',
           company: data.company || '',
-          contact_data: (data.contact_data || {}) as Record<string, string>,
+          contact_data: hydrateCoBorrowerSendFields((data.contact_data || {}) as Record<string, string>),
           created_at: data.created_at || '',
           updated_at: data.updated_at || '',
         });
@@ -130,7 +163,8 @@ const ContactCoBorrowersPage: React.FC = () => {
     if (isReadOnly) return false;
     // Mirror coborrower.* values to canonical top-level/contact_data keys so
     // the Co-borrowers grid populates after save (existing save API only).
-    const mirrored = mirrorPrefixedToCanonical(contactData, 'coborrower.');
+    const withSend = mirrorCoBorrowerSendFields(contactData);
+    const mirrored = mirrorPrefixedToCanonical(withSend, 'coborrower.');
     return await crud.updateContact(id, mirrored);
   }, [crud, isReadOnly]);
 
@@ -140,7 +174,10 @@ const ContactCoBorrowersPage: React.FC = () => {
   }, [crud, isReadOnly]);
 
   const handleRowClick = useCallback((c: ContactRecord) => {
-    setSelectedContact(c);
+    setSelectedContact({
+      ...c,
+      contact_data: hydrateCoBorrowerSendFields((c.contact_data || {}) as Record<string, string>),
+    });
     navigate(`/contacts/co-borrowers/${c.id}`);
   }, [navigate]);
 
