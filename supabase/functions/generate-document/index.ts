@@ -5375,7 +5375,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          const xmlLowerCD = xml.toLowerCase();
+          const xmlLowerCD = __xmlGetLower(filename, xml);
           if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
