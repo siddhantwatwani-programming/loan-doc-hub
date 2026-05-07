@@ -3720,21 +3720,29 @@ async function generateSingleDocument(
           // Use exec-based scan so we can read each match's offset and decide
           // its region. Process tags longest-first to avoid prefix collisions
           // (e.g. "propertytax.delinquent_amount_N" before "...delinquent_N").
-          const tagsByLengthDesc = [...RE851D_INDEXED_TAGS].sort((a, b) => b.length - a.length);
+          // CPU optimization: pre-filter the tag list to only tags actually
+          // present in the XML via a cheap substring scan. The full RE851D
+          // tag list is ~180 entries and most are absent from any given
+          // template — running a 4MB regex.exec for each absent tag is the
+          // dominant CPU cost in the RE851D path. xml.includes() is O(n)
+          // single-pass and avoids regex compilation/backtracking entirely.
+          const tagsByLengthDesc = RE851D_INDEXED_TAGS
+            .filter((t) => xml.includes(t))
+            .sort((a, b) => b.length - a.length);
           // We collect all rewrites first, then apply them in reverse order so
           // earlier offsets remain valid. Each rewrite is (start, end, replacement).
           type Rewrite = { start: number; end: number; replacement: string };
           const rewrites: Rewrite[] = [];
 
-          // Track consumed [start,end) ranges to avoid double-matching when
-          // a shorter tag is a substring of a longer one already matched.
-          const consumed: Array<[number, number]> = [];
-          const isConsumed = (s: number, e: number): boolean => {
-            for (const [cs, ce] of consumed) {
-              if (s < ce && e > cs) return true;
-            }
-            return false;
-          };
+          // Track consumed start offsets to avoid double-matching when a
+          // shorter tag is a substring (suffix-trimmed) of a longer tag
+          // already matched. Because tags are processed longest-first and
+          // every shorter overlapping tag shares the same start offset
+          // (e.g. "pr_li_rem_priority_N" inside "pr_li_rem_priority_N_S"),
+          // a Set<number> keyed by start offset suffices and replaces the
+          // previous O(n) per-match linear scan over a growing array.
+          const consumedStarts = new Set<number>();
+          const isConsumed = (s: number, _e: number): boolean => consumedStarts.has(s);
 
           for (const tag of tagsByLengthDesc) {
             const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
