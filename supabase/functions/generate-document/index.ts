@@ -1456,29 +1456,40 @@ async function generateSingleDocument(
               propRawNoSpace === prefixNoSpace ||
               (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
             if (!matches) continue;
-            matchedLiens.push(li || "0");
-            const anticipatedRaw = String(
-              fieldValues.get(`${base}.anticipated`)?.rawValue || ""
-            ).trim().toLowerCase();
-            const isAnticipated = ["true", "yes", "y", "1"].includes(anticipatedRaw);
+            const truthy = (v: string) =>
+              ["true", "yes", "y", "1"].includes(v.trim().toLowerCase());
+            const isAnticipated = truthy(String(fieldValues.get(`${base}.anticipated`)?.rawValue || ""));
+            const isExistingRemain = truthy(String(fieldValues.get(`${base}.existingRemain`)?.rawValue || fieldValues.get(`${base}.existing_remain`)?.rawValue || ""));
+            const isExistingPaydown = truthy(String(fieldValues.get(`${base}.existingPaydown`)?.rawValue || fieldValues.get(`${base}.existing_paydown`)?.rawValue || ""));
+            const isExistingPayoff = truthy(String(fieldValues.get(`${base}.existingPayoff`)?.rawValue || fieldValues.get(`${base}.existing_payoff`)?.rawValue || ""));
+            // Skip Existing - Payoff entirely (lien will be cleared by this loan).
+            if (isExistingPayoff) {
+              matchedLiens.push(`${li || "0"}:skip-payoff`);
+              continue;
+            }
+            let bucket = "none";
             if (isAnticipated) {
               const amt = parseFloat(
-                String(fieldValues.get(`${base}.anticipated_amount`)?.rawValue || "")
+                String(fieldValues.get(`${base}.original_balance`)?.rawValue || "")
                   .replace(/[^0-9.-]/g, "")
               );
               if (!isNaN(amt)) {
                 lienExpectedSum += amt;
                 lienExpectedHit = true;
+                bucket = "exp";
+              }
+            } else if (isExistingRemain || isExistingPaydown) {
+              const curAmt = parseFloat(
+                String(fieldValues.get(`${base}.current_balance`)?.rawValue || "")
+                  .replace(/[^0-9.-]/g, "")
+              );
+              if (!isNaN(curAmt)) {
+                lienRemainingSum += curAmt;
+                lienRemainingHit = true;
+                bucket = isExistingPaydown ? "rem-paydown" : "rem";
               }
             }
-            const remAmt = parseFloat(
-              String(fieldValues.get(`${base}.new_remaining_balance`)?.rawValue || "")
-                .replace(/[^0-9.-]/g, "")
-            );
-            if (!isNaN(remAmt)) {
-              lienRemainingSum += remAmt;
-              lienRemainingHit = true;
-            }
+            matchedLiens.push(`${li || "0"}:${bucket}`);
           }
           // Unconditional log so we can verify the rollup in production
           // without flipping DOC_GEN_DEBUG. One line per property index.
