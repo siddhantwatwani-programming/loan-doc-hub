@@ -5562,7 +5562,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          const xmlLower60 = xml.toLowerCase();
+          const xmlLower60 = __xmlGetLower(filename, xml);
           if (xmlLower60.indexOf("60 day") === -1 && xmlLower60.indexOf("60-day") === -1 && xmlLower60.indexOf("sixty day") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
