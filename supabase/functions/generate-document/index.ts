@@ -3993,7 +3993,13 @@ async function generateSingleDocument(
             while ((m = re.exec(xml)) !== null) {
               const start = m.index;
               const end = start + m[0].length;
-              if (isConsumed(start, end)) continue;
+              // Hot-path fast check: longest-first ordering means any shorter
+              // tag that overlaps a previously-rewritten longer tag will share
+              // the same start offset, so the Set lookup is sufficient here.
+              // (The full overlap-aware `isConsumed` is still used by the
+              // downstream encumbrance/performBy passes that may add ranges
+              // with arbitrary spans.)
+              if (consumedStarts.has(start)) continue;
               const region = resolveRegion(start);
               // If the region restricts allowed tags and this tag isn't in the
               // allowlist, skip it (don't rewrite, don't consume the counter).
