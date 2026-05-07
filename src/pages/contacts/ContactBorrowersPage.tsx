@@ -282,7 +282,7 @@ const ContactBorrowersPage: React.FC = () => {
         onCreateNew={() => setModalOpen(true)}
         onDeleteSelected={isReadOnly ? undefined : handleDeleteSelected}
         defaultColumns={DEFAULT_COLUMNS}
-        tableConfigKey="contact_borrowers_v6"
+        tableConfigKey="contact_borrowers_v7"
         addButtonLabel="Add Borrower"
         breadcrumbLabel="Borrowers"
         filterOptions={BORROWER_FILTER_OPTIONS}
