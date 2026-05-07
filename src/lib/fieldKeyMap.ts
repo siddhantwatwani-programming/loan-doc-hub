@@ -58,6 +58,9 @@ export const BORROWER_PRIMARY_KEYS = {
   sendLateNotice: 'borrower.send_late_notice',
   sendBorrowerStatement: 'borrower.send_borrower_statement',
   sendMaturityNotice: 'borrower.send_maturity_notice',
+  sendPaymentConfirmation: 'borrower.send_payment_confirmation',
+  sendCouponBook: 'borrower.send_coupon_book',
+  sendPaymentStatement: 'borrower.send_payment_statement',
   deliveryOnline: 'borrower.delivery_online',
   deliveryMail: 'borrower.delivery_mail',
   vesting: 'borrower.vesting',
@@ -72,6 +75,7 @@ export const BORROWER_PRIMARY_KEYS = {
   hold: 'borrower.hold',
   ach: 'borrower.ach',
   agreementOnFile: 'borrower.agreement_on_file',
+  agreementOnFileDate: 'borrower.agreement_on_file_date',
 } as const;
 
 export const BORROWER_AUTHORIZED_PARTY_KEYS = {
