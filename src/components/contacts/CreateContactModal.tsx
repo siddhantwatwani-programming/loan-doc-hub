@@ -1145,9 +1145,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
           </div>
+          </div>
+          </>
         )}
 
-        <DialogFooter className={contactType === 'lender' ? "shrink-0" : undefined}>
+        <DialogFooter className={contactType === 'lender' || contactType === 'borrower' ? "shrink-0" : undefined}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'agreement_on_file_date', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice', 'send_pref.payment_confirmation', 'send_pref.coupon_book', 'send_pref.payment_statement']) || !hasValidContactEmails(form)}>Create</Button>
         </DialogFooter>
