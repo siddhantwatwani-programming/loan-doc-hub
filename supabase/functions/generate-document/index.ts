@@ -2591,6 +2591,10 @@ async function generateSingleDocument(
           // flag, since the UI saves all four condition flags whenever the user
           // changes the dropdown and a stale `anticipated=true` can otherwise
           // mis-route an existing-remain/paydown lien into the Expected column.
+          const hasAmt = (raw: unknown) => {
+            const n = parseFloat(String(raw ?? "").replace(/[^0-9.\-]/g, ""));
+            return Number.isFinite(n) && n !== 0;
+          };
           const classifyLocal = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
             const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
             const lbl = normLblLocal(get("condition"));
@@ -2603,7 +2607,15 @@ async function generateSingleDocument(
             if (truthy2(get("existing_payoff")) || truthy2(get("existingPayoff"))) return "payoff";
             if (truthy2(get("existing_paydown")) || truthy2(get("existingPaydown"))) return "paydown";
             if (truthy2(get("existing_remain")) || truthy2(get("existingRemain"))) return "remain";
-            if (truthy2(get("anticipated"))) return "anticipated";
+            if (truthy2(get("anticipated"))) {
+              // Trust anticipated only when it is the dominant signal: original_balance
+              // (or anticipated_amount) populated, OR no remain/paydown amounts present.
+              const hasOrig = hasAmt(get("original_balance")) || hasAmt(get("originalBalance")) || hasAmt(get("anticipated_amount")) || hasAmt(get("anticipatedAmount"));
+              const hasRemain = hasAmt(get("current_balance")) || hasAmt(get("currentBalance")) || hasAmt(get("existing_paydown_amount")) || hasAmt(get("existingPaydownAmount"));
+              if (hasOrig) return "anticipated";
+              if (hasRemain) return "remain"; // stale anticipated; recover via remain bucket
+              return "anticipated";
+            }
             const antLbl = normLblLocal(get("anticipated"));
             if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
             return "none";
@@ -2658,15 +2670,16 @@ async function generateSingleDocument(
                 const isNo = balloon === "false" || balloon === "no";
                 const isUnknown = !isYes && !isNo;
 
+                const isAntBucket = tagPrefix === "pr_li_ant";
+                const isRemBucket = tagPrefix === "pr_li_rem";
                 const fields: Array<[string, string, string]> = [
                   ["priority", firstNonEmpty("lien_priority_now", "priority", "remaining_new_lien_priority", "lien_priority_after", "n"), "text"],
                   ["interestRate", firstNonEmpty("interest_rate", "intRate"), "percent"],
                   ["beneficiary", firstNonEmpty("holder", "lienHolder", "beneficiary"), "text"],
-                  ["originalAmount", firstNonEmpty("original_balance", "originalBalance"), "currency"],
-                  // Per RE851D Part 1 spec: Remaining = current_balance only.
-                  // Drop new_remaining_balance fallback (which previously leaked
-                  // anticipated liens' "Anticipated Balance" into the Remaining column).
-                  ["principalBalance", firstNonEmpty("current_balance", "currentBalance"), "currency"],
+                  // Strict bucket isolation: Expected (ANT) column shows original_balance only;
+                  // Remaining (REM) column shows current_balance only. No cross-leak.
+                  ["originalAmount", isRemBucket ? "" : firstNonEmpty("original_balance", "originalBalance"), "currency"],
+                  ["principalBalance", isAntBucket ? "" : firstNonEmpty("current_balance", "currentBalance"), "currency"],
                   ["monthlyPayment", firstNonEmpty("regular_payment", "regularPayment"), "currency"],
                   ["maturityDate", firstNonEmpty("maturity_date", "matDate"), "date"],
                   ["balloonAmount", firstNonEmpty("balloon_amount", "balloonAmount"), "currency"],
@@ -2777,6 +2790,10 @@ async function generateSingleDocument(
           // > anticipated boolean > anticipated label. Existing-* booleans win
           // over a stale anticipated=true so the per-property rollup matches
           // the per-slot publisher above. Payoff hard-wins to enforce exclude.
+          const hasAmt2 = (raw: unknown) => {
+            const n = parseFloat(String(raw ?? "").replace(/[^0-9.\-]/g, ""));
+            return Number.isFinite(n) && n !== 0;
+          };
           const classify = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
             const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
             const lbl = normLbl(get("condition"));
@@ -2787,7 +2804,13 @@ async function generateSingleDocument(
             if (truthy3(get("existing_payoff")) || truthy3(get("existingPayoff"))) return "payoff";
             if (truthy3(get("existing_paydown")) || truthy3(get("existingPaydown"))) return "paydown";
             if (truthy3(get("existing_remain")) || truthy3(get("existingRemain"))) return "remain";
-            if (truthy3(get("anticipated"))) return "anticipated";
+            if (truthy3(get("anticipated"))) {
+              const hasOrig = hasAmt2(get("original_balance")) || hasAmt2(get("originalBalance")) || hasAmt2(get("anticipated_amount")) || hasAmt2(get("anticipatedAmount"));
+              const hasRemain = hasAmt2(get("current_balance")) || hasAmt2(get("currentBalance")) || hasAmt2(get("existing_paydown_amount")) || hasAmt2(get("existingPaydownAmount"));
+              if (hasOrig) return "anticipated";
+              if (hasRemain) return "remain";
+              return "anticipated";
+            }
             const antLbl = normLbl(get("anticipated"));
             if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
             return "none";
@@ -2844,6 +2867,13 @@ async function generateSingleDocument(
             if (pIdx === null) continue; // no cross-bleed
 
             const cond = classify(lp);
+            const dbgOrig = fieldValues.get(`${lp}.original_balance`)?.rawValue ?? "";
+            const dbgCur = fieldValues.get(`${lp}.current_balance`)?.rawValue ?? "";
+            const dbgAnt = fieldValues.get(`${lp}.anticipated`)?.rawValue ?? "";
+            const dbgER = fieldValues.get(`${lp}.existing_remain`)?.rawValue ?? "";
+            const dbgEPd = fieldValues.get(`${lp}.existing_paydown`)?.rawValue ?? "";
+            const dbgEPo = fieldValues.get(`${lp}.existing_payoff`)?.rawValue ?? "";
+            console.log(`[generate-document] RE851D rollup-classify ${lp} → prop=${pIdx} cond=${cond} | anticipated=${dbgAnt} remain=${dbgER} paydown=${dbgEPd} payoff=${dbgEPo} orig=${dbgOrig} cur=${dbgCur}`);
             if (cond === "payoff" || cond === "none") {
               matchedLog[pIdx].push(`${li}:${cond}`);
               continue;
