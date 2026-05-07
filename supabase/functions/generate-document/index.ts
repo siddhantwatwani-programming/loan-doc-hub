@@ -1501,30 +1501,37 @@ async function generateSingleDocument(
               `(scanned=${lienIndices.size})`
             );
           }
-          if (lienExpectedHit) {
-            const v = { rawValue: lienExpectedSum.toFixed(2), dataType: "currency" as const };
-            // Force-set: authoritative for any lien-derived index. Removes the
-            // race where a stale empty key (from a prior shield run or upstream
-            // hydration) would silently mask the real value.
-            fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, v);
-            // Backfill legacy alias only if the static PropertyDetailsForm field is empty.
+          // Always publish per-property Expected/Remaining encumbrances —
+          // default to "0.00" when no eligible lien matches so the template
+          // never renders blank for that property row (N-property safe).
+          {
+            const expVal = {
+              rawValue: (lienExpectedHit ? lienExpectedSum : 0).toFixed(2),
+              dataType: "currency" as const,
+            };
+            fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, expVal);
             const staticExpected = String(
               fieldValues.get(`${prefix}.expected_senior`)?.rawValue || ""
             ).trim();
             if (!staticExpected) {
-              fieldValues.set(`pr_p_expectedSenior_${idx}`, v);
+              fieldValues.set(`pr_p_expectedSenior_${idx}`, expVal);
             }
           }
-          if (lienRemainingHit) {
-            const v = { rawValue: lienRemainingSum.toFixed(2), dataType: "currency" as const };
-            fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, v);
+          {
+            const remVal = {
+              rawValue: (lienRemainingHit ? lienRemainingSum : 0).toFixed(2),
+              dataType: "currency" as const,
+            };
+            fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, remVal);
             const staticRemaining = String(
               fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || ""
             ).trim();
             if (!staticRemaining) {
-              fieldValues.set(`pr_p_remainingSenior_${idx}`, v);
+              fieldValues.set(`pr_p_remainingSenior_${idx}`, remVal);
             }
           }
+          // Expose hit flags via locals already in scope; downstream Total
+          // block (lines ~1533+) uses lienRemainingHit/lienExpectedHit.
         }
 
         // ── RE851D: per-property total encumbrance (remaining + expected senior) ──
