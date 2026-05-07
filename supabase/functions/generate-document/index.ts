@@ -6078,11 +6078,11 @@ async function generateSingleDocument(
 
           const findControlNearAEA = (
             labelStart: number, labelEnd: number, regionStart: number, regionEnd: number,
-          ): { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null => {
+          ): { idx: number; end: number; kind: "sdt" | "glyph" | "drawing"; m: string[] } | null => {
             const maxBack = 2500;
             const scanStart = Math.max(regionStart, labelStart - maxBack);
             const before = xml.slice(scanStart, labelStart);
-            let last: { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null = null;
+            let last: { idx: number; end: number; kind: "sdt" | "glyph" | "drawing"; m: string[] } | null = null;
             const sdtRe = new RegExp(sdtCheckboxReAEA.source, "g");
             let sm: RegExpExecArray | null;
             while ((sm = sdtRe.exec(before)) !== null) {
@@ -6095,6 +6095,12 @@ async function generateSingleDocument(
               last = { idx: scanStart + gm.index, end: scanStart + gm.index + gm[0].length, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] };
             }
             if (last) return last;
+            const dRe = new RegExp(drawingRunReAEA.source, "g");
+            let dm: RegExpExecArray | null;
+            while ((dm = dRe.exec(before)) !== null) {
+              last = { idx: scanStart + dm.index, end: scanStart + dm.index + dm[0].length, kind: "drawing", m: [dm[0]] };
+            }
+            if (last) return last;
             const fwdEnd = Math.min(regionEnd, labelEnd + 400);
             const after = xml.slice(labelEnd, fwdEnd);
             const sdtRe2 = new RegExp(sdtCheckboxReAEA.source, "g");
@@ -6103,6 +6109,9 @@ async function generateSingleDocument(
             const gRe2 = new RegExp(glyphRunReAEA.source, "g");
             const gm2 = gRe2.exec(after);
             if (gm2) return { idx: labelEnd + gm2.index, end: labelEnd + gm2.index + gm2[0].length, kind: "glyph", m: [gm2[0], gm2[1], gm2[2], gm2[3]] };
+            const dRe2 = new RegExp(drawingRunReAEA.source, "g");
+            const dm2 = dRe2.exec(after);
+            if (dm2) return { idx: labelEnd + dm2.index, end: labelEnd + dm2.index + dm2[0].length, kind: "drawing", m: [dm2[0]] };
             return null;
           };
 
