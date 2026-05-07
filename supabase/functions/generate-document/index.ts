@@ -6026,6 +6026,8 @@ async function generateSingleDocument(
 
         const sdtCheckboxReAEA = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
         const glyphRunReAEA = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+        // Image-based checkbox: a run containing a <w:drawing> (PNG of empty/checked box)
+        const drawingRunReAEA = /<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:drawing\b[\s\S]*?<\/w:drawing>\s*<\/w:r>/g;
         const yesLabelReSrc = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
         const noLabelReSrc  = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
 
@@ -6035,6 +6037,12 @@ async function generateSingleDocument(
           let next = block.replace(/(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/, `$1${val}$2`);
           next = next.replace(/(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/, `$1${glyph}$3`);
           return next;
+        };
+        // Replace an image-based checkbox run with a glyph run (☑ checked / ☐ unchecked).
+        // Uses Segoe UI Symbol so the glyph renders consistently across Word/LibreOffice.
+        const rewriteDrawingRunAEA = (_block: string, checked: boolean): string => {
+          const glyph = checked ? "\u2611" : "\u2610";
+          return `<w:r><w:rPr><w:rFonts w:ascii="Segoe UI Symbol" w:hAnsi="Segoe UI Symbol" w:cs="Segoe UI Symbol"/><w:color w:val="000000"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">${glyph}</w:t></w:r>`;
         };
 
         for (const [filename, bytes] of Object.entries(unzipped)) {
@@ -6070,11 +6078,11 @@ async function generateSingleDocument(
 
           const findControlNearAEA = (
             labelStart: number, labelEnd: number, regionStart: number, regionEnd: number,
-          ): { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null => {
+          ): { idx: number; end: number; kind: "sdt" | "glyph" | "drawing"; m: string[] } | null => {
             const maxBack = 2500;
             const scanStart = Math.max(regionStart, labelStart - maxBack);
             const before = xml.slice(scanStart, labelStart);
-            let last: { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null = null;
+            let last: { idx: number; end: number; kind: "sdt" | "glyph" | "drawing"; m: string[] } | null = null;
             const sdtRe = new RegExp(sdtCheckboxReAEA.source, "g");
             let sm: RegExpExecArray | null;
             while ((sm = sdtRe.exec(before)) !== null) {
@@ -6087,6 +6095,12 @@ async function generateSingleDocument(
               last = { idx: scanStart + gm.index, end: scanStart + gm.index + gm[0].length, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] };
             }
             if (last) return last;
+            const dRe = new RegExp(drawingRunReAEA.source, "g");
+            let dm: RegExpExecArray | null;
+            while ((dm = dRe.exec(before)) !== null) {
+              last = { idx: scanStart + dm.index, end: scanStart + dm.index + dm[0].length, kind: "drawing", m: [dm[0]] };
+            }
+            if (last) return last;
             const fwdEnd = Math.min(regionEnd, labelEnd + 400);
             const after = xml.slice(labelEnd, fwdEnd);
             const sdtRe2 = new RegExp(sdtCheckboxReAEA.source, "g");
@@ -6095,6 +6109,9 @@ async function generateSingleDocument(
             const gRe2 = new RegExp(glyphRunReAEA.source, "g");
             const gm2 = gRe2.exec(after);
             if (gm2) return { idx: labelEnd + gm2.index, end: labelEnd + gm2.index + gm2[0].length, kind: "glyph", m: [gm2[0], gm2[1], gm2[2], gm2[3]] };
+            const dRe2 = new RegExp(drawingRunReAEA.source, "g");
+            const dm2 = dRe2.exec(after);
+            if (dm2) return { idx: labelEnd + dm2.index, end: labelEnd + dm2.index + dm2[0].length, kind: "drawing", m: [dm2[0]] };
             return null;
           };
 
@@ -6130,10 +6147,14 @@ async function generateSingleDocument(
 
               const yesReplacement = yC.kind === "sdt"
                 ? rewriteSdtCheckedAEA(yC.m[0], isYes)
-                : `${yC.m[1]}${isYes ? "\u2611" : "\u2610"}${yC.m[3]}`;
+                : yC.kind === "drawing"
+                  ? rewriteDrawingRunAEA(yC.m[0], isYes)
+                  : `${yC.m[1]}${isYes ? "\u2611" : "\u2610"}${yC.m[3]}`;
               const noReplacement = nC.kind === "sdt"
                 ? rewriteSdtCheckedAEA(nC.m[0], !isYes)
-                : `${nC.m[1]}${!isYes ? "\u2611" : "\u2610"}${nC.m[3]}`;
+                : nC.kind === "drawing"
+                  ? rewriteDrawingRunAEA(nC.m[0], !isYes)
+                  : `${nC.m[1]}${!isYes ? "\u2611" : "\u2610"}${nC.m[3]}`;
 
               rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
               rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
