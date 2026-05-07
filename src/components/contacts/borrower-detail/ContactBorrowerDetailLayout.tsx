@@ -33,6 +33,15 @@ interface ContactBorrowerDetailLayoutProps {
   titlePrefix?: string;
 }
 
+const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
+const SEND_FIELD_ALIASES: [string, string][] = [
+  ['send_pref.payment_confirmation', 'send_payment_confirmation'],
+  ['send_pref.coupon_book', 'send_coupon_book'],
+  ['send_pref.payment_statement', 'send_payment_statement'],
+  ['send_pref.late_notice', 'send_late_notice'],
+  ['send_pref.maturity_notice', 'send_maturity_notice'],
+];
+
 const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = ({
   contact,
   onBack,
@@ -44,14 +53,6 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const { loading: permissionsLoading, isFormViewOnly } = useFormPermissions();
   const [activeSection, setActiveSection] = useState<BorrowerSection>(initialSection);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
-  const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
-  const SEND_FIELD_ALIASES: [string, string][] = [
-    ['send_pref.payment_confirmation', 'send_payment_confirmation'],
-    ['send_pref.coupon_book', 'send_coupon_book'],
-    ['send_pref.payment_statement', 'send_payment_statement'],
-    ['send_pref.late_notice', 'send_late_notice'],
-    ['send_pref.maturity_notice', 'send_maturity_notice'],
-  ];
   const isReadOnly = permissionsLoading || isFormViewOnly('borrower');
 
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -125,7 +126,7 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
     return () => contactWs.unregisterSaveFn(contact.id);
   }, [contactWs, contact.id, handleSave]);
 
-  const emptyFields: any[] = [];
+  const emptyFields = [];
   const emptyDirty = new Set<string>();
 
   const renderContent = () => {
