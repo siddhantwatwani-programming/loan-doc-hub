@@ -4524,10 +4524,6 @@ async function generateSingleDocument(
       // final flush, which uses the cached string instead.
       return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
     };
-      // Return existing bytes (or empty); the value is discarded by the
-      // final flush, which uses the cached string instead.
-      return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
-    };
 
     // Cached lowercase XML per filename. The four post-render YES/NO safety
     // passes (remain-unpaid, cure-delinquency, 60-day, encumbrances-of-record)
