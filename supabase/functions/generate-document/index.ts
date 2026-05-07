@@ -1524,11 +1524,12 @@ async function generateSingleDocument(
           // Unconditional log so we can verify the rollup in production
           // without flipping DOC_GEN_DEBUG. One line per property index.
           if (matchedLiens.length > 0 || lienIndices.size > 0) {
+            const totalForLog = (lienRemainingSum + lienExpectedSum).toFixed(2);
             console.log(
               `[generate-document] RE851D lien rollup ${prefix}: liens=[${matchedLiens.join(",")}], ` +
-              `expected=${lienExpectedHit ? lienExpectedSum.toFixed(2) : "—"}, ` +
-              `remaining=${lienRemainingHit ? lienRemainingSum.toFixed(2) : "—"} ` +
-              `(scanned=${lienIndices.size})`
+              `remaining=${lienRemainingSum.toFixed(2)}, ` +
+              `expected=${lienExpectedSum.toFixed(2)}, ` +
+              `total=${totalForLog} (scanned=${lienIndices.size})`
             );
           }
           // Always publish per-property Expected/Remaining encumbrances from
