@@ -1401,179 +1401,20 @@ async function generateSingleDocument(
           }
         }
 
-        // ── RE851D: per-property Expected / Remaining Senior Encumbrance from Lien data ──
-        // Source: Lien section (lien{k}.anticipated, lien{k}.anticipated_amount,
-        // lien{k}.new_remaining_balance, lien{k}.property). For each property index
-        // we sum across every lien whose `lien{k}.property` matches either the
-        // entity prefix ("property{idx}") OR the property's normalized address.
-        // Strict per-index — no cross-index fallback.
-        let lienExpectedSum = 0;
-        let lienRemainingSum = 0;
-        let lienExpectedHit = false;
-        let lienRemainingHit = false;
-        {
-          // Normalize property identifiers — collapse whitespace, strip stray
-          // punctuation/quotes, lowercase. Catches values like "Property1 ",
-          // "property 1", "'property1", etc.
-          const norm = (s: string): string =>
-            String(s || "")
-              .trim()
-              .toLowerCase()
-              .replace(/[''""`]/g, "")
-              .replace(/\s+/g, " ");
-          const propAddrNorm = norm(
-            String(fieldValues.get(`${prefix}.address`)?.rawValue || "")
-          );
-          const prefixLower = norm(prefix);
-          const prefixNoSpace = prefixLower.replace(/\s+/g, ""); // "property1"
-          // Discover all lien indices present (lien1.*, lien2.*, ...).
-          // IMPORTANT: when at least one indexed lien (lien1, lien2, ...) exists,
-          // we deliberately exclude the canonical "lien." entries — those are
-          // duplicates created by the generic indexed→canonical bridge upstream
-          // (line ~657) and would cause us to count the same lien twice
-          // (the bug seen in logs: matchedLiens=[1,0], sum=2×actual).
-          const lienIndices = new Set<string>();
-          let hasIndexedLien = false;
-          for (const [k] of fieldValues.entries()) {
-            const m = k.match(/^lien(\d*)\./);
-            if (!m) continue;
-            if (m[1]) hasIndexedLien = true;
-            lienIndices.add(m[1]); // "" for canonical "lien."
-          }
-          if (hasIndexedLien) {
-            lienIndices.delete(""); // drop canonical duplicates
-          }
-          const matchedLiens: string[] = [];
-          // Resolve current Condition dropdown value into one canonical bucket:
-          //   "anticipated" | "remain" | "paydown" | "payoff" | "none"
-          // Reads boolean aliases (anticipated/existing_*), the explicit
-          // `condition` field if present, AND tolerates raw label strings
-          // ("Will Remain", "Remain - Paydown", "Anticipated", "Existing - Payoff",
-          // including en-dash variants). Payoff always wins to enforce the
-          // "Existing - Payoff = exclude completely" spec rule even if stale
-          // sibling booleans remain `true`.
-          const truthy = (v: string) =>
-            ["true", "yes", "y", "1"].includes(v.trim().toLowerCase());
-          const normLabel = (v: string) =>
-            v.toLowerCase().replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
-          const resolveCondition = (base: string): string => {
-            const get = (sfx: string) =>
-              String(fieldValues.get(`${base}.${sfx}`)?.rawValue ?? "");
-            // 1) Explicit dropdown label (if persisted)
-            const labelRaw = normLabel(get("condition"));
-            if (labelRaw === "existing - payoff" || labelRaw === "payoff") return "payoff";
-            if (labelRaw === "will remain" || labelRaw === "remain") return "remain";
-            if (labelRaw === "remain - paydown" || labelRaw === "paydown") return "paydown";
-            if (labelRaw === "anticipated") return "anticipated";
-            // 2) Sibling boolean aliases (current persistence path)
-            const isPayoff   = truthy(get("existingPayoff"))   || truthy(get("existing_payoff"));
-            if (isPayoff) return "payoff"; // hard exclude wins
-            const isAntBool  = truthy(get("anticipated"));
-            const antRawLbl  = normLabel(get("anticipated"));
-            const isAnt      = isAntBool || antRawLbl === "anticipated" || antRawLbl === "this loan";
-            const isPaydown  = truthy(get("existingPaydown")) || truthy(get("existing_paydown"));
-            const isRemain   = truthy(get("existingRemain"))  || truthy(get("existing_remain"));
-            if (isAnt) return "anticipated";
-            if (isPaydown) return "paydown";
-            if (isRemain) return "remain";
-            return "none";
-          };
-
-          for (const li of lienIndices) {
-            const base = li ? `lien${li}` : "lien";
-            const propRaw = norm(
-              String(fieldValues.get(`${base}.property`)?.rawValue || "")
-            );
-            if (!propRaw) continue;
-            const propRawNoSpace = propRaw.replace(/\s+/g, "");
-            const matches =
-              propRaw === prefixLower ||
-              propRawNoSpace === prefixNoSpace ||
-              (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
-            if (!matches) continue;
-
-            const cond = resolveCondition(base);
-            // Spec: Existing - Payoff is excluded completely.
-            if (cond === "payoff") {
-              matchedLiens.push(`${li || "0"}:skip-payoff`);
-              continue;
-            }
-            // Spec mapping table:
-            //   Will Remain      -> Current Balance  -> Remaining
-            //   Remain - Paydown -> Current Balance  -> Remaining
-            //   Anticipated      -> Original Balance -> Expected
-            // Blank/non-numeric balance treated as 0.
-            const parseAmt = (s: string): number => {
-              const n = parseFloat(String(s ?? "").replace(/[^0-9.-]/g, ""));
-              return Number.isFinite(n) ? n : 0;
-            };
-            let bucket = "none";
-            if (cond === "anticipated") {
-              const amt = parseAmt(String(fieldValues.get(`${base}.original_balance`)?.rawValue || ""));
-              lienExpectedSum += amt;
-              lienExpectedHit = true;
-              bucket = "exp";
-            } else if (cond === "remain" || cond === "paydown") {
-              const curAmt = parseAmt(String(fieldValues.get(`${base}.current_balance`)?.rawValue || ""));
-              lienRemainingSum += curAmt;
-              lienRemainingHit = true;
-              bucket = cond === "paydown" ? "rem-paydown" : "rem";
-            }
-            matchedLiens.push(`${li || "0"}:${cond}:${bucket}`);
-          }
-          // Unconditional log so we can verify the rollup in production
-          // without flipping DOC_GEN_DEBUG. One line per property index.
-          if (matchedLiens.length > 0 || lienIndices.size > 0) {
-            const totalForLog = (lienRemainingSum + lienExpectedSum).toFixed(2);
-            console.log(
-              `[generate-document] RE851D lien rollup ${prefix}: liens=[${matchedLiens.join(",")}], ` +
-              `remaining=${lienRemainingSum.toFixed(2)}, ` +
-              `expected=${lienExpectedSum.toFixed(2)}, ` +
-              `total=${totalForLog} (scanned=${lienIndices.size})`
-            );
-          }
-          // Always publish per-property Expected/Remaining encumbrances from
-          // the Lien-derived rollup. Authoritative: Lien data wins over any
-          // stale property-level static fields. Defaults to "0.00" when no
-          // eligible lien matches so the template never renders blank.
-          const expVal = {
-            rawValue: lienExpectedSum.toFixed(2),
-            dataType: "currency" as const,
-          };
-          const remVal = {
-            rawValue: lienRemainingSum.toFixed(2),
-            dataType: "currency" as const,
-          };
-          fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, expVal);
-          fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, remVal);
-          fieldValues.set(`pr_p_expectedSenior_${idx}`, expVal);
-          fieldValues.set(`pr_p_remainingSenior_${idx}`, remVal);
-        }
-
-        // ── RE851D: per-property TOTAL Senior Encumbrances ──
-        // Total = Lien-derived Remaining + Lien-derived Expected (per spec).
-        // Always published; defaults to 0.00 when no eligible liens exist.
-        {
-          const total = lienRemainingSum + lienExpectedSum;
-          const totalVal = {
-            rawValue: total.toFixed(2),
-            dataType: "currency" as const,
-          };
-          fieldValues.set(`pr_p_totalEncumbrance_${idx}`, totalVal);
-          fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
-          // RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
-          {
-            const loanAmtRaw =
-              fieldValues.get("ln_p_loanAmount")?.rawValue ??
-              fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
-            const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
-            const sum = total + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
-            fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
-              rawValue: sum.toFixed(2),
-              dataType: "currency" as const,
-            });
-          }
-        }
+        // ── RE851D: Expected/Remaining/Total Senior Encumbrance ──
+        // Intentionally NOT published here. The authoritative late pass (search
+        // for "RE851D Part 1 / Part 2 senior-encumbrance rollup") runs after
+        // ALL lien bridging and is the single source of truth for:
+        //   ln_p_remainingEncumbrance_N, ln_p_expectedEncumbrance_N,
+        //   ln_p_totalEncumbrance_N, pr_p_remainingSenior_N,
+        //   pr_p_expectedSenior_N, pr_p_totalEncumbrance_N,
+        //   pr_p_totalSenior_N, pr_p_totalSeniorPlusLoan_N, ln_p_totalWithLoan_N.
+        // Per-spec mapping (Condition dropdown):
+        //   Anticipated      -> Expected  = SUM(original_balance)
+        //   Will Remain      -> Remaining = SUM(current_balance)
+        //   Remain - Paydown -> Remaining = SUM(current_balance)
+        //   Existing - Payoff -> excluded entirely
+        // Blanks -> 0.00. Strict per-property match. No cross-bleed.
 
         // ── RE851D: per-property tax publisher ──
         // PropertyTax UI saves under propertytax{idx}.<field>. We publish four
@@ -1769,23 +1610,8 @@ async function generateSingleDocument(
         }
       }
 
-      // ── RE851D final encumbrance state log ──
-      // One unconditional console line per generation summarizing exactly
-      // what processDocx will see for the lien-derived encumbrance keys.
-      // Critical for diagnosing "tag is in template but value is blank"
-      // reports without flipping DOC_GEN_DEBUG.
-      {
-        const fmt = (k: string) => {
-          const v = fieldValues.get(k);
-          if (!v) return "∅";
-          const raw = v.rawValue;
-          if (raw === "" || raw === null || raw === undefined) return "''";
-          return String(raw);
-        };
-        const exp = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
-        const rem = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
-        console.log(`[generate-document] RE851D final encumbrance state: expected=[${exp}], remaining=[${rem}]`);
-      }
+      // (RE851D final encumbrance state log moved to after the authoritative
+      // late pass — search for "RE851D final encumbrance state".)
     }
 
     // Auto-compute pr_p_address from pr_p_* component fields (new naming convention)
@@ -2994,6 +2820,23 @@ async function generateSingleDocument(
               `[generate-document] RE851D Part1 rollup property${pi}: liens=[${matchedLog[pi].join(",")}], ` +
               `remaining=${rem.toFixed(2)}, expected=${exp.toFixed(2)}, total=${tot.toFixed(2)}`
             );
+          }
+
+          // ── RE851D final encumbrance state log (post late-pass) ──
+          // Proves to logs exactly what processDocx will see for the
+          // lien-derived encumbrance keys after the authoritative rollup ran.
+          {
+            const fmt = (k: string) => {
+              const v = fieldValues.get(k);
+              if (!v) return "∅";
+              const raw = v.rawValue;
+              if (raw === "" || raw === null || raw === undefined) return "''";
+              return String(raw);
+            };
+            const expL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_expectedEncumbrance_${i}`)}`).join(", ");
+            const remL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_remainingEncumbrance_${i}`)}`).join(", ");
+            const totL = [1, 2, 3, 4, 5].map(i => `${i}:${fmt(`ln_p_totalEncumbrance_${i}`)}`).join(", ");
+            console.log(`[generate-document] RE851D final encumbrance state: expected=[${expL}], remaining=[${remL}], total=[${totL}]`);
           }
         }
       }
