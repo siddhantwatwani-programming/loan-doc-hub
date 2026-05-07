@@ -1,48 +1,61 @@
-I found two concrete issues in the current RE851D path for deal DL-2026-0235:
+Root cause confirmed for deal DL-2026-0235:
 
-1. The generated document was still using an earlier rollup path before the later authoritative pass was taking effect in the logs/output.
-2. The persisted lien values are stored under indexed lien keys, but the dictionary field keys for lien current/original balances are inconsistent with the current code’s aliases:
-   - `lienN.original_balance` is saved through `pr_li_lienOriginBalanc2`
-   - `lienN.current_balance` is saved through `pr_li_lienCurrenBalanc2`
-   - the existing bridge only maps some older/non-numbered variants and can leave the RE851D rollup using stale or blank values in some paths.
+- Current persisted lien data is correct:
+  - Property 1 / Lien 1: Remain-Paydown, Current Balance 324 -> Remaining 324
+  - Property 2 / Lien 2: Remain-Paydown, Current Balance 23,423 -> Remaining 23,423
+  - Property 2 / Lien 4: Anticipated, Original Balance 48,234 -> Expected 48,234
+  - Property 3 / Lien 3: Anticipated, Original Balance 54,567 -> Expected 54,567
+  - Property 4 / Lien 5: Existing-Payoff -> excluded
+- The screenshot/logs show the generated document still uses the old early rollup:
+  - Property 2 Remaining is 22,780 instead of 23,423.
+  - Expected values are blank.
+- The code already has a correct late authoritative pass, but it runs inside the lien-bridging block before a later generic bridge/aggregation step. That later step can overwrite keys like `pr_p_totalSenior_*` / related aliases with older current-balance-only logic. Also the existing “final encumbrance state” log is currently placed before the late pass, so it is not actually proving what the template receives.
 
-Plan:
+Implementation plan:
 
-1. Keep the existing document generation flow and database schema unchanged.
+1. Remove or neutralize the early RE851D encumbrance publisher
+   - Stop the early per-property block from publishing `ln_p_expectedEncumbrance_N`, `ln_p_remainingEncumbrance_N`, `pr_p_expectedSenior_N`, `pr_p_remainingSenior_N`, `ln_p_totalEncumbrance_N`, and `pr_p_totalEncumbrance_N`.
+   - Keep unrelated RE851D per-property alias logic intact.
+   - This avoids stale values being published before all lien fields are fully bridged.
 
-2. Update only `supabase/functions/generate-document/index.ts`.
+2. Move the authoritative RE851D Part 1 rollup to the true final point before template processing
+   - Run it after all lien bridging and generic auto-computations, immediately before `processDocx`/tag replacement.
+   - Make it the last writer for all Part 1 encumbrance aliases:
+     - `ln_p_remainingEncumbrance_N`
+     - `ln_p_expectedEncumbrance_N`
+     - `ln_p_totalEncumbrance_N`
+     - `pr_p_remainingSenior_N`
+     - `pr_p_expectedSenior_N`
+     - `pr_p_totalEncumbrance_N`
+     - `pr_p_totalSenior_N`
+     - `pr_p_totalSeniorPlusLoan_N`
+     - `ln_p_totalWithLoan_N`
 
-3. Add a small RE851D-only helper that reads lien fields robustly from all existing saved aliases for each lien prefix:
-   - current balance: `lienN.current_balance`, `lienN.currentBalance`, `pr_li_lienCurrenBalanc2`, and existing compatible variants where applicable
-   - original balance: `lienN.original_balance`, `lienN.originalBalance`, `pr_li_lienOriginBalanc2`, and existing compatible variants where applicable
-   - condition: explicit `condition` if present, otherwise the existing persisted booleans `anticipated`, `existing_remain`, `existing_paydown`, `existing_payoff`
+3. Tighten the rollup source logic
+   - Discover all `lienN.*` records once.
+   - Match lien to property strictly by `lienN.property = propertyN`, with existing address fallback only for legacy values.
+   - Classify condition from the current dropdown-backed booleans and any explicit label:
+     - Anticipated -> Expected bucket
+     - Will Remain -> Remaining bucket
+     - Remain-Paydown -> Remaining bucket
+     - Existing-Payoff -> excluded entirely
+   - Use the required source balances:
+     - Remaining = `current_balance`
+     - Expected = `original_balance`
+     - Total = Remaining + Expected
+   - Treat blanks/non-numeric values as `0.00`.
 
-4. Make the late authoritative RE851D Part 1/Part 2 rollup the single source of truth for:
-   - `ln_p_remainingEncumbrance_N`
-   - `ln_p_expectedEncumbrance_N`
-   - `ln_p_totalEncumbrance_N`
-   - compatibility aliases `pr_p_remainingSenior_N`, `pr_p_expectedSenior_N`, `pr_p_totalEncumbrance_N`, `pr_p_totalSenior_N`
-   - `ln_p_totalWithLoan_N` / `pr_p_totalSeniorPlusLoan_N`
+4. Fix the debug proof point
+   - Move the `RE851D final encumbrance state` log so it runs after the true final rollup.
+   - Log remaining, expected, and total for properties 1–5.
+   - This will make future generation logs directly confirm the exact values the template receives.
 
-5. Enforce the mandatory mapping exactly:
-   - `Anticipated` -> Expected = sum of Original Balance
-   - `Will Remain` and `Remain - Paydown` -> Remaining = sum of Current Balance
-   - `Existing - Payoff` -> excluded from Remaining, Expected, and Total
-   - no qualifying lien -> publish `0.00`, never blank
-
-6. Ensure property isolation remains strict:
-   - only include liens whose `lienN.property` resolves to that same `propertyN`
-   - no fallback from property 1 to other properties
-   - address matching remains only as a compatibility fallback when a lien stores the address instead of `propertyN`
-
-7. Move or repeat the final encumbrance-state diagnostic log after the authoritative pass, so the logs prove the exact values that the document processor receives.
-
-8. Add focused test coverage in the existing document-generation test area if feasible without changing the schema or UI:
-   - only remaining
-   - only expected
-   - mixed remaining + expected
-   - payoff excluded
-   - blank values become zero
-   - multi-property isolation
-
-9. Validate by generating/checking RE851D for DL-2026-0235 and confirming the Part 1 table and Part 2 property blocks show the same correct per-property values.
+5. Validate after implementation
+   - Deploy/test the `generate-document` function.
+   - Generate or invoke RE851D for deal `DL-2026-0235`.
+   - Confirm logs show:
+     - P1: Remaining 324.00, Expected 0.00, Total 324.00
+     - P2: Remaining 23423.00, Expected 48234.00, Total 71657.00
+     - P3: Remaining 0.00, Expected 54567.00, Total 54567.00
+     - P4: Remaining 0.00, Expected 0.00, Total 0.00
+   - Check that no other document flows are touched.
