@@ -5817,37 +5817,16 @@ async function generateSingleDocument(
             continue;
           }
 
-          // Build visible-text projection with offset map back to xml positions.
-          const map: number[] = [];
-          const buf: string[] = [];
-          {
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                i = e + 1;
-                continue;
-              }
-              buf.push(xml[i]);
-              map.push(i);
-              i++;
-            }
-          }
-          const txt = buf.join("");
+          // Visible-text projection (shared cache). The encumbrance pass also
+          // needs a raw→visible reverse map; build that locally only here.
+          const __vpE = __getVisProj(filename, xml);
+          const txt = __vpE.txt;
+          const map = __vpE.map;
           const rawToVis = new Map<number, number>();
           for (let v = 0; v < map.length; v++) rawToVis.set(map[v], v);
 
-          // Find PROPERTY anchors via "PROPERTY INFORMATION" headings.
-          const propAnchorsRaw: number[] = [];
-          {
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchorsRaw.push(map[m.index] ?? 0);
-              if (propAnchorsRaw.length >= 5) break;
-            }
-          }
+          // Find PROPERTY anchors via "PROPERTY INFORMATION" headings (cached).
+          const propAnchorsRaw: number[] = [...__vpE.propAnchorsRaw];
           if (propAnchorsRaw.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
