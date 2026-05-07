@@ -6147,10 +6147,14 @@ async function generateSingleDocument(
 
               const yesReplacement = yC.kind === "sdt"
                 ? rewriteSdtCheckedAEA(yC.m[0], isYes)
-                : `${yC.m[1]}${isYes ? "\u2611" : "\u2610"}${yC.m[3]}`;
+                : yC.kind === "drawing"
+                  ? rewriteDrawingRunAEA(yC.m[0], isYes)
+                  : `${yC.m[1]}${isYes ? "\u2611" : "\u2610"}${yC.m[3]}`;
               const noReplacement = nC.kind === "sdt"
                 ? rewriteSdtCheckedAEA(nC.m[0], !isYes)
-                : `${nC.m[1]}${!isYes ? "\u2611" : "\u2610"}${nC.m[3]}`;
+                : nC.kind === "drawing"
+                  ? rewriteDrawingRunAEA(nC.m[0], !isYes)
+                  : `${nC.m[1]}${!isYes ? "\u2611" : "\u2610"}${nC.m[3]}`;
 
               rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
               rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
