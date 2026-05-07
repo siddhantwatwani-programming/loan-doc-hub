@@ -45,6 +45,13 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
   const [activeSection, setActiveSection] = useState<BorrowerSection>(initialSection);
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const NON_BORROWER_PREFIXES = ['ach.', 'coborrower.', 'borrower.guarantor.', 'borrower.authorized_party.', 'borrower.1098.'];
+  const SEND_FIELD_ALIASES: [string, string][] = [
+    ['send_pref.payment_confirmation', 'send_payment_confirmation'],
+    ['send_pref.coupon_book', 'send_coupon_book'],
+    ['send_pref.payment_statement', 'send_payment_statement'],
+    ['send_pref.late_notice', 'send_late_notice'],
+    ['send_pref.maturity_notice', 'send_maturity_notice'],
+  ];
   const isReadOnly = permissionsLoading || isFormViewOnly('borrower');
 
   const [values, setValues] = useState<Record<string, string>>(() => {
@@ -53,6 +60,12 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
       if (typeof value !== 'string') return;
       const needsPrefix = !NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) && !key.startsWith('borrower.');
       result[needsPrefix ? `borrower.${key}` : key] = value;
+    });
+    SEND_FIELD_ALIASES.forEach(([sendPrefKey, borrowerKey]) => {
+      const prefValue = result[`borrower.${sendPrefKey}`];
+      if (prefValue !== undefined && result[`borrower.${borrowerKey}`] === undefined) {
+        result[`borrower.${borrowerKey}`] = prefValue;
+      }
     });
     if (!result['borrower.borrower_id']) {
       result['borrower.borrower_id'] = contact.contact_id;
@@ -74,6 +87,12 @@ const ContactBorrowerDetailLayout: React.FC<ContactBorrowerDetailLayoutProps> = 
     Object.entries(values).forEach(([key, value]) => {
       const stripped = NON_BORROWER_PREFIXES.some(p => key.startsWith(p)) ? key : key.replace(/^borrower\./, '');
       contactData[stripped] = value;
+    });
+    SEND_FIELD_ALIASES.forEach(([sendPrefKey, borrowerKey]) => {
+      const borrowerValue = contactData[borrowerKey];
+      if (borrowerValue !== undefined) {
+        contactData[sendPrefKey] = borrowerValue;
+      }
     });
     const oldData = (contact.contact_data || {}) as Record<string, string>;
     const changes: ContactFieldChange[] = [];
