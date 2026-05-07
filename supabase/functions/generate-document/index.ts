@@ -2852,6 +2852,150 @@ async function generateSingleDocument(
 
           debugLog(`[generate-document] RE851D encumbrance mapping: rem props=${Object.keys(perPropRem).length}, ant props=${Object.keys(perPropAnt).length}`);
         }
+
+        // ── RE851D Part 1 / Part 2 senior-encumbrance rollup (authoritative late pass) ──
+        // Runs after every lien bridge so all lienN.* keys are present in fieldValues.
+        // Per spec (RE851D Condition mapping):
+        //   • Anticipated                      → Expected  = SUM(original_balance)
+        //   • Will Remain / Existing - Remain  → Remaining = SUM(current_balance)
+        //   • Remain - Paydown                 → Remaining = SUM(current_balance)
+        //   • Existing - Payoff                → excluded entirely
+        // Strict per-property match (lienK.property === propertyN). No cross-bleed.
+        // Every property index that appears in CSR gets 0.00 published when no
+        // qualifying lien exists, so the template never renders blank.
+        if (/851d/i.test(template.name || "")) {
+          const truthy3 = (v: unknown) => {
+            const s = String(v ?? "").trim().toLowerCase();
+            return s === "true" || s === "yes" || s === "y" || s === "1" || s === "on";
+          };
+          const normLbl = (v: unknown) =>
+            String(v ?? "").toLowerCase().replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
+          const parseAmt2 = (v: unknown) => {
+            const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g, ""));
+            return Number.isFinite(n) ? n : 0;
+          };
+          // Resolve canonical Condition bucket for one lien prefix.
+          const classify = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
+            const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
+            // 1) Explicit dropdown label, if persisted as `condition`.
+            const lbl = normLbl(get("condition"));
+            if (lbl === "existing - payoff" || lbl === "payoff") return "payoff";
+            if (lbl === "anticipated") return "anticipated";
+            if (lbl === "will remain" || lbl === "existing - remain" || lbl === "remain") return "remain";
+            if (lbl === "remain - paydown" || lbl === "existing - paydown" || lbl === "paydown") return "paydown";
+            // 2) Boolean aliases (the actual UI persistence path).
+            //    Payoff hard-wins to enforce the "Existing - Payoff = exclude" rule.
+            if (truthy3(get("existing_payoff")) || truthy3(get("existingPayoff"))) return "payoff";
+            if (truthy3(get("anticipated"))) return "anticipated";
+            if (truthy3(get("existing_paydown")) || truthy3(get("existingPaydown"))) return "paydown";
+            if (truthy3(get("existing_remain")) || truthy3(get("existingRemain"))) return "remain";
+            // 3) Anticipated may be persisted as a string label.
+            const antLbl = normLbl(get("anticipated"));
+            if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
+            return "none";
+          };
+
+          // Discover all lien indices and all property indices.
+          const lienIdxSet = new Set<number>();
+          for (const [k] of fieldValues.entries()) {
+            const m = k.match(/^lien(\d+)\./);
+            if (m) lienIdxSet.add(parseInt(m[1], 10));
+          }
+          const propIdxSet = new Set<number>();
+          for (const [k] of fieldValues.entries()) {
+            const m = k.match(/^property(\d+)\./i);
+            if (m) propIdxSet.add(parseInt(m[1], 10));
+          }
+          if (propIdxSet.size === 0) propIdxSet.add(1);
+
+          // Build address → property index map for address-keyed lien.property values.
+          const normAddrA = (s: unknown) =>
+            String(s ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+          const addrToProp = new Map<string, number>();
+          for (const pi of propIdxSet) {
+            const a = normAddrA(fieldValues.get(`property${pi}.address`)?.rawValue);
+            if (a) addrToProp.set(a, pi);
+          }
+
+          // Initialize per-property accumulators for every CSR-known property.
+          const remByProp = new Map<number, number>();
+          const expByProp = new Map<number, number>();
+          const matchedLog: Record<number, string[]> = {};
+          for (const pi of propIdxSet) {
+            remByProp.set(pi, 0);
+            expByProp.set(pi, 0);
+            matchedLog[pi] = [];
+          }
+
+          // Walk each lien strictly once, route to its property by exact match.
+          for (const li of [...lienIdxSet].sort((a, b) => a - b)) {
+            const lp = `lien${li}`;
+            const propRaw = String(fieldValues.get(`${lp}.property`)?.rawValue ?? "").trim();
+            if (!propRaw) continue;
+            // Resolve target property index. Accept "property1"/"Property 1" or address.
+            let pIdx: number | null = null;
+            const pm = propRaw.toLowerCase().replace(/\s+/g, "").match(/^property(\d+)$/);
+            if (pm) {
+              const cand = parseInt(pm[1], 10);
+              if (propIdxSet.has(cand)) pIdx = cand;
+            }
+            if (pIdx === null) {
+              const cand = addrToProp.get(normAddrA(propRaw));
+              if (cand !== undefined) pIdx = cand;
+            }
+            if (pIdx === null) continue; // no cross-bleed
+
+            const cond = classify(lp);
+            if (cond === "payoff" || cond === "none") {
+              matchedLog[pIdx].push(`${li}:${cond}`);
+              continue;
+            }
+            if (cond === "anticipated") {
+              const amt = parseAmt2(fieldValues.get(`${lp}.original_balance`)?.rawValue);
+              expByProp.set(pIdx, (expByProp.get(pIdx) || 0) + amt);
+              matchedLog[pIdx].push(`${li}:ant=${amt}`);
+            } else {
+              // remain or paydown → current_balance
+              const amt = parseAmt2(fieldValues.get(`${lp}.current_balance`)?.rawValue);
+              remByProp.set(pIdx, (remByProp.get(pIdx) || 0) + amt);
+              matchedLog[pIdx].push(`${li}:${cond}=${amt}`);
+            }
+          }
+
+          // Loan amount for the +loan derivation (per-property "Total + Loan").
+          const loanAmtRollup = parseAmt2(
+            fieldValues.get("ln_p_loanAmount")?.rawValue ??
+            fieldValues.get("loan_terms.loan_amount")?.rawValue ?? ""
+          );
+
+          // Publish authoritative values; always emit 0.00 for known property rows.
+          for (const pi of propIdxSet) {
+            const rem = remByProp.get(pi) || 0;
+            const exp = expByProp.get(pi) || 0;
+            const tot = rem + exp;
+            const remVal = { rawValue: rem.toFixed(2), dataType: "currency" as const };
+            const expVal = { rawValue: exp.toFixed(2), dataType: "currency" as const };
+            const totVal = { rawValue: tot.toFixed(2), dataType: "currency" as const };
+            // Primary RE851D Part 1 / Part 2 keys.
+            fieldValues.set(`ln_p_remainingEncumbrance_${pi}`, remVal);
+            fieldValues.set(`ln_p_expectedEncumbrance_${pi}`, expVal);
+            fieldValues.set(`ln_p_totalEncumbrance_${pi}`, totVal);
+            // Compatibility aliases used by older RE851D template variants.
+            fieldValues.set(`pr_p_remainingSenior_${pi}`, remVal);
+            fieldValues.set(`pr_p_expectedSenior_${pi}`, expVal);
+            fieldValues.set(`pr_p_totalEncumbrance_${pi}`, totVal);
+            fieldValues.set(`pr_p_totalSenior_${pi}`, totVal);
+            if (Number.isFinite(loanAmtRollup)) {
+              const totPlusLoan = (tot + loanAmtRollup).toFixed(2);
+              fieldValues.set(`pr_p_totalSeniorPlusLoan_${pi}`, { rawValue: totPlusLoan, dataType: "currency" });
+              fieldValues.set(`ln_p_totalWithLoan_${pi}`, { rawValue: totPlusLoan, dataType: "currency" });
+            }
+            console.log(
+              `[generate-document] RE851D Part1 rollup property${pi}: liens=[${matchedLog[pi].join(",")}], ` +
+              `remaining=${rem.toFixed(2)}, expected=${exp.toFixed(2)}, total=${tot.toFixed(2)}`
+            );
+          }
+        }
       }
 
       // Bridge ln_p_lienPosit (template tag) -> ln_p_lienPositi (actual field key)
