@@ -122,7 +122,13 @@ const getInitialForm = (contactType: string): Record<string, string> => {
     'phone.home': '', 'phone.home2': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
     'preferred.home': 'false', 'preferred.home2': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
     delivery_print: 'false', delivery_email: 'false', delivery_sms: 'false',
-    agreement_on_file: 'false',
+    agreement_on_file: 'false', agreement_on_file_date: '',
+    'send_pref.payment_confirmation': 'false', 'send_pref.coupon_book': 'false',
+    'send_pref.payment_statement': 'false', 'send_pref.late_notice': 'false',
+    'send_pref.maturity_notice': 'false',
+    vesting: '',
+    'ford.1': '', 'ford.2': '', 'ford.3': '', 'ford.4': '',
+    'ford.5': '', 'ford.6': '', 'ford.7': '', 'ford.8': '',
   };
 };
 
