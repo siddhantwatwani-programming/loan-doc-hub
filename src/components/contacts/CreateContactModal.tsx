@@ -1035,6 +1035,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrBErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {borrowerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['address.zip']}</p>}
+              <div className="pt-2 space-y-1">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
+                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
+                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
+                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
+                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
+                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
+              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
