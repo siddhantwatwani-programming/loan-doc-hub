@@ -2578,10 +2578,32 @@ async function generateSingleDocument(
         {
           const truthy2 = (v: unknown) => {
             const s = String(v ?? "").trim().toLowerCase();
-            return s === "true" || s === "yes" || s === "1" || s === "on";
+            return s === "true" || s === "yes" || s === "y" || s === "1" || s === "on";
+          };
+          const normLblLocal = (v: unknown) =>
+            String(v ?? "").toLowerCase().replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
+          // Strict Condition classification per RE851D spec:
+          //   anticipated -> ANT bucket (Expected column, original_balance)
+          //   remain / paydown -> REM bucket (Remaining column, current_balance)
+          //   payoff -> EXCLUDE entirely (no row published in either bucket)
+          const classifyLocal = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
+            const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
+            const lbl = normLblLocal(get("condition"));
+            if (lbl === "existing - payoff" || lbl === "payoff") return "payoff";
+            if (lbl === "anticipated") return "anticipated";
+            if (lbl === "will remain" || lbl === "existing - remain" || lbl === "remain") return "remain";
+            if (lbl === "remain - paydown" || lbl === "existing - paydown" || lbl === "paydown") return "paydown";
+            // Boolean aliases (UI persistence path). Payoff hard-wins.
+            if (truthy2(get("existing_payoff")) || truthy2(get("existingPayoff"))) return "payoff";
+            if (truthy2(get("anticipated"))) return "anticipated";
+            if (truthy2(get("existing_paydown")) || truthy2(get("existingPaydown"))) return "paydown";
+            if (truthy2(get("existing_remain")) || truthy2(get("existingRemain"))) return "remain";
+            const antLbl = normLblLocal(get("anticipated"));
+            if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
+            return "none";
           };
 
-          // Group liens by property index, preserving insertion order, split by anticipated flag
+          // Group liens by property index, preserving insertion order, split by Condition.
           type LienRow = { prefix: string };
           const perPropRem: Record<number, LienRow[]> = {};
           const perPropAnt: Record<number, LienRow[]> = {};
@@ -2591,15 +2613,16 @@ async function generateSingleDocument(
             const pm = propRaw.match(/^property(\d+)$/);
             if (!pm) return;
             const pIdx = parseInt(pm[1], 10);
-            // Route to ANTICIPATED bucket for any non-empty/non-"no"/non-"false" value
-            // (the UI dropdown stores values like "This Loan", "Senior Lien", "Other"
-            // that all mean "expected/anticipated"; truthy2 only matched true/yes/1/on
-            // so those liens were incorrectly falling into the REMAINING bucket).
-            const antRaw = String(fieldValues.get(`${prefix}.anticipated`)?.rawValue ?? "").trim().toLowerCase();
-            const isAnt = antRaw !== "" && antRaw !== "no" && antRaw !== "false" && antRaw !== "0" && antRaw !== "off";
-            const bucket = isAnt ? perPropAnt : perPropRem;
+            const cond = classifyLocal(prefix);
+            // Strict spec: payoff/none excluded from both columns.
+            if (cond === "payoff" || cond === "none") {
+              console.log(`[generate-document] RE851D Part1 slot-bucket: ${prefix} prop=${pIdx} cond=${cond} → EXCLUDED`);
+              return;
+            }
+            const bucket = cond === "anticipated" ? perPropAnt : perPropRem;
             if (!bucket[pIdx]) bucket[pIdx] = [];
             bucket[pIdx].push({ prefix });
+            console.log(`[generate-document] RE851D Part1 slot-bucket: ${prefix} prop=${pIdx} cond=${cond} → ${cond === "anticipated" ? "ANT" : "REM"}`);
           });
 
           const setVal = (k: string, v: string, dt: string) =>
