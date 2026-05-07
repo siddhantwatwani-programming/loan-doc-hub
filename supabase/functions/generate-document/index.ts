@@ -3199,7 +3199,17 @@ async function generateSingleDocument(
           "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
         }
       : {};
-    const effectiveLabelMap = { ...labelMap, ...re851aLabelAdditions };
+    // RE851D output is driven entirely by explicit merge tags and the
+    // template-scoped post-render safety passes below. The generic label
+    // map (sourced from merge_tag_mappings) adds no RE851D-specific
+    // bindings but forces a full ~3.9MB document scan for every label
+    // candidate during processDocx — a major CPU sink that contributed to
+    // "Generation timed out (CPU limit exceeded)". Disable label-based
+    // replacement for RE851D only; all other templates keep current behavior.
+    const isTemplate851D = /851d/i.test(template.name || "");
+    const effectiveLabelMap = isTemplate851D
+      ? {}
+      : { ...labelMap, ...re851aLabelAdditions };
 
     let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
 
@@ -4469,12 +4479,30 @@ async function generateSingleDocument(
       // Drop any cached visible-text projection for this part — pass N+1
       // must rebuild from the freshly mutated XML.
       delete __visProjCache[filename];
+      delete __xmlLowerCache[filename];
+      // Return existing bytes (or empty); the value is discarded by the
+      // final flush, which uses the cached string instead.
+      return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
       // Return existing bytes (or empty); the value is discarded by the
       // final flush, which uses the cached string instead.
       return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
     };
 
-    // ── RE851D shared visible-text projection cache ──
+    // Cached lowercase XML per filename. The four post-render YES/NO safety
+    // passes (remain-unpaid, cure-delinquency, 60-day, encumbrances-of-record)
+    // each previously called `xml.toLowerCase()` on the full ~3.9MB XML for
+    // their cheap "skip if substring missing" check. Caching makes that cost
+    // be paid once per file across all passes. Invalidated by __xmlSet.
+    const __xmlLowerCache: Record<string, string> = {};
+    const __xmlGetLower = (filename: string, xml: string): string => {
+      let s = __xmlLowerCache[filename];
+      if (s === undefined) {
+        s = xml.toLowerCase();
+        __xmlLowerCache[filename] = s;
+      }
+      return s;
+    };
     // The 6 post-render safety passes that need to anchor on visible text
     // each previously rebuilt a per-character `buf`/`map` projection of the
     // entire (~3–4 MB on 5-property deals) word/document.xml. That repeated
@@ -5150,7 +5178,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          if (xml.toLowerCase().indexOf("remain unpaid") === -1) {
+          if (__xmlGetLower(filename, xml).indexOf("remain unpaid") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
@@ -5347,7 +5375,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          const xmlLowerCD = xml.toLowerCase();
+          const xmlLowerCD = __xmlGetLower(filename, xml);
           if (xmlLowerCD.indexOf("cure the delinquency") === -1 && xmlLowerCD.indexOf("paid by this loan") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5534,7 +5562,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          const xmlLower60 = xml.toLowerCase();
+          const xmlLower60 = __xmlGetLower(filename, xml);
           if (xmlLower60.indexOf("60 day") === -1 && xmlLower60.indexOf("60-day") === -1 && xmlLower60.indexOf("sixty day") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5722,7 +5750,7 @@ async function generateSingleDocument(
             continue;
           }
           let xml = __xmlGet(filename, bytes);
-          if (xml.toLowerCase().indexOf("encumbrances of record") === -1) {
+          if (__xmlGetLower(filename, xml).indexOf("encumbrances of record") === -1) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
           }
