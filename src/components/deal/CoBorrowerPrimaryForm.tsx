@@ -417,22 +417,28 @@ export const CoBorrowerPrimaryForm: React.FC<CoBorrowerPrimaryFormProps> = ({
             <div>
               <h4 className="font-semibold text-sm text-foreground pb-1">Send</h4>
               <div className="flex items-center gap-4 flex-wrap">
-                <DirtyFieldWrapper fieldKey={fk('send_payment_notification')}>
+                <DirtyFieldWrapper fieldKey={fk('send_payment_confirmation')}>
                   <div className="flex items-center gap-1.5">
-                    <Checkbox id="coborrower-sendPaymentNotification" checked={getBoolValue('send_payment_notification')} onCheckedChange={(checked) => handleChange('send_payment_notification', String(!!checked))} disabled={disabled} />
-                    <Label htmlFor="coborrower-sendPaymentNotification" className="text-sm font-normal">Payment Notification</Label>
+                    <Checkbox id="coborrower-sendPaymentConfirmation" checked={getBoolValue('send_payment_confirmation')} onCheckedChange={(checked) => handleChange('send_payment_confirmation', String(!!checked))} disabled={disabled} />
+                    <Label htmlFor="coborrower-sendPaymentConfirmation" className="text-sm font-normal">Payment Confirmation</Label>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={fk('send_coupon_book')}>
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox id="coborrower-sendCouponBook" checked={getBoolValue('send_coupon_book')} onCheckedChange={(checked) => handleChange('send_coupon_book', String(!!checked))} disabled={disabled} />
+                    <Label htmlFor="coborrower-sendCouponBook" className="text-sm font-normal">Coupon Book</Label>
+                  </div>
+                </DirtyFieldWrapper>
+                <DirtyFieldWrapper fieldKey={fk('send_payment_statement')}>
+                  <div className="flex items-center gap-1.5">
+                    <Checkbox id="coborrower-sendPaymentStatement" checked={getBoolValue('send_payment_statement')} onCheckedChange={(checked) => handleChange('send_payment_statement', String(!!checked))} disabled={disabled} />
+                    <Label htmlFor="coborrower-sendPaymentStatement" className="text-sm font-normal">Payment Statement</Label>
                   </div>
                 </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={fk('send_late_notice')}>
                   <div className="flex items-center gap-1.5">
                     <Checkbox id="coborrower-sendLateNotice" checked={getBoolValue('send_late_notice')} onCheckedChange={(checked) => handleChange('send_late_notice', String(!!checked))} disabled={disabled} />
                     <Label htmlFor="coborrower-sendLateNotice" className="text-sm font-normal">Late Notice</Label>
-                  </div>
-                </DirtyFieldWrapper>
-                <DirtyFieldWrapper fieldKey={fk('send_borrower_statement')}>
-                  <div className="flex items-center gap-1.5">
-                    <Checkbox id="coborrower-sendBorrowerStatement" checked={getBoolValue('send_borrower_statement')} onCheckedChange={(checked) => handleChange('send_borrower_statement', String(!!checked))} disabled={disabled} />
-                    <Label htmlFor="coborrower-sendBorrowerStatement" className="text-sm font-normal">Borrower Statement</Label>
                   </div>
                 </DirtyFieldWrapper>
                 <DirtyFieldWrapper fieldKey={fk('send_maturity_notice')}>
