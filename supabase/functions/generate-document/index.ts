@@ -2677,6 +2677,46 @@ async function generateSingleDocument(
           publishSection("pr_li_ant", perPropAnt);
 
           debugLog(`[generate-document] RE851D encumbrance mapping: rem props=${Object.keys(perPropRem).length}, ant props=${Object.keys(perPropAnt).length}`);
+
+          // ── RE851D Additional Encumbrances Attachment YES/NO ──
+          // Per-property: if (remaining liens > 2) OR (anticipated liens > 2),
+          // force the "Additional remaining, expected, or anticipated encumbrances
+          // are set forth in an attachment to this statement." YES checkbox and
+          // signal the addendum builder to append overflow liens (3rd+) at the
+          // end of the document. Otherwise force NO. Single source of truth via
+          // pr_li_additionalEncumbrance_<N> aliases (mirrors existing _yes/_no/
+          // _glyph pattern used by other RE851D questionnaire booleans).
+          {
+            const allPropIdx = new Set<number>([
+              ...Object.keys(perPropRem).map(s => parseInt(s, 10)),
+              ...Object.keys(perPropAnt).map(s => parseInt(s, 10)),
+            ]);
+            // Also include every property index already discovered elsewhere so
+            // properties with 0 liens still publish a NO answer.
+            for (const k of fieldValues.keys()) {
+              const m = k.match(/^property(\d+)\./i);
+              if (m) allPropIdx.add(parseInt(m[1], 10));
+            }
+            for (const pIdx of allPropIdx) {
+              const remN = perPropRem[pIdx]?.length ?? 0;
+              const antN = perPropAnt[pIdx]?.length ?? 0;
+              const isYes = remN > 2 || antN > 2;
+              const set = (k: string, v: string, dt: string) =>
+                fieldValues.set(k, { rawValue: v, dataType: dt });
+              set(`pr_li_additionalEncumbrance_${pIdx}`,           isYes ? "true" : "", "boolean");
+              set(`pr_li_additionalEncumbrance_${pIdx}_yes`,       isYes ? "true" : "false", "boolean");
+              set(`pr_li_additionalEncumbrance_${pIdx}_no`,        isYes ? "false" : "true", "boolean");
+              set(`pr_li_additionalEncumbrance_${pIdx}_yes_glyph`, isYes ? "☑" : "☐", "text");
+              set(`pr_li_additionalEncumbrance_${pIdx}_no_glyph`,  isYes ? "☐" : "☑", "text");
+              // pr_p_* mirror for older template variants
+              set(`pr_p_additionalEncumbrance_${pIdx}`,           isYes ? "true" : "", "boolean");
+              set(`pr_p_additionalEncumbrance_${pIdx}_yes`,       isYes ? "true" : "false", "boolean");
+              set(`pr_p_additionalEncumbrance_${pIdx}_no`,        isYes ? "false" : "true", "boolean");
+              set(`pr_p_additionalEncumbrance_${pIdx}_yes_glyph`, isYes ? "☑" : "☐", "text");
+              set(`pr_p_additionalEncumbrance_${pIdx}_no_glyph`,  isYes ? "☐" : "☑", "text");
+              console.log(`[generate-document] RE851D additional-encumbrance PROP#${pIdx}: rem=${remN} ant=${antN} → ${isYes ? "YES" : "NO"}`);
+            }
+          }
         }
 
         // ── RE851D Part 1 / Part 2 senior-encumbrance rollup (authoritative late pass) ──
