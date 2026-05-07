@@ -4479,6 +4479,11 @@ async function generateSingleDocument(
       // Drop any cached visible-text projection for this part — pass N+1
       // must rebuild from the freshly mutated XML.
       delete __visProjCache[filename];
+      delete __xmlLowerCache[filename];
+      // Return existing bytes (or empty); the value is discarded by the
+      // final flush, which uses the cached string instead.
+      return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
       // Return existing bytes (or empty); the value is discarded by the
       // final flush, which uses the cached string instead.
       return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
