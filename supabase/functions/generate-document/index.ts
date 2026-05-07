@@ -1444,6 +1444,41 @@ async function generateSingleDocument(
             lienIndices.delete(""); // drop canonical duplicates
           }
           const matchedLiens: string[] = [];
+          // Resolve current Condition dropdown value into one canonical bucket:
+          //   "anticipated" | "remain" | "paydown" | "payoff" | "none"
+          // Reads boolean aliases (anticipated/existing_*), the explicit
+          // `condition` field if present, AND tolerates raw label strings
+          // ("Will Remain", "Remain - Paydown", "Anticipated", "Existing - Payoff",
+          // including en-dash variants). Payoff always wins to enforce the
+          // "Existing - Payoff = exclude completely" spec rule even if stale
+          // sibling booleans remain `true`.
+          const truthy = (v: string) =>
+            ["true", "yes", "y", "1"].includes(v.trim().toLowerCase());
+          const normLabel = (v: string) =>
+            v.toLowerCase().replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
+          const resolveCondition = (base: string): string => {
+            const get = (sfx: string) =>
+              String(fieldValues.get(`${base}.${sfx}`)?.rawValue ?? "");
+            // 1) Explicit dropdown label (if persisted)
+            const labelRaw = normLabel(get("condition"));
+            if (labelRaw === "existing - payoff" || labelRaw === "payoff") return "payoff";
+            if (labelRaw === "will remain" || labelRaw === "remain") return "remain";
+            if (labelRaw === "remain - paydown" || labelRaw === "paydown") return "paydown";
+            if (labelRaw === "anticipated") return "anticipated";
+            // 2) Sibling boolean aliases (current persistence path)
+            const isPayoff   = truthy(get("existingPayoff"))   || truthy(get("existing_payoff"));
+            if (isPayoff) return "payoff"; // hard exclude wins
+            const isAntBool  = truthy(get("anticipated"));
+            const antRawLbl  = normLabel(get("anticipated"));
+            const isAnt      = isAntBool || antRawLbl === "anticipated" || antRawLbl === "this loan";
+            const isPaydown  = truthy(get("existingPaydown")) || truthy(get("existing_paydown"));
+            const isRemain   = truthy(get("existingRemain"))  || truthy(get("existing_remain"));
+            if (isAnt) return "anticipated";
+            if (isPaydown) return "paydown";
+            if (isRemain) return "remain";
+            return "none";
+          };
+
           for (const li of lienIndices) {
             const base = li ? `lien${li}` : "lien";
             const propRaw = norm(
@@ -1456,40 +1491,35 @@ async function generateSingleDocument(
               propRawNoSpace === prefixNoSpace ||
               (!!propAddrNorm && (propRaw === propAddrNorm || propRaw.includes(propAddrNorm)));
             if (!matches) continue;
-            const truthy = (v: string) =>
-              ["true", "yes", "y", "1"].includes(v.trim().toLowerCase());
-            const isAnticipated = truthy(String(fieldValues.get(`${base}.anticipated`)?.rawValue || ""));
-            const isExistingRemain = truthy(String(fieldValues.get(`${base}.existingRemain`)?.rawValue || fieldValues.get(`${base}.existing_remain`)?.rawValue || ""));
-            const isExistingPaydown = truthy(String(fieldValues.get(`${base}.existingPaydown`)?.rawValue || fieldValues.get(`${base}.existing_paydown`)?.rawValue || ""));
-            const isExistingPayoff = truthy(String(fieldValues.get(`${base}.existingPayoff`)?.rawValue || fieldValues.get(`${base}.existing_payoff`)?.rawValue || ""));
-            // Skip Existing - Payoff entirely (lien will be cleared by this loan).
-            if (isExistingPayoff) {
+
+            const cond = resolveCondition(base);
+            // Spec: Existing - Payoff is excluded completely.
+            if (cond === "payoff") {
               matchedLiens.push(`${li || "0"}:skip-payoff`);
               continue;
             }
+            // Spec mapping table:
+            //   Will Remain      -> Current Balance  -> Remaining
+            //   Remain - Paydown -> Current Balance  -> Remaining
+            //   Anticipated      -> Original Balance -> Expected
+            // Blank/non-numeric balance treated as 0.
+            const parseAmt = (s: string): number => {
+              const n = parseFloat(String(s ?? "").replace(/[^0-9.-]/g, ""));
+              return Number.isFinite(n) ? n : 0;
+            };
             let bucket = "none";
-            if (isAnticipated) {
-              const amt = parseFloat(
-                String(fieldValues.get(`${base}.original_balance`)?.rawValue || "")
-                  .replace(/[^0-9.-]/g, "")
-              );
-              if (!isNaN(amt)) {
-                lienExpectedSum += amt;
-                lienExpectedHit = true;
-                bucket = "exp";
-              }
-            } else if (isExistingRemain || isExistingPaydown) {
-              const curAmt = parseFloat(
-                String(fieldValues.get(`${base}.current_balance`)?.rawValue || "")
-                  .replace(/[^0-9.-]/g, "")
-              );
-              if (!isNaN(curAmt)) {
-                lienRemainingSum += curAmt;
-                lienRemainingHit = true;
-                bucket = isExistingPaydown ? "rem-paydown" : "rem";
-              }
+            if (cond === "anticipated") {
+              const amt = parseAmt(String(fieldValues.get(`${base}.original_balance`)?.rawValue || ""));
+              lienExpectedSum += amt;
+              lienExpectedHit = true;
+              bucket = "exp";
+            } else if (cond === "remain" || cond === "paydown") {
+              const curAmt = parseAmt(String(fieldValues.get(`${base}.current_balance`)?.rawValue || ""));
+              lienRemainingSum += curAmt;
+              lienRemainingHit = true;
+              bucket = cond === "paydown" ? "rem-paydown" : "rem";
             }
-            matchedLiens.push(`${li || "0"}:${bucket}`);
+            matchedLiens.push(`${li || "0"}:${cond}:${bucket}`);
           }
           // Unconditional log so we can verify the rollup in production
           // without flipping DOC_GEN_DEBUG. One line per property index.

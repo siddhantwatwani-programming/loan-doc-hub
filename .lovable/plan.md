@@ -1,43 +1,54 @@
-I confirmed the failure is now a memory limit problem during the RE851D post-render phase, not just the earlier CPU scan issue. Logs show rendering completes, then the function reaches the RE851D post-render safety passes and dies with `Memory limit exceeded` before upload/job completion.
+I’ll make a targeted fix only in the RE851D document-generation rollup logic. No UI changes, API changes, schema changes, or template-flow refactors.
 
 Plan:
 
-1. Keep the change strictly scoped to RE851D document generation
-   - No UI changes.
-   - No database/schema changes.
-   - No changes to other document templates.
-   - Preserve existing field mappings and existing generation flow.
+1. Update the RE851D Part 1 lien rollup in `supabase/functions/generate-document/index.ts`
+   - Replace the current direct boolean-only checks for lien condition fields with a small resolver that understands the current Condition dropdown values and the existing saved boolean aliases.
+   - The resolver will normalize values such as hyphen/en-dash variants and casing, then classify each lien as:
+     - `remain` for `Will Remain`
+     - `paydown` for `Remain - Paydown`
+     - `anticipated` for `Anticipated`
+     - `payoff` for `Existing - Payoff`
+     - `none` for unset/unknown
+   - Payoff will always win/exclude the lien if conflicting stale flags are present.
 
-2. Reduce DOCX memory duplication in the shared processor
-   - In `supabase/functions/_shared/docx-processor.ts`, remove the full second unzip used only for integrity validation after `zipSync`.
-   - Validate the already-processed XML strings before zipping instead of unzipping the freshly zipped output again.
-   - This avoids holding multiple full copies of the ~4MB `word/document.xml` plus zipped/unzipped package in memory at the same time.
+2. Apply the required per-property aggregation rules
+   - Keep the existing strict lien-to-property matching logic: only liens whose `Related Property` matches the current property index/address are included.
+   - For each property:
+     - `Will Remain` and `Remain - Paydown` sum `current_balance` into Remaining Senior Encumbrances.
+     - `Anticipated` sums `original_balance` into Expected Senior Encumbrances.
+     - `Existing - Payoff` is excluded completely.
+   - Blank/null/non-numeric balances will be treated as `0` in the sum.
 
-3. Collapse repeated RE851D post-render safety passes into a single XML pass
-   - In `supabase/functions/generate-document/index.ts`, keep the existing behavior, but avoid repeatedly scanning and copying `word/document.xml` for each question block.
-   - Build the visible-text projection/property ranges once.
-   - Apply the current safety logic for:
-     - Owner Occupied YES/NO
-     - Multiple / Additional Securing Property YES/NO
-     - Remain Unpaid YES/NO
-     - Cure Delinquency YES/NO
-     - 60-day delinquency YES/NO
-     - Encumbrance of Record YES/NO
-     - Encumbrance table value/balloon post-render fixes
-   - Collect all non-overlapping rewrites/inserts and apply them once in reverse order.
+3. Guarantee zero output for actual property rows
+   - Publish `0.00` for:
+     - `ln_p_remainingEncumbrance_N`
+     - `ln_p_expectedEncumbrance_N`
+     - `pr_p_remainingSenior_N`
+     - `pr_p_expectedSenior_N`
+     - `pr_p_totalEncumbrance_N`
+     - `ln_p_totalEncumbrance_N`
+   - This ensures actual property rows render `0`/`0.00` instead of blank when no qualifying liens exist.
+   - Existing non-property blank-row behavior will not be changed.
 
-4. Remove avoidable large object retention after each major phase
-   - Clear temporary decoded XML caches once they are no longer needed.
-   - Avoid creating unused `TextDecoder`/`TextEncoder` instances inside every RE851D pass.
-   - Keep only one mutable DOCX package representation until final upload.
+4. Preserve existing RE851D flow and diagnostics
+   - Leave template rewriting, checkbox safety passes, property publishers, and other documents untouched.
+   - Update the existing RE851D log line to include enough condition/bucket detail to verify the four test cases without changing runtime behavior.
 
-5. Preserve all existing RE851D field results
-   - Do not change the senior encumbrance calculations.
-   - Do not change the `_N` mapping rules.
-   - Do not change lien/property isolation logic.
-   - Blank/zero behavior and property-specific values remain as already implemented.
+Validation checklist after implementation:
 
-6. Verify by checking logs after generation
-   - Confirm `Memory limit exceeded` no longer appears.
-   - Confirm the job reaches success and uploads the generated DOCX.
-   - Confirm existing RE851D timing logs still show replacement and post-render stages completing.
+```text
+Test 1: Will Remain + Current Balance 23423
+Remaining = 23423.00, Expected = 0.00, Total = 23423.00
+
+Test 2: Anticipated + Original Balance 50000
+Remaining = 0.00, Expected = 50000.00, Total = 50000.00
+
+Test 3: Will Remain 20000 + Anticipated 30000 on same property
+Remaining = 20000.00, Expected = 30000.00, Total = 50000.00
+
+Test 4: Existing - Payoff
+Remaining = 0.00, Expected = 0.00, Total = 0.00
+```
+
+I’ll also verify from the code path that Property #1/#2/#3 each use only their own matching liens and do not fall back to Property #1 values.
