@@ -174,11 +174,8 @@ export const BorrowerPrimaryForm: React.FC<BorrowerPrimaryFormProps> = ({
           </DirtyFieldWrapper>
 
           <DirtyFieldWrapper fieldKey={FIELD_KEYS.firstName}>
-            <div className="flex items-start gap-3">
-              <div className="min-w-[140px] text-left shrink-0">
-                <Label className="text-sm text-muted-foreground">First</Label>
-                <p className="text-xs text-muted-foreground">If Entity, Use Signer</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <Label className="text-sm text-muted-foreground min-w-[140px] text-left shrink-0">First</Label>
               <Input value={getValue('firstName')} onChange={(e) => handleChange('firstName', e.target.value)} disabled={disabled} className="h-7 text-sm" />
             </div>
           </DirtyFieldWrapper>
