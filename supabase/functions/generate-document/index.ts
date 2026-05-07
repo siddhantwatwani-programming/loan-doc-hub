@@ -4397,9 +4397,91 @@ async function generateSingleDocument(
     const __xmlSet = (filename: string, xml: string): Uint8Array => {
       __xmlStrCache[filename] = xml;
       __xmlDirty.add(filename);
+      // Drop any cached visible-text projection for this part — pass N+1
+      // must rebuild from the freshly mutated XML.
+      delete __visProjCache[filename];
       // Return existing bytes (or empty); the value is discarded by the
       // final flush, which uses the cached string instead.
       return (__re851dPassCache && __re851dPassCache[filename]) || new Uint8Array(0);
+    };
+
+    // ── RE851D shared visible-text projection cache ──
+    // The 6 post-render safety passes that need to anchor on visible text
+    // each previously rebuilt a per-character `buf`/`map` projection of the
+    // entire (~3–4 MB on 5-property deals) word/document.xml. That repeated
+    // O(N) work was the dominant remaining CPU sink and pushed generation
+    // over the edge function CPU limit. This helper builds the projection
+    // once per (filename, xml-version) and reuses it. Bulk-slice segments
+    // replace per-char push() loops; PROPERTY INFORMATION anchors are also
+    // computed once and stored on the projection.
+    type __VisProj = {
+      txt: string;
+      map: number[];
+      propAnchorsRaw: number[];
+      propRanges: Array<{ k: number; start: number; end: number }>;
+    };
+    const __visProjCache: Record<string, __VisProj> = {};
+    const __getVisProj = (filename: string, xml: string): __VisProj => {
+      const cached = __visProjCache[filename];
+      if (cached) return cached;
+      const parts: string[] = [];
+      const segStarts: number[] = [];
+      const segLens: number[] = [];
+      let i = 0;
+      while (i < xml.length) {
+        const lt = xml.indexOf("<", i);
+        if (lt === -1) {
+          if (i < xml.length) {
+            parts.push(xml.slice(i));
+            segStarts.push(i);
+            segLens.push(xml.length - i);
+          }
+          break;
+        }
+        if (lt > i) {
+          parts.push(xml.slice(i, lt));
+          segStarts.push(i);
+          segLens.push(lt - i);
+        }
+        // Synthetic single space at the tag boundary, mapped to '<' offset.
+        parts.push(" ");
+        segStarts.push(lt);
+        segLens.push(0);
+        const gt = xml.indexOf(">", lt);
+        if (gt === -1) break;
+        i = gt + 1;
+      }
+      const txt = parts.join("");
+      const map = new Array<number>(txt.length);
+      let v = 0;
+      for (let s = 0; s < parts.length; s++) {
+        const part = parts[s];
+        const start = segStarts[s];
+        const len = segLens[s];
+        if (len === 0) {
+          map[v++] = start;
+        } else {
+          for (let k = 0; k < part.length; k++) map[v++] = start + k;
+        }
+      }
+      const propAnchorsRaw: number[] = [];
+      const propRe = /\bPROPERTY\s+INFORMATION\b/gi;
+      let m: RegExpExecArray | null;
+      while ((m = propRe.exec(txt)) !== null) {
+        propAnchorsRaw.push(map[m.index] ?? 0);
+        if (propAnchorsRaw.length >= 5) break;
+      }
+      const propRanges: __VisProj["propRanges"] = [];
+      for (let pi = 0; pi < propAnchorsRaw.length; pi++) {
+        propRanges.push({
+          k: pi + 1,
+          start: propAnchorsRaw[pi],
+          end: pi + 1 < propAnchorsRaw.length ? propAnchorsRaw[pi + 1] : xml.length,
+        });
+      }
+      const proj: __VisProj = { txt, map, propAnchorsRaw, propRanges };
+      __visProjCache[filename] = proj;
+      return proj;
     };
     const __passZip = (rezip: fflate.Zippable): Uint8Array => {
       if (!__re851dPassCache) __re851dPassCache = {};
@@ -4461,34 +4543,17 @@ async function generateSingleDocument(
           // headings when the gray bar is absent. Cap at 5 properties.
           const propAnchors: Array<{ k: number; orig: number }> = [];
           {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            // Primary: PROPERTY INFORMATION headings.
-            const reInfo = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            const infoHits: number[] = [];
-            while ((m = reInfo.exec(txt)) !== null) {
-              infoHits.push(map[m.index] ?? 0);
-              if (infoHits.length >= 5) break;
-            }
-            if (infoHits.length > 0) {
-              infoHits.forEach((orig, i) => propAnchors.push({ k: i + 1, orig }));
+            const __vp = __getVisProj(filename, xml);
+            const txt = __vp.txt;
+            const map = __vp.map;
+            // Primary: PROPERTY INFORMATION headings (already cached on proj).
+            if (__vp.propAnchorsRaw.length > 0) {
+              __vp.propAnchorsRaw.forEach((orig, i) => propAnchors.push({ k: i + 1, orig }));
             } else {
               // Fallback: PROPERTY #K detail headings.
               const rePk = /\bPROPERTY\s*#\s*([1-5])\b/gi;
               const seen = new Set<number>();
+              let m: RegExpExecArray | null;
               while ((m = rePk.exec(txt)) !== null) {
                 const k = parseInt(m[1], 10);
                 if (k >= 1 && k <= 5 && !seen.has(k)) {
@@ -4737,28 +4802,9 @@ async function generateSingleDocument(
           // Build a visible-text projection with an offset map back into xml.
           // This handles Word splitting visible text across multiple <w:t>
           // runs and intervening tags.
-          const buf: string[] = [];
-          const map: number[] = [];
-          {
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " " && prev !== "") {
-                  buf.push(" ");
-                  map.push(i);
-                }
-                i = e + 1;
-                continue;
-              }
-              buf.push(xml[i]);
-              map.push(i);
-              i++;
-            }
-          }
-          const txt = buf.join("");
+          const __vp2 = __getVisProj(filename, xml);
+          const txt = __vp2.txt;
+          const map = __vp2.map;
           const txtToXml = (ti: number) =>
             ti < 0 ? 0 : ti >= map.length ? xml.length : map[ti];
 
@@ -4993,29 +5039,7 @@ async function generateSingleDocument(
           }
 
           // Build "PROPERTY INFORMATION" anchors -> property indices 1..5.
-          const propAnchors: number[] = [];
-          {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
-            }
-          }
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
           if (propAnchors.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5212,29 +5236,7 @@ async function generateSingleDocument(
             continue;
           }
 
-          const propAnchors: number[] = [];
-          {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
-            }
-          }
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
           if (propAnchors.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5421,29 +5423,7 @@ async function generateSingleDocument(
             continue;
           }
 
-          const propAnchors: number[] = [];
-          {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
-            }
-          }
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
           if (propAnchors.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5630,29 +5610,7 @@ async function generateSingleDocument(
             continue;
           }
 
-          const propAnchors: number[] = [];
-          {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
-            }
-          }
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
           if (propAnchors.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
@@ -5859,37 +5817,16 @@ async function generateSingleDocument(
             continue;
           }
 
-          // Build visible-text projection with offset map back to xml positions.
-          const map: number[] = [];
-          const buf: string[] = [];
-          {
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                i = e + 1;
-                continue;
-              }
-              buf.push(xml[i]);
-              map.push(i);
-              i++;
-            }
-          }
-          const txt = buf.join("");
+          // Visible-text projection (shared cache). The encumbrance pass also
+          // needs a raw→visible reverse map; build that locally only here.
+          const __vpE = __getVisProj(filename, xml);
+          const txt = __vpE.txt;
+          const map = __vpE.map;
           const rawToVis = new Map<number, number>();
           for (let v = 0; v < map.length; v++) rawToVis.set(map[v], v);
 
-          // Find PROPERTY anchors via "PROPERTY INFORMATION" headings.
-          const propAnchorsRaw: number[] = [];
-          {
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchorsRaw.push(map[m.index] ?? 0);
-              if (propAnchorsRaw.length >= 5) break;
-            }
-          }
+          // Find PROPERTY anchors via "PROPERTY INFORMATION" headings (cached).
+          const propAnchorsRaw: number[] = [...__vpE.propAnchorsRaw];
           if (propAnchorsRaw.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
