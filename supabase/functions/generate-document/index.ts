@@ -2773,21 +2773,21 @@ async function generateSingleDocument(
             return Number.isFinite(n) ? n : 0;
           };
           // Resolve canonical Condition bucket for one lien prefix.
+          // Priority: condition dropdown label > explicit existing_* booleans
+          // > anticipated boolean > anticipated label. Existing-* booleans win
+          // over a stale anticipated=true so the per-property rollup matches
+          // the per-slot publisher above. Payoff hard-wins to enforce exclude.
           const classify = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
             const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
-            // 1) Explicit dropdown label, if persisted as `condition`.
             const lbl = normLbl(get("condition"));
             if (lbl === "existing - payoff" || lbl === "payoff") return "payoff";
             if (lbl === "anticipated") return "anticipated";
             if (lbl === "will remain" || lbl === "existing - remain" || lbl === "remain") return "remain";
             if (lbl === "remain - paydown" || lbl === "existing - paydown" || lbl === "paydown") return "paydown";
-            // 2) Boolean aliases (the actual UI persistence path).
-            //    Payoff hard-wins to enforce the "Existing - Payoff = exclude" rule.
             if (truthy3(get("existing_payoff")) || truthy3(get("existingPayoff"))) return "payoff";
-            if (truthy3(get("anticipated"))) return "anticipated";
             if (truthy3(get("existing_paydown")) || truthy3(get("existingPaydown"))) return "paydown";
             if (truthy3(get("existing_remain")) || truthy3(get("existingRemain"))) return "remain";
-            // 3) Anticipated may be persisted as a string label.
+            if (truthy3(get("anticipated"))) return "anticipated";
             const antLbl = normLbl(get("anticipated"));
             if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
             return "none";
