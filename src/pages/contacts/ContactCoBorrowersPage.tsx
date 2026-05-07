@@ -174,7 +174,10 @@ const ContactCoBorrowersPage: React.FC = () => {
   }, [crud, isReadOnly]);
 
   const handleRowClick = useCallback((c: ContactRecord) => {
-    setSelectedContact(c);
+    setSelectedContact({
+      ...c,
+      contact_data: hydrateCoBorrowerSendFields((c.contact_data || {}) as Record<string, string>),
+    });
     navigate(`/contacts/co-borrowers/${c.id}`);
   }, [navigate]);
 
