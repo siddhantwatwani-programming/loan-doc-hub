@@ -229,29 +229,38 @@ export async function processDocx(
   } catch { /* never fail generation on logging */ }
 
 
-  // Defensive integrity check: re-open the produced ZIP and assert that
-  // EVERY processed content-bearing XML part is well-formed enough for
-  // Word to open. The previous version only checked word/document.xml,
-  // which let malformed headers/footers/footnotes/endnotes through and
-  // caused Word's "file could not be opened" error on download.
+  // Defensive integrity check. Validate the XML strings we already produced
+  // BEFORE zipping, instead of unzipping the freshly compressed output again.
+  // The previous "verify by unzip" path held a second full copy of every
+  // content-bearing part in memory simultaneously with the zipped buffer,
+  // which on 5-property RE851D documents (~4MB document.xml) was enough to
+  // trip the edge function's memory limit. Validating the source strings is
+  // equivalent for the integrity properties we care about (well-formed root,
+  // tag balance, no stray placeholder markers, w14 namespace declared).
   try {
-    const verify = fflate.unzipSync(compressed);
     const verifyDecoder = new TextDecoder("utf-8");
+    const getPartXml = (partName: string): string | null => {
+      const entry = (processedFiles as Record<string, unknown>)[partName];
+      if (!entry) return null;
+      const bytes = Array.isArray(entry)
+        ? (entry as [Uint8Array, unknown])[0]
+        : (entry as Uint8Array);
+      if (!bytes || bytes.length === 0) return null;
+      return verifyDecoder.decode(bytes);
+    };
 
-    const docXmlBytes = verify["word/document.xml"];
-    if (!docXmlBytes) {
+    if (!getPartXml("word/document.xml")) {
       throw new Error("DOCX_INTEGRITY: word/document.xml missing from generated package");
     }
 
-    // Identify every content-bearing XML part we may have edited. This
-    // mirrors the isContentPart filter above.
-    const contentPartNames = Object.keys(verify).filter((filename) =>
-      filename === "word/document.xml" ||
-      filename.startsWith("word/header") ||
-      filename.startsWith("word/footer") ||
-      filename.startsWith("word/footnotes") ||
-      filename.startsWith("word/endnotes")
-    ).filter((filename) => filename.endsWith(".xml"));
+    const contentPartNames = Object.keys(processedFiles).filter((filename) =>
+      (filename === "word/document.xml" ||
+        filename.startsWith("word/header") ||
+        filename.startsWith("word/footer") ||
+        filename.startsWith("word/footnotes") ||
+        filename.startsWith("word/endnotes")) &&
+      filename.endsWith(".xml")
+    );
 
     const countOpens = (xml: string, tag: string) => {
       const re = new RegExp(`<${tag}(\\s[^>]*[^/])?>`, 'g');
@@ -261,9 +270,8 @@ export async function processDocx(
       (xml.match(new RegExp(`</${tag}>`, 'g')) || []).length;
 
     for (const partName of contentPartNames) {
-      const bytes = verify[partName];
-      if (!bytes) continue;
-      const xml = verifyDecoder.decode(bytes);
+      const xml = getPartXml(partName);
+      if (!xml) continue;
       const trimmed = xml.trim();
 
       if (!trimmed.startsWith("<?xml")) {
