@@ -3808,6 +3808,7 @@ async function generateSingleDocument(
               }
               rewrites.push({ start, end, replacement });
               consumed.push([start, end]);
+              consumedStarts.add(start);
               bumpRegion(region.id);
               totalRewrites++;
             }
