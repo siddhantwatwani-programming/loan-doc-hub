@@ -2789,6 +2789,10 @@ async function generateSingleDocument(
           // > anticipated boolean > anticipated label. Existing-* booleans win
           // over a stale anticipated=true so the per-property rollup matches
           // the per-slot publisher above. Payoff hard-wins to enforce exclude.
+          const hasAmt2 = (raw: unknown) => {
+            const n = parseFloat(String(raw ?? "").replace(/[^0-9.\-]/g, ""));
+            return Number.isFinite(n) && n !== 0;
+          };
           const classify = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
             const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
             const lbl = normLbl(get("condition"));
@@ -2799,7 +2803,13 @@ async function generateSingleDocument(
             if (truthy3(get("existing_payoff")) || truthy3(get("existingPayoff"))) return "payoff";
             if (truthy3(get("existing_paydown")) || truthy3(get("existingPaydown"))) return "paydown";
             if (truthy3(get("existing_remain")) || truthy3(get("existingRemain"))) return "remain";
-            if (truthy3(get("anticipated"))) return "anticipated";
+            if (truthy3(get("anticipated"))) {
+              const hasOrig = hasAmt2(get("original_balance")) || hasAmt2(get("originalBalance")) || hasAmt2(get("anticipated_amount")) || hasAmt2(get("anticipatedAmount"));
+              const hasRemain = hasAmt2(get("current_balance")) || hasAmt2(get("currentBalance")) || hasAmt2(get("existing_paydown_amount")) || hasAmt2(get("existingPaydownAmount"));
+              if (hasOrig) return "anticipated";
+              if (hasRemain) return "remain";
+              return "anticipated";
+            }
             const antLbl = normLbl(get("anticipated"));
             if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
             return "none";
