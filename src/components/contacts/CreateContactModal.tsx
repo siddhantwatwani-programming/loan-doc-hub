@@ -59,6 +59,14 @@ const BORROWER_CAPACITY_OPTIONS = [
   'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
 
+const BORROWER_FORD_OPTIONS = [
+  'Spouse, Kids, Grandkids', 'Big Dream', 'Sports Teams', 'Hobbies / Collections',
+  'Goals / Achievements', 'Favorite Restaurant, Food, Drinks', 'Pet(s)', 'Vacation Spot',
+  'Job / Occupation', 'Music / Bands', 'College', 'Hometown / Childhood',
+  'TV / Movies / Books', 'Anniversary', 'Challenges / Frustrations', 'Charity / Personal Causes',
+  'Upcoming Event - What / When', 'Celebration - What / When',
+];
+
 
 const getInitialForm = (contactType: string): Record<string, string> => {
   if (contactType === 'lender') {
@@ -114,7 +122,13 @@ const getInitialForm = (contactType: string): Record<string, string> => {
     'phone.home': '', 'phone.home2': '', 'phone.work': '', 'phone.cell': '', 'phone.fax': '',
     'preferred.home': 'false', 'preferred.home2': 'false', 'preferred.work': 'false', 'preferred.cell': 'false', 'preferred.fax': 'false',
     delivery_print: 'false', delivery_email: 'false', delivery_sms: 'false',
-    agreement_on_file: 'false',
+    agreement_on_file: 'false', agreement_on_file_date: '',
+    'send_pref.payment_confirmation': 'false', 'send_pref.coupon_book': 'false',
+    'send_pref.payment_statement': 'false', 'send_pref.late_notice': 'false',
+    'send_pref.maturity_notice': 'false',
+    vesting: '',
+    'ford.1': '', 'ford.2': '', 'ford.3': '', 'ford.4': '',
+    'ford.5': '', 'ford.6': '', 'ford.7': '', 'ford.8': '',
   };
 };
 
@@ -992,26 +1006,18 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
               <div className="pt-2 space-y-1">
                 <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={form['agreement_on_file_date'] || ''}
+                    onChange={(e) => set('agreement_on_file_date', e.target.value)}
+                    className="h-7 text-xs w-[140px]"
+                  />
                   <Checkbox
                     checked={form['agreement_on_file'] === 'true'}
                     onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
                   />
                   <Label className="text-xs">Agreement on File</Label>
-                  <Input
-                    type="date"
-                    value={form['agreement_on_file_date'] || ''}
-                    onChange={(e) => set('agreement_on_file_date', e.target.value)}
-                    className="h-7 text-xs flex-1"
-                  />
                 </div>
-              </div>
-              <div className="pt-2 space-y-1">
-                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
-                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
-                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
-                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
-                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
-                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
               </div>
             </div>
 
@@ -1043,6 +1049,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrBErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {borrowerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['address.zip']}</p>}
+              <div className="pt-2 space-y-1">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
+                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
+                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
+                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
+                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
+                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
+              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
@@ -1103,6 +1117,28 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   </div>
                 ))}
               </RadioGroup>
+
+              <div className="pt-2">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Vesting</h4>
+                <Textarea value={form['vesting'] || ''} onChange={(e) => set('vesting', e.target.value)} className="text-xs min-h-[60px] resize-none" />
+              </div>
+
+              <div className="pt-2">
+                <h4 className="font-semibold text-xs text-foreground pb-1">FORD</h4>
+                <div className="space-y-1">
+                  {([['ford.1', 'ford.2'], ['ford.3', 'ford.4'], ['ford.5', 'ford.6'], ['ford.7', 'ford.8']] as const).map(([dropdownKey, inputKey], idx) => (
+                    <div key={idx} className="grid grid-cols-2 gap-1">
+                      <Select value={form[dropdownKey] || ''} onValueChange={(v) => set(dropdownKey, v)}>
+                        <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent className="bg-background border border-border z-[200]">
+                          {BORROWER_FORD_OPTIONS.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                      <Input value={form[inputKey] || ''} onChange={(e) => set(inputKey, e.target.value)} className="h-7 text-xs" />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

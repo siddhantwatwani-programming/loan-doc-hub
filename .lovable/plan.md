@@ -1,39 +1,36 @@
-## RE851D – Authoritative Per-Property Encumbrance Calculation
+## Borrower form & Add Borrower modal updates
 
-The bulk of the per-property lien rollup already exists in `supabase/functions/generate-document/index.ts` (lines ~1404–1585): it scans `lienK.*`, matches by `lien.property` against the property prefix/address, excludes `Existing - Payoff`, sums `original_balance` for `Anticipated`, sums `current_balance` for `Will Remain` / `Remain - Paydown`, and defaults blanks to `0.00`.
+Scope: UI reordering and parity additions only. No schema, no API, no new persistence keys (`borrower.vesting`, `borrower.ford.1..8`, `borrower.agreement_on_file_date`, send/delivery keys are already in `BORROWER_PRIMARY_KEYS` / save layer).
 
-Two gaps remain that can cause failing test cases when both Lien data and stale property-level fields coexist:
+### 1. `src/components/deal/BorrowerPrimaryForm.tsx`
 
-### Issue 1 — Static property fields can shadow lien-derived values
-Lines 1513–1531 only publish `pr_p_expectedSenior_${idx}` / `pr_p_remainingSenior_${idx}` when `${prefix}.expected_senior` / `${prefix}.remaining_senior` are empty. If a deal has any stale value on those property keys, it overrides the freshly computed Lien rollup.
+**Delivery Options (Column 1)** — already in order Print, Email, SMS. No change.
 
-### Issue 2 — Total uses static property values first
-Lines 1540–1555 read `${prefix}.remaining_senior` and `${prefix}.expected_senior` first and only fall back to the lien sums when those parse to NaN. Per the spec, **Total = (lien-derived Remaining) + (lien-derived Expected)**.
+**Agreement on File row** — reorder so the date input renders BEFORE the checkbox + label. (Currently date is first → keep, but verify checkbox sits after; current code already puts date before checkbox + label, so leave as-is.)
 
-### Changes (single file, narrow edit)
+**Send block** — currently inside Column 2 below Mailing Address ZIP. Move it so it renders directly under the **Primary Address ZIP** (i.e., before the `Mailing Address` heading).
 
-**`supabase/functions/generate-document/index.ts`** — replace lines ~1504–1584:
+### 2. `src/components/contacts/CreateContactModal.tsx` (borrower branch, lines ~914–1107)
 
-1. Always publish from the Lien rollup (no static-value gating):
-   - `ln_p_expectedEncumbrance_${idx}` = `lienExpectedSum.toFixed(2)` (0.00 when no eligible lien)
-   - `ln_p_remainingEncumbrance_${idx}` = `lienRemainingSum.toFixed(2)` (0.00 when no eligible lien)
-   - `pr_p_expectedSenior_${idx}` and `pr_p_remainingSenior_${idx}` set unconditionally to the same values
-2. Total block: drop the `${prefix}.remaining_senior` / `${prefix}.expected_senior` reads. Compute:
-   - `total = lienRemainingSum + lienExpectedSum`
-   - Set `pr_p_totalEncumbrance_${idx}` and `ln_p_totalEncumbrance_${idx}` unconditionally to `total.toFixed(2)`
-   - Recompute `ln_p_totalWithLoan_${idx} = total + loan_amount` (loan_amount NaN → 0)
-3. Keep payoff exclusion, per-property strict matching, indexed-lien dedup, and debug log line as-is.
+a. **Delivery Options order**: already Print, Email, SMS. No change.
 
-### Behavioral matrix (covers all test cases)
+b. **Agreement on File row** (lines ~993–1007): swap order so the **date input renders first**, followed by the checkbox + "Agreement on File" label, matching the BorrowerPrimaryForm layout.
 
-| Scenario | Remaining | Expected | Total |
-|---|---|---|---|
-| Will Remain / Remain-Paydown only (CB=23423) | 23423 | 0 | 23423 |
-| Anticipated only (OB=50000) | 0 | 50000 | 50000 |
-| Mix (CB=20000 Will Remain + OB=30000 Anticipated) | 20000 | 30000 | 50000 |
-| Existing - Payoff only | 0 | 0 | 0 |
-| No liens for property | 0 | 0 | 0 |
+c. **Send block** (lines ~1008–1015): remove from Column 1; move into Column 2 directly after the Primary Address ZIP field (before the `Mailing Address` sub-heading).
+
+d. **Add Vesting + FORD to Column 3** — mirror BorrowerPrimaryForm:
+   - Add `vesting` (Textarea) and `ford.1..8` (4 rows of Select + Input pairs using `FORD_DROPDOWN_OPTIONS`) below the Phone block in Column 3.
+   - Initial form state additions (borrower branch of `getInitialForm`): `vesting: ''`, `'ford.1'..'ford.8': ''`.
+   - Add `FORD_DROPDOWN_OPTIONS` constant at top of modal (copy from `BorrowerPrimaryForm.tsx`).
+   - Whitelist new optional keys in `hasAtLeastOneFieldFilled` skip list only if they should not satisfy "any field filled" (vesting/ford are real fields so do NOT add to skip list).
+
+e. **Persistence**: `handleCreate` → `crud.createContact(data)` writes `contact_data` as-is. Convert dotted modal keys to `borrower.*` namespace? Check existing path — currently borrower saves use raw keys like `address.street`, `phone.home`, `delivery_print` (without `borrower.` prefix). Vesting/FORD must save with the same convention used for read-back via `BORROWER_PRIMARY_KEYS` (`borrower.vesting`, `borrower.ford.1`). Inspect `useContactsCrud.createContact` & `ContactBorrowerDetailLayout` translation: detail layout adds `borrower.` prefix on read for keys that don't already have one. So the modal can save `vesting` and `ford.1..8` (unprefixed) and they'll be read as `borrower.vesting`, `borrower.ford.1..8` automatically.
+
+### 3. Grid columns (`src/pages/contacts/ContactBorrowersPage.tsx`)
+
+No new columns required — request only mentions reordering Delivery and Agreement, both of which are already represented (`delivery_print`, `delivery_email`, `delivery_sms`, `agreement_on_file`). No change unless missing — leave as-is.
 
 ### Out of scope
-- No template/dictionary changes. Existing `{{ln_p_remainingEncumbrance_N}}`, `{{ln_p_expectedEncumbrance_N}}`, `{{ln_p_totalEncumbrance_N}}` placeholders already resolve.
-- No UI / schema / other document changes.
+- No schema changes, no field_dictionary updates.
+- No changes to other contact types (lender/broker).
+- No changes to save/update API surface; uses existing `createContact` / `updateContact`.
