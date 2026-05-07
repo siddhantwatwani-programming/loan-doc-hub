@@ -5423,29 +5423,7 @@ async function generateSingleDocument(
             continue;
           }
 
-          const propAnchors: number[] = [];
-          {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            const re = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            while ((m = re.exec(txt)) !== null) {
-              propAnchors.push(map[m.index] ?? 0);
-              if (propAnchors.length >= 5) break;
-            }
-          }
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
           if (propAnchors.length === 0) {
             rezip[filename] = [bytes, { level: 0 }];
             continue;
