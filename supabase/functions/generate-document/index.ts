@@ -2867,6 +2867,13 @@ async function generateSingleDocument(
             if (pIdx === null) continue; // no cross-bleed
 
             const cond = classify(lp);
+            const dbgOrig = fieldValues.get(`${lp}.original_balance`)?.rawValue ?? "";
+            const dbgCur = fieldValues.get(`${lp}.current_balance`)?.rawValue ?? "";
+            const dbgAnt = fieldValues.get(`${lp}.anticipated`)?.rawValue ?? "";
+            const dbgER = fieldValues.get(`${lp}.existing_remain`)?.rawValue ?? "";
+            const dbgEPd = fieldValues.get(`${lp}.existing_paydown`)?.rawValue ?? "";
+            const dbgEPo = fieldValues.get(`${lp}.existing_payoff`)?.rawValue ?? "";
+            console.log(`[generate-document] RE851D rollup-classify ${lp} → prop=${pIdx} cond=${cond} | anticipated=${dbgAnt} remain=${dbgER} paydown=${dbgEPd} payoff=${dbgEPo} orig=${dbgOrig} cur=${dbgCur}`);
             if (cond === "payoff" || cond === "none") {
               matchedLog[pIdx].push(`${li}:${cond}`);
               continue;
