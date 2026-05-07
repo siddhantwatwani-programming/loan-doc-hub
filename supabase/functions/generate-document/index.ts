@@ -1550,7 +1550,8 @@ async function generateSingleDocument(
           if (isNaN(expectedNum) && lienExpectedHit) expectedNum = lienExpectedSum;
           const haveRemaining = !isNaN(remainingNum);
           const haveExpected = !isNaN(expectedNum);
-          if (haveRemaining || haveExpected) {
+          // Always publish Total Senior Encumbrances per property — default 0.
+          {
             const total = (haveRemaining ? remainingNum : 0) + (haveExpected ? expectedNum : 0);
             const totalVal = {
               rawValue: total.toFixed(2),
