@@ -6026,6 +6026,8 @@ async function generateSingleDocument(
 
         const sdtCheckboxReAEA = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
         const glyphRunReAEA = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+        // Image-based checkbox: a run containing a <w:drawing> (PNG of empty/checked box)
+        const drawingRunReAEA = /<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:drawing\b[\s\S]*?<\/w:drawing>\s*<\/w:r>/g;
         const yesLabelReSrc = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
         const noLabelReSrc  = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
 
@@ -6035,6 +6037,12 @@ async function generateSingleDocument(
           let next = block.replace(/(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/, `$1${val}$2`);
           next = next.replace(/(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/, `$1${glyph}$3`);
           return next;
+        };
+        // Replace an image-based checkbox run with a glyph run (☑ checked / ☐ unchecked).
+        // Uses Segoe UI Symbol so the glyph renders consistently across Word/LibreOffice.
+        const rewriteDrawingRunAEA = (_block: string, checked: boolean): string => {
+          const glyph = checked ? "\u2611" : "\u2610";
+          return `<w:r><w:rPr><w:rFonts w:ascii="Segoe UI Symbol" w:hAnsi="Segoe UI Symbol" w:cs="Segoe UI Symbol"/><w:color w:val="000000"/><w:sz w:val="20"/><w:szCs w:val="20"/></w:rPr><w:t xml:space="preserve">${glyph}</w:t></w:r>`;
         };
 
         for (const [filename, bytes] of Object.entries(unzipped)) {
