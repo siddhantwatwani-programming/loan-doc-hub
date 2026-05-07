@@ -3734,15 +3734,20 @@ async function generateSingleDocument(
           type Rewrite = { start: number; end: number; replacement: string };
           const rewrites: Rewrite[] = [];
 
-          // Track consumed start offsets to avoid double-matching when a
-          // shorter tag is a substring (suffix-trimmed) of a longer tag
-          // already matched. Because tags are processed longest-first and
-          // every shorter overlapping tag shares the same start offset
-          // (e.g. "pr_li_rem_priority_N" inside "pr_li_rem_priority_N_S"),
-          // a Set<number> keyed by start offset suffices and replaces the
-          // previous O(n) per-match linear scan over a growing array.
+          // Track consumed [start,end) ranges. Hot path uses a Set keyed by
+          // start offset for O(1) lookup since the longest-first ordering
+          // means overlapping shorter tags share the same start offset; the
+          // array form is preserved for downstream passes that may add
+          // arbitrary [s,e) ranges and need full overlap semantics.
+          const consumed: Array<[number, number]> = [];
           const consumedStarts = new Set<number>();
-          const isConsumed = (s: number, _e: number): boolean => consumedStarts.has(s);
+          const isConsumed = (s: number, e: number): boolean => {
+            if (consumedStarts.has(s)) return true;
+            for (const [cs, ce] of consumed) {
+              if (s < ce && e > cs) return true;
+            }
+            return false;
+          };
 
           for (const tag of tagsByLengthDesc) {
             const re = new RegExp(tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
