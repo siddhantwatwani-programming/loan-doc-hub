@@ -9,6 +9,34 @@ import type { FilterOption } from '@/components/deal/GridToolbar';
 import { useFormPermissions } from '@/hooks/useFormPermissions';
 import { mirrorPrefixedToCanonical } from '@/lib/contactPrefixMirror';
 
+const COBORROWER_SEND_ALIASES: Array<[string, string]> = [
+  ['send_pref.payment_confirmation', 'coborrower.send_payment_confirmation'],
+  ['send_pref.coupon_book', 'coborrower.send_coupon_book'],
+  ['send_pref.payment_statement', 'coborrower.send_payment_statement'],
+  ['send_pref.late_notice', 'coborrower.send_late_notice'],
+  ['send_pref.maturity_notice', 'coborrower.send_maturity_notice'],
+];
+
+/** Hydrate `coborrower.send_*` from canonical `send_pref.*` so the detail form populates after reload. */
+function hydrateCoBorrowerSendFields(cd: Record<string, string>): Record<string, string> {
+  const out = { ...cd };
+  for (const [canonical, prefixed] of COBORROWER_SEND_ALIASES) {
+    if (out[canonical] !== undefined && (out[prefixed] === undefined || out[prefixed] === '')) {
+      out[prefixed] = out[canonical];
+    }
+  }
+  return out;
+}
+
+/** Mirror `coborrower.send_*` to canonical `send_pref.*` so the grid populates after save. */
+function mirrorCoBorrowerSendFields(cd: Record<string, string>): Record<string, string> {
+  const out = { ...cd };
+  for (const [canonical, prefixed] of COBORROWER_SEND_ALIASES) {
+    if (out[prefixed] !== undefined) out[canonical] = out[prefixed];
+  }
+  return out;
+}
+
 const DEFAULT_COLUMNS: ColumnConfig[] = [
   { id: 'contact_id', label: 'Borrower ID', visible: true },
   { id: 'borrower_type', label: 'Type', visible: true },
