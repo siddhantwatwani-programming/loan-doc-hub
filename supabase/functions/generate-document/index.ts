@@ -3199,7 +3199,17 @@ async function generateSingleDocument(
           "ADD ON INTEREST": { fieldKey: "ln_p_addOnInterest" },
         }
       : {};
-    const effectiveLabelMap = { ...labelMap, ...re851aLabelAdditions };
+    // RE851D output is driven entirely by explicit merge tags and the
+    // template-scoped post-render safety passes below. The generic label
+    // map (sourced from merge_tag_mappings) adds no RE851D-specific
+    // bindings but forces a full ~3.9MB document scan for every label
+    // candidate during processDocx — a major CPU sink that contributed to
+    // "Generation timed out (CPU limit exceeded)". Disable label-based
+    // replacement for RE851D only; all other templates keep current behavior.
+    const isTemplate851D = /851d/i.test(template.name || "");
+    const effectiveLabelMap = isTemplate851D
+      ? {}
+      : { ...labelMap, ...re851aLabelAdditions };
 
     let templateBuffer = new Uint8Array(await fileData.arrayBuffer());
 
