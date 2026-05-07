@@ -928,6 +928,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'borrower' && (
+          <>
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
             {/* Column 1: Borrower Details */}
             <div className="space-y-1.5">
