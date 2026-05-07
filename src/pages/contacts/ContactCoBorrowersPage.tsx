@@ -139,7 +139,7 @@ const ContactCoBorrowersPage: React.FC = () => {
           city: data.city || '',
           state: data.state || '',
           company: data.company || '',
-          contact_data: (data.contact_data || {}) as Record<string, string>,
+          contact_data: hydrateCoBorrowerSendFields((data.contact_data || {}) as Record<string, string>),
           created_at: data.created_at || '',
           updated_at: data.updated_at || '',
         });
