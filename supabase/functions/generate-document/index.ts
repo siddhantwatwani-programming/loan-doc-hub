@@ -4396,9 +4396,15 @@ async function generateSingleDocument(
     // once per (filename, xml-version) and reuses it. Bulk-slice segments
     // replace per-char push() loops; PROPERTY INFORMATION anchors are also
     // computed once and stored on the projection.
+    // Memory-optimized projection. The previous implementation allocated a
+    // per-character `map: number[]` of length txt.length — on a ~4 MB
+    // word/document.xml that array alone consumed 30+ MB of JS heap, which
+    // was the dominant cause of the "Memory limit exceeded" crash on
+    // 5-property RE851D documents. Replace with a compact segment table
+    // (Int32Array) and a binary-search-based txt-index → xml-index resolver.
     type __VisProj = {
       txt: string;
-      map: number[];
+      map: { length: number; [i: number]: number };
       propAnchorsRaw: number[];
       propRanges: Array<{ k: number; start: number; end: number }>;
     };
@@ -4406,51 +4412,93 @@ async function generateSingleDocument(
     const __getVisProj = (filename: string, xml: string): __VisProj => {
       const cached = __visProjCache[filename];
       if (cached) return cached;
-      const parts: string[] = [];
-      const segStarts: number[] = [];
-      const segLens: number[] = [];
+      // First pass: count segments to size the typed arrays exactly.
+      let segCount = 0;
+      {
+        let i = 0;
+        while (i < xml.length) {
+          const lt = xml.indexOf("<", i);
+          if (lt === -1) {
+            if (i < xml.length) segCount++;
+            break;
+          }
+          if (lt > i) segCount++;
+          segCount++; // synthetic space
+          const gt = xml.indexOf(">", lt);
+          if (gt === -1) break;
+          i = gt + 1;
+        }
+      }
+      const txtStart = new Int32Array(segCount);
+      const xmlStart = new Int32Array(segCount);
+      const segLen = new Int32Array(segCount);
+      const txtParts: string[] = new Array(segCount);
+      let s = 0;
+      let txtPos = 0;
       let i = 0;
       while (i < xml.length) {
         const lt = xml.indexOf("<", i);
         if (lt === -1) {
           if (i < xml.length) {
-            parts.push(xml.slice(i));
-            segStarts.push(i);
-            segLens.push(xml.length - i);
+            const part = xml.slice(i);
+            txtStart[s] = txtPos;
+            xmlStart[s] = i;
+            segLen[s] = part.length;
+            txtParts[s] = part;
+            txtPos += part.length;
+            s++;
           }
           break;
         }
         if (lt > i) {
-          parts.push(xml.slice(i, lt));
-          segStarts.push(i);
-          segLens.push(lt - i);
+          const part = xml.slice(i, lt);
+          txtStart[s] = txtPos;
+          xmlStart[s] = i;
+          segLen[s] = lt - i;
+          txtParts[s] = part;
+          txtPos += part.length;
+          s++;
         }
-        // Synthetic single space at the tag boundary, mapped to '<' offset.
-        parts.push(" ");
-        segStarts.push(lt);
-        segLens.push(0);
+        txtStart[s] = txtPos;
+        xmlStart[s] = lt;
+        segLen[s] = 0;
+        txtParts[s] = " ";
+        txtPos += 1;
+        s++;
         const gt = xml.indexOf(">", lt);
         if (gt === -1) break;
         i = gt + 1;
       }
-      const txt = parts.join("");
-      const map = new Array<number>(txt.length);
-      let v = 0;
-      for (let s = 0; s < parts.length; s++) {
-        const part = parts[s];
-        const start = segStarts[s];
-        const len = segLens[s];
-        if (len === 0) {
-          map[v++] = start;
-        } else {
-          for (let k = 0; k < part.length; k++) map[v++] = start + k;
+      const txt = txtParts.join("");
+      const segN = s;
+      const lookup = (ti: number): number => {
+        if (ti < 0) return 0;
+        if (ti >= txt.length) return xml.length;
+        let lo = 0, hi = segN - 1, best = 0;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (txtStart[mid] <= ti) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
         }
-      }
+        const off = ti - txtStart[best];
+        return segLen[best] === 0 ? xmlStart[best] : xmlStart[best] + off;
+      };
+      // Lazy index-access proxy so existing `map[i]` and `map.length` call
+      // sites continue to work unchanged with O(log n) lookup.
+      const map = new Proxy({ length: txt.length } as { length: number; [i: number]: number }, {
+        get(target, prop) {
+          if (prop === "length") return target.length;
+          if (typeof prop === "string") {
+            const idx = Number(prop);
+            if (Number.isInteger(idx)) return lookup(idx);
+          }
+          return undefined;
+        },
+      }) as unknown as { length: number; [i: number]: number };
       const propAnchorsRaw: number[] = [];
       const propRe = /\bPROPERTY\s+INFORMATION\b/gi;
       let m: RegExpExecArray | null;
       while ((m = propRe.exec(txt)) !== null) {
-        propAnchorsRaw.push(map[m.index] ?? 0);
+        propAnchorsRaw.push(lookup(m.index));
         if (propAnchorsRaw.length >= 5) break;
       }
       const propRanges: __VisProj["propRanges"] = [];
