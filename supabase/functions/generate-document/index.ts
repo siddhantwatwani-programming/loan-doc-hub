@@ -5920,7 +5920,10 @@ async function generateSingleDocument(
 
           // Scan each property region for ENCUMBRANCE sections.
           for (const region of propRanges) {
-            const visStart = rawToVis.get(map[propAnchorsRaw.indexOf(propAnchorsRaw.find(p => p === region.start)!)] ?? 0);
+            // (visStart was previously computed via the rawToVis lookup but
+            // never used; the section scanner below operates directly on
+            // the visible-text and maps each hit back via map[].)
+
             // Locate ENCUMBRANCE section headers in visible text within this region.
             // We need the visible-text offsets corresponding to region.start..region.end.
             // Find via simple substring search on visible text indexes whose mapped
