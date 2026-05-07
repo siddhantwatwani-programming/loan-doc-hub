@@ -1,65 +1,64 @@
-## Plan to fix RE851D CPU timeout
+# RE851D — Additional Remaining/Anticipated Encumbrances Attachment
 
-I will optimize only the RE851D generation path in `supabase/functions/generate-document/index.ts` and, if needed, add a small RE851D-specific fast path in the shared DOCX tag parser. No UI, CSR data, or database schema changes.
+Per-property logic. If a property has more than 2 Remaining liens **or** more than 2 Anticipated liens, force the "Additional remaining, expected, or anticipated encumbrances are set forth in an attachment to this statement." YES checkbox for that property and append an Addendum section at the end of the document listing the overflow liens (3rd onward). Otherwise force NO and emit no addendum content.
 
-## What I found
+All work confined to `supabase/functions/generate-document/index.ts` in the existing RE851D code paths. No template changes, no schema changes, no UI changes, no impact to other templates.
 
-Recent logs show RE851D reaches the render/post-render stage and then exceeds the CPU limit:
+## Implementation
 
-- `processDocx` render itself is about 530ms, with `conditionalBlocks` as the largest parser phase.
-- The function then runs many RE851D post-render passes over the same ~3.9MB `word/document.xml`.
-- Several post-render questionnaire passes scan all 5 anchors but report `missing/duplicate controls`, meaning they are spending CPU without changing output.
-- The existing code already caches unzip/zip, but it still repeats large XML scans, label/control searches, and property range calculations across separate passes.
+### 1. Compute overflow flags during the existing per-property lien pass
+Inside the existing `pr_li_rem` / `pr_li_ant` publisher block (around lines 2572–2700, where `perPropRem` and `perPropAnt` are already built), add:
 
-## Implementation steps
+- `remCount[pIdx] = perPropRem[pIdx]?.length ?? 0`
+- `antCount[pIdx] = perPropAnt[pIdx]?.length ?? 0`
+- `attachmentYes[pIdx] = remCount[pIdx] > 2 || antCount[pIdx] > 2`
 
-1. **Add a single RE851D context object**
-   - Compute template flags once: `isTemplate851D`, `isTemplate851A`, `isTemplate885`.
-   - Build property indices, property count, property ranges, and common boolean values once.
-   - Reuse these values for preprocessing and post-render safety logic instead of recomputing them in every pass.
+Publish boolean + glyph aliases per property so any existing merge tags work without template edits:
+- `pr_li_additionalEncumbrance_<N>` / `_yes` / `_no` / `_yes_glyph` / `_no_glyph`
+- `pr_p_additionalEncumbrance_<N>` mirror (same family as other pr_li/pr_p mirrors already in the file)
 
-2. **Consolidate RE851D post-render YES/NO safety passes**
-   - Merge the four similar questionnaire passes into one bounded pass:
-     - `remain unpaid`
-     - `cure the delinquency`
-     - `60 day(s) or more delinquent`
-     - `encumbrances of record`
-   - For each property range, scan only that local range/window once and queue rewrites in a shared rewrite list.
-   - Reuse one common checkbox toggle helper instead of redefining it in each pass.
-   - Preserve the same acceptance behavior: if controls are not present, skip safely; do not rewrite unrelated checkboxes.
+These follow the exact same pattern used for `pr_li_encumbranceOfRecord_<N>` (lines 2518–2522) so the existing anti-fallback shield for `pr_li_*` (memory: "RE851D Lien Questionnaire Glyph Resolution") covers them automatically.
 
-3. **Keep owner-occupied and multiple-property fixes, but remove duplicated scans**
-   - Reuse the shared visible-text projection and property ranges.
-   - Avoid repeated text projection rebuilds after every skipped or no-op pass.
-   - Only mark XML dirty when actual replacements are queued.
+### 2. Post-render YES/NO safety pass (label-anchored)
+Add a new pass next to the existing four post-render passes (remain-unpaid, cure-delinquency, 60-day, encumbrances-of-record around line 5740). Reuse the same helpers (`__xmlGet`, `__xmlGetLower`, `__getVisProj`, `findControlNear`, `rewriteSdtChecked`, `glyphRunRe`, `sdtCheckboxRe`).
 
-4. **Optimize RE851D `_N` preprocessing**
-   - Build `Set`s for `RE851D_INDEXED_TAGS`, `PART1_TAGS`, and `PART2_TAGS` once outside hot offset checks.
-   - Replace repeated `new Set(...)` construction in `resolveRegion()` with reused sets.
-   - Keep the region-aware `_N` replacement behavior intact.
+Anchor regex (case-insensitive, whitespace-tolerant): match `additional remaining` AND `set forth in an attachment` within the same property region. Then locate the nearest YES and NO label runs and toggle their controls based on `attachmentYes[propertyK]`.
 
-5. **Skip label-based fallback for RE851D when explicit merge tags are used**
-   - RE851D output is driven by explicit merge tags plus targeted RE851D safety passes, not the generic label map.
-   - Use an empty/effectively disabled label map for RE851D in `processDocx` unless the template has no merge markers.
-   - This removes a full `labelReplace` scan over the 3.9MB XML while preserving targeted RE851D checkbox corrections.
+This guarantees the checkbox visibly flips even on templates where the author used static glyphs instead of merge tags — same approach already proven for the four other questionnaire YES/NO pairs.
 
-6. **Add RE851D performance proof logs**
-   - Log concise timings for:
-     - `_N` preprocessing
-     - `processDocx`
-     - combined post-render pass
-     - final flush/upload prep
-   - Keep logs minimal so they help confirm the CPU reduction without adding meaningful overhead.
+### 3. Append addendum at end of document
+After all post-render passes complete and immediately before the final flush/upload prep (after the encumbrances-of-record pass closes around line 5896), add a single addendum builder pass on `word/document.xml`:
 
-## Validation
+1. Skip entirely when no property has `attachmentYes === true` (no document mutation).
+2. Build addendum XML in-memory using:
+   - A page-break paragraph (`<w:p><w:r><w:br w:type="page"/></w:r></w:p>`).
+   - A heading paragraph: "Addendum — Additional Encumbrances".
+   - For each property `N` where `attachmentYes[N]` is true:
+     - Sub-heading "Property N".
+     - If `remCount > 2`: sub-section "Additional Remaining Encumbrances", then for liens 3..remCount emit the same fields the main document already shows for remaining liens (Lender, Original Balance, Current Balance, Recording Info, etc.) read directly from `fieldValues` using the existing `pr_li_rem_<field>_<N>_<S>` keys already published by the per-slot section.
+     - If `antCount > 2`: sub-section "Additional Anticipated Encumbrances", then for liens 3..antCount emit the same fields using `pr_li_ant_<field>_<N>_<S>` keys.
+3. Insert the addendum block immediately before the final `</w:body>` (or before `<w:sectPr>` inside body if present, to preserve final section properties).
+4. Run formatted text through the same XML-escape helper used elsewhere in the file (no raw user values injected).
 
-After implementation, regenerate RE851D for deal `DL-2026-0235` and confirm logs show:
+Paragraph styling reuses the document's `Normal` style + bold runs only — no new styles, no new relationships, no images, no tables added (keeps it format-safe and Word-compatible without touching numbering/styles parts).
 
-- No `CPU Time exceeded`.
-- `RE851D Part1 rollup` values still publish correctly:
-  - P1 remaining `324.00`, expected `0.00`, total `324.00`
-  - P2 remaining `23423.00`, expected `48234.00`, total `71657.00`
-  - P3 remaining `0.00`, expected `54567.00`, total `54567.00`
-  - P4 remaining `0.00`, expected `0.00`, total `0.00`
-- Generated DOCX uploads successfully.
-- Other document templates remain unaffected because all changes are gated to RE851D.
+### 4. Logging
+Add concise `[generate-document] RE851D additional-encumbrance` log lines:
+- Per property: `PROP#K rem=X ant=Y → YES/NO`
+- Addendum: `appended K addendum sections (R remaining-overflow, A anticipated-overflow)`
+Mirrors existing log style.
+
+## Validation (after implementation)
+
+For deal `DL-2026-0235`:
+- Properties with ≤2 remaining and ≤2 anticipated liens → NO checked, no addendum appended.
+- Property with 3+ remaining or 3+ anticipated liens → YES checked, only liens 1–2 in main body (unchanged), addendum at end lists liens 3+.
+- Other templates (RE851A, RE885, etc.) unaffected — all changes gated by the existing `isTemplate851D` guard.
+- No raw `pr_li_*` keys leak into output (existing anti-fallback shield + addendum builder reads resolved values only).
+
+## Constraints honored
+- No DB / field_dictionary / template / RLS changes.
+- No UI changes.
+- No new dependencies.
+- Existing main-document rendering for liens 1–2 unchanged (publisher still emits all `_S` slots; addendum just additionally renders 3+).
+- Single source of truth for YES/NO state: `attachmentYes` map computed once, used by both the merge-tag publisher and the post-render safety pass.
