@@ -2591,6 +2591,10 @@ async function generateSingleDocument(
           // flag, since the UI saves all four condition flags whenever the user
           // changes the dropdown and a stale `anticipated=true` can otherwise
           // mis-route an existing-remain/paydown lien into the Expected column.
+          const hasAmt = (raw: unknown) => {
+            const n = parseFloat(String(raw ?? "").replace(/[^0-9.\-]/g, ""));
+            return Number.isFinite(n) && n !== 0;
+          };
           const classifyLocal = (lp: string): "anticipated" | "remain" | "paydown" | "payoff" | "none" => {
             const get = (sfx: string) => fieldValues.get(`${lp}.${sfx}`)?.rawValue;
             const lbl = normLblLocal(get("condition"));
@@ -2603,7 +2607,15 @@ async function generateSingleDocument(
             if (truthy2(get("existing_payoff")) || truthy2(get("existingPayoff"))) return "payoff";
             if (truthy2(get("existing_paydown")) || truthy2(get("existingPaydown"))) return "paydown";
             if (truthy2(get("existing_remain")) || truthy2(get("existingRemain"))) return "remain";
-            if (truthy2(get("anticipated"))) return "anticipated";
+            if (truthy2(get("anticipated"))) {
+              // Trust anticipated only when it is the dominant signal: original_balance
+              // (or anticipated_amount) populated, OR no remain/paydown amounts present.
+              const hasOrig = hasAmt(get("original_balance")) || hasAmt(get("originalBalance")) || hasAmt(get("anticipated_amount")) || hasAmt(get("anticipatedAmount"));
+              const hasRemain = hasAmt(get("current_balance")) || hasAmt(get("currentBalance")) || hasAmt(get("existing_paydown_amount")) || hasAmt(get("existingPaydownAmount"));
+              if (hasOrig) return "anticipated";
+              if (hasRemain) return "remain"; // stale anticipated; recover via remain bucket
+              return "anticipated";
+            }
             const antLbl = normLblLocal(get("anticipated"));
             if (antLbl === "anticipated" || antLbl === "this loan" || antLbl === "other") return "anticipated";
             return "none";
