@@ -992,26 +992,18 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
               <div className="pt-2 space-y-1">
                 <div className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={form['agreement_on_file_date'] || ''}
+                    onChange={(e) => set('agreement_on_file_date', e.target.value)}
+                    className="h-7 text-xs w-[140px]"
+                  />
                   <Checkbox
                     checked={form['agreement_on_file'] === 'true'}
                     onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
                   />
                   <Label className="text-xs">Agreement on File</Label>
-                  <Input
-                    type="date"
-                    value={form['agreement_on_file_date'] || ''}
-                    onChange={(e) => set('agreement_on_file_date', e.target.value)}
-                    className="h-7 text-xs flex-1"
-                  />
                 </div>
-              </div>
-              <div className="pt-2 space-y-1">
-                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
-                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
-                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
-                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
-                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
-                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
               </div>
             </div>
 
