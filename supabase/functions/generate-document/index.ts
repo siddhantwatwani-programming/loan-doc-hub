@@ -2882,6 +2882,22 @@ async function generateSingleDocument(
               fieldValues.set(`pr_p_totalSeniorPlusLoan_${pi}`, { rawValue: totPlusLoan, dataType: "currency" });
               fieldValues.set(`ln_p_totalWithLoan_${pi}`, { rawValue: totPlusLoan, dataType: "currency" });
             }
+            // Per-property zero-fill for slot-1 aliases so blank cells render
+            // "0.00" when no qualifying lien exists for the column. Only set
+            // when the per-slot publisher above did NOT already write a value.
+            const remSlot1 = `pr_li_rem_principalBalance_${pi}_1`;
+            if (!fieldValues.has(remSlot1)) {
+              fieldValues.set(remSlot1, { rawValue: "0.00", dataType: "currency" });
+              fieldValues.set(`pr_li_rem_principalBalance_${pi}`, { rawValue: "0.00", dataType: "currency" });
+            }
+            const antSlot1 = `pr_li_ant_originalAmount_${pi}_1`;
+            if (!fieldValues.has(antSlot1)) {
+              fieldValues.set(antSlot1, { rawValue: "0.00", dataType: "currency" });
+              fieldValues.set(`pr_li_ant_originalAmount_${pi}`, { rawValue: "0.00", dataType: "currency" });
+            }
+            // Additional Part-1 column aliases some template variants use.
+            fieldValues.set(`pr_p_remainingEncumbrance_${pi}`, remVal);
+            fieldValues.set(`pr_p_expectedEncumbrance_${pi}`, expVal);
             console.log(
               `[generate-document] RE851D Part1 rollup property${pi}: liens=[${matchedLog[pi].join(",")}], ` +
               `remaining=${rem.toFixed(2)}, expected=${exp.toFixed(2)}, total=${tot.toFixed(2)}`
