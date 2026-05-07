@@ -1,47 +1,68 @@
-## RE851D – Part 1 Loan-to-Value: strict Remaining vs Expected mapping
+I did a deep read-only analysis of the current RE851D generation path and the saved deal data for DL-2026-0248.
 
-### What I found
+Key finding: the document-generation code already has a partial late-pass rollup, but the condition resolution and saved data interpretation are still not strict enough. In the current saved data, the condition flags can be stale/inconsistent (for example `anticipated=true` can remain even when the UI intended a remaining/paydown state), so the generator can still route a lien into the wrong bucket. Also, several related RE851D paths still classify by a broad `anticipated` truthy check instead of the exact Condition business rules.
 
-Data for `DL-2026-0248`:
-- `lien1` → property1, `existing_paydown=true`, `anticipated=false`, `current_balance=23,423`, `original_balance` not set
-- `lien2` → property2, `anticipated=true`, `original_balance=567`, `current_balance=2,342`, `new_remaining_balance=34`
+Plan:
 
-The authoritative late pass at `supabase/functions/generate-document/index.ts` lines 2722-2881 already implements the spec for `ln_p_remainingEncumbrance_N` / `ln_p_expectedEncumbrance_N` / `ln_p_totalEncumbrance_N`. So the per-property classification logic is correct in principle.
+1. Add one RE851D-only canonical lien classifier in `supabase/functions/generate-document/index.ts`
+   - Scope it only to RE851D generation.
+   - Read the effective condition in strict priority order:
+     1. Explicit `condition` dropdown value if present.
+     2. Mutually-exclusive boolean flags, with payoff excluded, then remain/paydown, then anticipated.
+     3. If legacy data has conflicting flags, prefer the specific existing-remain/paydown/payoff flags over a stale `anticipated=true` flag.
+   - Normalize these values:
+     - `Anticipated` => expected bucket.
+     - `Will Remain`, `Existing - Remain` => remaining bucket.
+     - `Remain - Paydown`, `Existing - Paydown` => remaining bucket.
+     - `Existing - Payoff` => excluded.
+     - unknown/blank => excluded.
 
-The bug is downstream:
-1. The render shows `34` (which equals `lien2.new_remaining_balance`) in Property 2's Remaining column — meaning the template cell isn't reading `ln_p_remainingEncumbrance_2`, it's reading a legacy aggregated alias (e.g. `pr_li_lienCurrenBalanc2` aggregated across all liens, joined by newlines via the multi-lien collector at lines 2284-2360, or a `_N` slot tag under `pr_li_rem_principalBalance_N` published at lines 2572-2680 which routes by `lien.anticipated` only — not by Remain/Paydown vs Payoff).
-2. `pr_li_rem_*` / `pr_li_ant_*` slot publishers (lines 2589-2603) split only on `anticipated`, with no exclusion of `Existing - Payoff` and no Paydown/Remain gating. A paydown lien is correctly bucketed as "rem", but a `payoff` lien would still be included.
-3. Expected column shows blank for Property 2 even though lien2 has `original_balance=567` — likely because the template uses a per-slot tag (`pr_li_ant_originalAmount_2_1`) which IS published, but the cell may instead be bound to `ln_p_expectedEncumbrance_2` and a competing pass overwrites or fails to set it. The shield list at line 1516 includes `ln_p_expectedEncumbrance` but per-`_N` shielding may zero-out before the late rollup runs.
+2. Replace the two local RE851D classifiers with this single classifier
+   - Update the per-slot `pr_li_rem_*` / `pr_li_ant_*` publisher.
+   - Update the authoritative Part 1 / Part 2 rollup.
+   - This prevents the same lien from appearing in both Remaining and Expected and avoids drift between row-level and total-level logic.
 
-### Fix (edit `supabase/functions/generate-document/index.ts` only)
+3. Enforce strict source fields for totals
+   - Remaining column: sum only `current_balance` / `currentBalance` for remain/paydown liens.
+   - Expected column: sum only `original_balance` / `originalBalance` for anticipated liens.
+   - Do not use `new_remaining_balance`, `anticipated_amount`, `existing_payoff_amount`, or `anticipated balance` fields for these Part 1 totals.
+   - Total column: Remaining + Expected.
 
-**A. Make late rollup the absolute last writer for Part 1 totals**
-- Move/duplicate the rollup block (lines 2722-2881) so it runs AFTER the anti-fallback shield (line 1498) and AFTER the per-slot `pr_li_rem_*` / `pr_li_ant_*` publisher (line 2572). Already late, but ensure it always overwrites with `fieldValues.set(...)` for every property index discovered (it does — keep).
-- Re-emit additional aliases the template may use: `pr_p_remainingEncumbrance_N`, `pr_p_expectedEncumbrance_N`, `pr_p_totalSenior_N` (already present), and per-slot `pr_li_rem_principalBalance_N_1` / `pr_li_ant_originalAmount_N_1` ONLY when classification matches, else explicit `"0.00"`.
+4. Enforce property-level isolation
+   - Resolve lien property only to its own `propertyN` match, with existing address fallback retained only where it maps unambiguously to one property.
+   - Do not allow unassigned or unmatched liens to fall into any property bucket.
+   - Keep the current no-cross-bleed behavior.
 
-**B. Tighten per-slot bucket split (lines 2589-2603)**
-- Replace the simple `anticipated`-only split with the same `classify()` used in the rollup:
-  - `payoff` → skip entirely (no row published)
-  - `anticipated` → `pr_li_ant` bucket
-  - `remain` / `paydown` → `pr_li_rem` bucket
-- This guarantees a Payoff lien never appears in either column and Remain/Paydown never leak into Anticipated.
+5. Publish zeroes for all known RE851D property rows
+   - For every property present in CSR, publish:
+     - `ln_p_remainingEncumbrance_N = 0.00` when no remaining lien qualifies.
+     - `ln_p_expectedEncumbrance_N = 0.00` when no anticipated lien qualifies.
+     - `ln_p_totalEncumbrance_N = 0.00` when no lien qualifies.
+   - Also keep existing compatibility aliases such as `pr_p_remainingSenior_N`, `pr_p_expectedSenior_N`, `pr_p_totalSenior_N`, etc.
 
-**C. Field selection inside slots (line 2636-2637)**
-- For `pr_li_rem_*` rows, `principalBalance` must come ONLY from `current_balance` (drop `new_remaining_balance` fallback that produced the `34` artifact).
-- For `pr_li_ant_*` rows, `originalAmount` from `original_balance` only (already correct).
+6. Keep existing UI, schema, flow, styling, and unrelated mappings unchanged
+   - No database schema changes.
+   - No UI layout changes.
+   - No template upload/generation flow changes.
+   - No changes to unrelated document sections or unrelated checkbox logic.
 
-**D. Zero-fill for empty rows**
-- After the rollup, for every property index, if no `pr_li_rem_principalBalance_N_*` slot was published, publish `pr_li_rem_principalBalance_N_1 = "0.00"`. Same for `pr_li_ant_originalAmount_N_1`. Prevents blank cells.
+7. Add targeted logging for validation
+   - Log each lien as: lien number, resolved property, raw condition flags, final bucket, amount source, amount used.
+   - Log final per-property Remaining / Expected / Total.
+   - This will make DL-2026-0248 easy to validate from function logs after regeneration.
 
-**E. Logging**
-- Per-property log line: `prop=N cond_routed=[lien1:paydown→rem=23423, lien2:anticipated→exp=567] remaining=X expected=Y total=Z`.
+Expected result for the case you described:
 
-### Out of scope (will not touch)
-- Template `.docx`, `field_dictionary`, `template_field_maps`, RLS, UI/CSR forms, schema, addendum logic, encumbrance-of-record passes, other document types.
+```text
+Property 1: Condition Anticipated
+Remaining = 0.00
+Expected  = 567.00
+Total     = 567.00
 
-### Acceptance (DL-2026-0248)
-- Property 1: Remaining = `23,423.00`, Expected = `0.00`, Total = `23,423.00`
-- Property 2: Remaining = `0.00`, Expected = `567.00`, Total = `567.00`
-- No `34.00` anywhere in Part 1 columns
-- No blanks; all numeric cells render
-- No cross-property bleed; Existing-Payoff liens excluded from both columns
+Property 2: Condition Remain - Paydown
+Remaining = 23423.00
+Expected  = 0.00
+Total     = 23423.00
+```
+
+After approval, I will implement only the RE851D document-generation changes above in `supabase/functions/generate-document/index.ts`.
