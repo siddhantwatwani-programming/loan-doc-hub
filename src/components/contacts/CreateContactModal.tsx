@@ -439,9 +439,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        contactType === 'lender' ? "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" : "max-w-4xl max-h-[85vh] overflow-y-auto"
+        contactType === 'lender' || contactType === 'borrower'
+          ? "max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
+          : "max-w-4xl max-h-[85vh] overflow-y-auto"
       )}>
-        <DialogHeader className={contactType === 'lender' ? "shrink-0" : undefined}>
+        <DialogHeader className={contactType === 'lender' || contactType === 'borrower' ? "shrink-0" : undefined}>
           <DialogTitle>Create New {typeLabel}</DialogTitle>
         </DialogHeader>
 
@@ -926,6 +928,8 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
         )}
 
         {contactType === 'borrower' && (
+          <>
+          <div className="flex-1 overflow-y-auto min-h-0 sleek-scrollbar">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-0">
             {/* Column 1: Borrower Details */}
             <div className="space-y-1.5">
@@ -1006,17 +1010,17 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
 
               <div className="pt-2 space-y-1">
                 <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={form['agreement_on_file'] === 'true'}
+                    onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
+                  />
+                  <Label className="text-xs">Agreement on File</Label>
                   <Input
                     type="date"
                     value={form['agreement_on_file_date'] || ''}
                     onChange={(e) => set('agreement_on_file_date', e.target.value)}
                     className="h-7 text-xs w-[140px]"
                   />
-                  <Checkbox
-                    checked={form['agreement_on_file'] === 'true'}
-                    onCheckedChange={(checked) => set('agreement_on_file', String(!!checked))}
-                  />
-                  <Label className="text-xs">Agreement on File</Label>
                 </div>
               </div>
             </div>
@@ -1049,14 +1053,6 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                 <ZipInput value={form['address.zip'] || ''} onValueChange={(val) => { set('address.zip', val); clrBErr('address.zip'); }} className="h-7 text-xs" />
               </div>
               {borrowerErrors['address.zip'] && <p className="text-[10px] text-destructive ml-[108px]">{borrowerErrors['address.zip']}</p>}
-              <div className="pt-2 space-y-1">
-                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
-                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
-                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
-                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
-                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
-                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
-              </div>
               <div className="pt-2 space-y-1.5">
                 <h3 className="font-semibold text-xs text-foreground border-b border-border pb-1 mb-1">Mailing Address</h3>
                 {renderCheckbox('Same as Primary', 'mailing_same_as_primary')}
@@ -1081,6 +1077,14 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
                   <Label className="w-[100px] shrink-0 text-xs">ZIP</Label>
                   <ZipInput value={form['mailing.zip'] || ''} onValueChange={(val) => set('mailing.zip', val)} disabled={isSameAsPrimary} className="h-7 text-xs" />
                 </div>
+              </div>
+              <div className="pt-2 space-y-1">
+                <h4 className="font-semibold text-xs text-foreground pb-1">Send</h4>
+                {renderCheckbox('Payment Confirmation', 'send_pref.payment_confirmation')}
+                {renderCheckbox('Coupon Book', 'send_pref.coupon_book')}
+                {renderCheckbox('Payment Statement', 'send_pref.payment_statement')}
+                {renderCheckbox('Late Notice', 'send_pref.late_notice')}
+                {renderCheckbox('Maturity Notice', 'send_pref.maturity_notice')}
               </div>
             </div>
 
@@ -1141,9 +1145,11 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({
               </div>
             </div>
           </div>
+          </div>
+          </>
         )}
 
-        <DialogFooter className={contactType === 'lender' ? "shrink-0" : undefined}>
+        <DialogFooter className={contactType === 'lender' || contactType === 'borrower' ? "shrink-0" : undefined}>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={!hasAtLeastOneFieldFilled(form, ['mailing_same_as_primary', 'preferred.home', 'preferred.home2', 'preferred.work', 'preferred.cell', 'preferred.fax', 'delivery.print', 'delivery.email', 'delivery.sms', 'delivery_print', 'delivery_email', 'delivery_sms', 'agreement_on_file', 'agreement_on_file_date', 'send_pref.payment_notification', 'send_pref.late_notice', 'send_pref.borrower_statement', 'send_pref.maturity_notice', 'send_pref.payment_confirmation', 'send_pref.coupon_book', 'send_pref.payment_statement']) || !hasValidContactEmails(form)}>Create</Button>
         </DialogFooter>
