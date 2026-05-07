@@ -4543,34 +4543,17 @@ async function generateSingleDocument(
           // headings when the gray bar is absent. Cap at 5 properties.
           const propAnchors: Array<{ k: number; orig: number }> = [];
           {
-            const map: number[] = [];
-            const buf: string[] = [];
-            let i = 0;
-            while (i < xml.length) {
-              if (xml[i] === "<") {
-                const e = xml.indexOf(">", i);
-                if (e === -1) break;
-                const prev = buf.length ? buf[buf.length - 1] : "";
-                if (prev !== " ") { buf.push(" "); map.push(i); }
-                i = e + 1; continue;
-              }
-              buf.push(xml[i]); map.push(i); i++;
-            }
-            const txt = buf.join("");
-            // Primary: PROPERTY INFORMATION headings.
-            const reInfo = /\bPROPERTY\s+INFORMATION\b/gi;
-            let m: RegExpExecArray | null;
-            const infoHits: number[] = [];
-            while ((m = reInfo.exec(txt)) !== null) {
-              infoHits.push(map[m.index] ?? 0);
-              if (infoHits.length >= 5) break;
-            }
-            if (infoHits.length > 0) {
-              infoHits.forEach((orig, i) => propAnchors.push({ k: i + 1, orig }));
+            const __vp = __getVisProj(filename, xml);
+            const txt = __vp.txt;
+            const map = __vp.map;
+            // Primary: PROPERTY INFORMATION headings (already cached on proj).
+            if (__vp.propAnchorsRaw.length > 0) {
+              __vp.propAnchorsRaw.forEach((orig, i) => propAnchors.push({ k: i + 1, orig }));
             } else {
               // Fallback: PROPERTY #K detail headings.
               const rePk = /\bPROPERTY\s*#\s*([1-5])\b/gi;
               const seen = new Set<number>();
+              let m: RegExpExecArray | null;
               while ((m = rePk.exec(txt)) !== null) {
                 const k = parseInt(m[1], 10);
                 if (k >= 1 && k <= 5 && !seen.has(k)) {
