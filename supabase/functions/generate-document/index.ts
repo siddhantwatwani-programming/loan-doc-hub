@@ -5941,6 +5941,285 @@ async function generateSingleDocument(
         );
       }
     }
+
+    // ── RE851D Additional Encumbrances Attachment: post-render YES/NO + addendum ──
+    // For each property, if the published pr_li_additionalEncumbrance_<N> flag is
+    // YES (count of remaining liens > 2 OR anticipated liens > 2), force the
+    // matching "set forth in an attachment" YES checkbox (NO if false), then
+    // append an Addendum section at the end of word/document.xml listing the
+    // overflow liens (3rd onward) split by Remaining vs Anticipated.
+    if (/851d/i.test(template.name || "")) {
+      try {
+        // Re-derive per-property remaining/anticipated lien lists from fieldValues.
+        const lienPrefixesAEA = new Set<string>();
+        for (const k of fieldValues.keys()) {
+          const m = k.match(/^(lien\d+)\./);
+          if (m) lienPrefixesAEA.add(m[1]);
+        }
+        const orderedLiensAEA = [...lienPrefixesAEA].sort((a, b) =>
+          parseInt(a.replace("lien", ""), 10) - parseInt(b.replace("lien", ""), 10)
+        );
+        const remByProp: Record<number, string[]> = {};
+        const antByProp: Record<number, string[]> = {};
+        for (const lp of orderedLiensAEA) {
+          const propRaw = String(fieldValues.get(`${lp}.property`)?.rawValue ?? "").trim();
+          const pm = propRaw.match(/^property(\d+)$/);
+          if (!pm) continue;
+          const pIdx = parseInt(pm[1], 10);
+          const antRaw = String(fieldValues.get(`${lp}.anticipated`)?.rawValue ?? "").trim().toLowerCase();
+          const isAnt = antRaw !== "" && antRaw !== "no" && antRaw !== "false" && antRaw !== "0" && antRaw !== "off";
+          const bucket = isAnt ? antByProp : remByProp;
+          if (!bucket[pIdx]) bucket[pIdx] = [];
+          bucket[pIdx].push(lp);
+        }
+        const yesPropIdx = new Set<number>();
+        for (const pIdx of new Set<number>([
+          ...Object.keys(remByProp).map(s => parseInt(s, 10)),
+          ...Object.keys(antByProp).map(s => parseInt(s, 10)),
+        ])) {
+          const remN = remByProp[pIdx]?.length ?? 0;
+          const antN = antByProp[pIdx]?.length ?? 0;
+          if (remN > 2 || antN > 2) yesPropIdx.add(pIdx);
+        }
+
+        const unzipped = __passUnzip(processedDocx);
+        const rezip: fflate.Zippable = {};
+        let didMutate = false;
+
+        const sdtCheckboxReAEA = /<w:sdt\b[^>]*>[\s\S]*?<w14:checkbox\b[\s\S]*?<\/w:sdt>/g;
+        const glyphRunReAEA = /(<w:r\b[^>]*>(?:\s*<w:rPr>[\s\S]*?<\/w:rPr>)?\s*<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>\s*<\/w:r>)/g;
+        const yesLabelReSrc = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:Y\s*E\s*S|Yes)\b[^<]*?<\/w:t>/gi;
+        const noLabelReSrc  = /<w:t(?:\s[^>]*)?>[^<]*?\b(?:N\s*O|No)\b[^<]*?<\/w:t>/gi;
+
+        const rewriteSdtCheckedAEA = (block: string, checked: boolean): string => {
+          const val = checked ? "1" : "0";
+          const glyph = checked ? "\u2611" : "\u2610";
+          let next = block.replace(/(<w14:checked\b[^/]*?w14:val=")[01]("\s*\/?>)/, `$1${val}$2`);
+          next = next.replace(/(<w:sdtContent\b[^>]*>[\s\S]*?<w:t(?:\s[^>]*)?>)([☐☑☒])(<\/w:t>)/, `$1${glyph}$3`);
+          return next;
+        };
+
+        for (const [filename, bytes] of Object.entries(unzipped)) {
+          const isContent =
+            filename === "word/document.xml" ||
+            filename.startsWith("word/header") ||
+            filename.startsWith("word/footer");
+          if (!isContent) {
+            rezip[filename] = [bytes, { level: 0 }];
+            continue;
+          }
+          let xml = __xmlGet(filename, bytes);
+          const xmlLowerAEA = __xmlGetLower(filename, xml);
+          const hasAnchor = xmlLowerAEA.indexOf("set forth in an attachment") !== -1;
+
+          // Build property regions (only used by Pass A)
+          const propAnchors: number[] = [...__getVisProj(filename, xml).propAnchorsRaw];
+          const propRanges: Array<{ k: number; start: number; end: number }> = [];
+          if (propAnchors.length === 0) {
+            propRanges.push({ k: 1, start: 0, end: xml.length });
+          } else {
+            for (let pi = 0; pi < propAnchors.length; pi++) {
+              propRanges.push({
+                k: pi + 1,
+                start: propAnchors[pi],
+                end: pi + 1 < propAnchors.length ? propAnchors[pi + 1] : xml.length,
+              });
+            }
+          }
+
+          type RewriteAEA = { start: number; end: number; replacement: string };
+          const rewrites: RewriteAEA[] = [];
+
+          const findControlNearAEA = (
+            labelStart: number, labelEnd: number, regionStart: number, regionEnd: number,
+          ): { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null => {
+            const maxBack = 2500;
+            const scanStart = Math.max(regionStart, labelStart - maxBack);
+            const before = xml.slice(scanStart, labelStart);
+            let last: { idx: number; end: number; kind: "sdt" | "glyph"; m: string[] } | null = null;
+            const sdtRe = new RegExp(sdtCheckboxReAEA.source, "g");
+            let sm: RegExpExecArray | null;
+            while ((sm = sdtRe.exec(before)) !== null) {
+              last = { idx: scanStart + sm.index, end: scanStart + sm.index + sm[0].length, kind: "sdt", m: [sm[0]] };
+            }
+            if (last) return last;
+            const gRe = new RegExp(glyphRunReAEA.source, "g");
+            let gm: RegExpExecArray | null;
+            while ((gm = gRe.exec(before)) !== null) {
+              last = { idx: scanStart + gm.index, end: scanStart + gm.index + gm[0].length, kind: "glyph", m: [gm[0], gm[1], gm[2], gm[3]] };
+            }
+            if (last) return last;
+            const fwdEnd = Math.min(regionEnd, labelEnd + 400);
+            const after = xml.slice(labelEnd, fwdEnd);
+            const sdtRe2 = new RegExp(sdtCheckboxReAEA.source, "g");
+            const sm2 = sdtRe2.exec(after);
+            if (sm2) return { idx: labelEnd + sm2.index, end: labelEnd + sm2.index + sm2[0].length, kind: "sdt", m: [sm2[0]] };
+            const gRe2 = new RegExp(glyphRunReAEA.source, "g");
+            const gm2 = gRe2.exec(after);
+            if (gm2) return { idx: labelEnd + gm2.index, end: labelEnd + gm2.index + gm2[0].length, kind: "glyph", m: [gm2[0], gm2[1], gm2[2], gm2[3]] };
+            return null;
+          };
+
+          // Pass A — YES/NO safety pass anchored on attachment phrase
+          if (hasAnchor) {
+            const anchorRe = /set\s*forth\s*in\s*an\s*attachment/gi;
+            let am: RegExpExecArray | null;
+            let scanned = 0;
+            while ((am = anchorRe.exec(xml)) !== null) {
+              scanned++;
+              const aStart = am.index;
+              const region = propRanges.find((p) => aStart >= p.start && aStart < p.end);
+              const propK = region ? region.k : 1;
+              const winStart = Math.max(region ? region.start : 0, aStart - 600);
+              const winEnd = Math.min(region ? region.end : xml.length, aStart + 1500);
+
+              const yRe = new RegExp(yesLabelReSrc.source, "gi");
+              const nRe = new RegExp(noLabelReSrc.source, "gi");
+              yRe.lastIndex = aStart;
+              nRe.lastIndex = aStart;
+              const yL = yRe.exec(xml);
+              const nL = nRe.exec(xml);
+              if (!yL || !nL) continue;
+              if (yL.index >= winEnd || nL.index >= winEnd) continue;
+
+              const yC = findControlNearAEA(yL.index, yL.index + yL[0].length, winStart, winEnd);
+              const nC = findControlNearAEA(nL.index, nL.index + nL[0].length, winStart, winEnd);
+              if (!yC || !nC || yC.idx === nC.idx) continue;
+
+              const isYes = yesPropIdx.has(propK);
+              const overlaps = (s: number, e: number) => rewrites.some((r) => s < r.end && e > r.start);
+              if (overlaps(yC.idx, yC.end) || overlaps(nC.idx, nC.end)) continue;
+
+              const yesReplacement = yC.kind === "sdt"
+                ? rewriteSdtCheckedAEA(yC.m[0], isYes)
+                : `${yC.m[1]}${isYes ? "\u2611" : "\u2610"}${yC.m[3]}`;
+              const noReplacement = nC.kind === "sdt"
+                ? rewriteSdtCheckedAEA(nC.m[0], !isYes)
+                : `${nC.m[1]}${!isYes ? "\u2611" : "\u2610"}${nC.m[3]}`;
+
+              rewrites.push({ start: yC.idx, end: yC.end, replacement: yesReplacement });
+              rewrites.push({ start: nC.idx, end: nC.end, replacement: noReplacement });
+              console.log(`[generate-document] RE851D additional-encumbrance PROP#${propK}: forced ${isYes ? "YES" : "NO"}`);
+            }
+            console.log(`[generate-document] RE851D additional-encumbrance: scanned ${scanned} anchor(s) in ${filename}`);
+          }
+
+          // Pass B — append addendum at end of word/document.xml
+          let addendumXml = "";
+          if (filename === "word/document.xml" && yesPropIdx.size > 0) {
+            const xmlEscA = (s: string) =>
+              String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const fmtCurrencyA = (raw: unknown): string => {
+              const n = parseFloat(String(raw ?? "").replace(/[^0-9.\-]/g, ""));
+              if (!Number.isFinite(n)) return String(raw ?? "");
+              return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+            };
+            const getLien = (lp: string, ...sfx: string[]): string => {
+              for (const s of sfx) {
+                const v = fieldValues.get(`${lp}.${s}`)?.rawValue;
+                if (v !== undefined && v !== null && String(v).trim() !== "") return String(v);
+              }
+              return "";
+            };
+            const para = (text: string, opts?: { bold?: boolean; size?: number }) => {
+              const sz = opts?.size ?? 22;
+              const b = opts?.bold ? "<w:b/><w:bCs/>" : "";
+              return `<w:p><w:pPr><w:spacing w:after="60"/></w:pPr><w:r><w:rPr>${b}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${xmlEscA(text)}</w:t></w:r></w:p>`;
+            };
+            const pageBreakPara = `<w:p><w:r><w:br w:type="page"/></w:r></w:p>`;
+
+            const renderLienLines = (lp: string): string => {
+              const beneficiary = getLien(lp, "lien_holder", "lienHolder", "holder", "beneficiary");
+              const priority    = getLien(lp, "lien_priority_now", "priority", "lien_priority_after");
+              const orig        = getLien(lp, "original_balance", "originalBalance");
+              const cur         = getLien(lp, "current_balance", "currentBalance", "new_remaining_balance");
+              const rate        = getLien(lp, "interest_rate", "intRate");
+              const pmt         = getLien(lp, "regular_payment", "regularPayment");
+              const mat         = getLien(lp, "maturity_date", "matDate");
+              const lines: string[] = [];
+              if (priority)    lines.push(`Priority: ${priority}`);
+              if (beneficiary) lines.push(`Beneficiary: ${beneficiary}`);
+              if (orig)        lines.push(`Original Amount: ${fmtCurrencyA(orig)}`);
+              if (cur)         lines.push(`Approximate Principal Balance: ${fmtCurrencyA(cur)}`);
+              if (pmt)         lines.push(`Monthly Payment: ${fmtCurrencyA(pmt)}`);
+              if (rate)        lines.push(`Interest Rate: ${rate}${/%\s*$/.test(rate) ? "" : "%"}`);
+              if (mat)         lines.push(`Maturity Date: ${mat}`);
+              if (lines.length === 0) return para("(no details)");
+              return lines.map(l => para(l)).join("");
+            };
+
+            const sections: string[] = [];
+            sections.push(pageBreakPara);
+            sections.push(para("Addendum — Additional Encumbrances", { bold: true, size: 28 }));
+            let totalRemOver = 0, totalAntOver = 0;
+            const sortedYes = [...yesPropIdx].sort((a, b) => a - b);
+            for (const pIdx of sortedYes) {
+              const remRows = remByProp[pIdx] ?? [];
+              const antRows = antByProp[pIdx] ?? [];
+              const remOver = remRows.slice(2);
+              const antOver = antRows.slice(2);
+              if (remOver.length === 0 && antOver.length === 0) continue;
+              const propAddr = String(fieldValues.get(`property${pIdx}.address`)?.rawValue ?? "").trim();
+              sections.push(para(`Property ${pIdx}${propAddr ? " — " + propAddr : ""}`, { bold: true, size: 24 }));
+              if (remOver.length > 0) {
+                sections.push(para("Additional Remaining Encumbrances", { bold: true, size: 22 }));
+                remOver.forEach((lp, i) => {
+                  sections.push(para(`Lien ${i + 3}`, { bold: true }));
+                  sections.push(renderLienLines(lp));
+                });
+                totalRemOver += remOver.length;
+              }
+              if (antOver.length > 0) {
+                sections.push(para("Additional Anticipated Encumbrances", { bold: true, size: 22 }));
+                antOver.forEach((lp, i) => {
+                  sections.push(para(`Lien ${i + 3}`, { bold: true }));
+                  sections.push(renderLienLines(lp));
+                });
+                totalAntOver += antOver.length;
+              }
+            }
+            if (sections.length > 2) {
+              addendumXml = sections.join("");
+              console.log(`[generate-document] RE851D addendum: appending ${sortedYes.length} property section(s) (rem-overflow=${totalRemOver}, ant-overflow=${totalAntOver})`);
+            }
+          }
+
+          // Apply rewrites (descending) then insert addendum before sectPr/body close.
+          if (rewrites.length > 0) {
+            rewrites.sort((a, b) => b.start - a.start);
+            for (const r of rewrites) xml = xml.slice(0, r.start) + r.replacement + xml.slice(r.end);
+          }
+          if (addendumXml) {
+            const bodyCloseIdx = xml.lastIndexOf("</w:body>");
+            if (bodyCloseIdx !== -1) {
+              const beforeClose = xml.slice(0, bodyCloseIdx);
+              const lastSectPrIdx = beforeClose.lastIndexOf("<w:sectPr");
+              const insertAt = lastSectPrIdx !== -1 && lastSectPrIdx > beforeClose.lastIndexOf("</w:tbl>")
+                ? lastSectPrIdx
+                : bodyCloseIdx;
+              xml = xml.slice(0, insertAt) + addendumXml + xml.slice(insertAt);
+            }
+          }
+
+          if (rewrites.length > 0 || addendumXml) {
+            rezip[filename] = [__xmlSet(filename, xml), { level: 0 }];
+            didMutate = true;
+          } else {
+            rezip[filename] = [bytes, { level: 0 }];
+          }
+        }
+
+        if (didMutate) {
+          processedDocx = __passZip(rezip);
+        }
+      } catch (aeaErr) {
+        console.error(
+          `[generate-document] RE851D additional-encumbrance pass failed (continuing):`,
+          aeaErr instanceof Error ? aeaErr.message : String(aeaErr)
+        );
+      }
+    }
+
     // The template's encumbrance grids contain only static label cells with no merge
     // tags in the value cells, so the existing in-render publishers (pr_li_rem_*_N_S /
     // pr_li_ant_*_N_S) write keys nothing references. This pass label-anchors each
