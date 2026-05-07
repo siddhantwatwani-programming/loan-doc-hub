@@ -5847,13 +5847,14 @@ async function generateSingleDocument(
             continue;
           }
 
-          // Visible-text projection (shared cache). The encumbrance pass also
-          // needs a raw→visible reverse map; build that locally only here.
+          // Visible-text projection (shared cache). The previously-built
+          // raw→visible reverse `rawToVis` Map and computed `visStart` were
+          // never actually consumed downstream and allocated an O(N) entry
+          // per visible character — on a ~4 MB document this was a major
+          // memory sink that helped trip the edge function's memory limit.
           const __vpE = __getVisProj(filename, xml);
           const txt = __vpE.txt;
           const map = __vpE.map;
-          const rawToVis = new Map<number, number>();
-          for (let v = 0; v < map.length; v++) rawToVis.set(map[v], v);
 
           // Find PROPERTY anchors via "PROPERTY INFORMATION" headings (cached).
           const propAnchorsRaw: number[] = [...__vpE.propAnchorsRaw];
