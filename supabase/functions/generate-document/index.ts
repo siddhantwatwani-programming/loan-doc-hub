@@ -3539,65 +3539,128 @@ async function generateSingleDocument(
           partB: [number, number] | null;
           props: Array<{ k: number; range: [number, number] }>;
         } => {
-          // Build stripped text + offset map (skip <...> tag content).
-          // CRITICAL: insert a synthetic space wherever a tag boundary is
-          // consumed so that text like "PROPERTY</w:t>...<w:t>INFORMATION"
-          // does not collapse to "PROPERTYINFORMATION" (which would defeat
-          // every anchor regex below). The synthetic space is mapped back
-          // to the original offset of the '<' so downstream offset math
-          // remains stable.
-          const strippedChars: string[] = [];
-          const map: number[] = []; // strippedChars[i] originated at map[i] in xml
-          let i = 0;
-          while (i < xml.length) {
-            const ch = xml[i];
-            if (ch === "<") {
-              const tagStart = i;
-              const end = xml.indexOf(">", i);
-              if (end === -1) break;
-              // Insert one synthetic space per tag-skip if the previous
-              // stripped char wasn't already whitespace. Mapped to the
-              // tag's '<' offset so collapsedToOriginal lands at a real
-              // boundary in the source XML.
-              const prev = strippedChars.length > 0 ? strippedChars[strippedChars.length - 1] : "";
-              if (prev !== " " && prev !== "\n" && prev !== "\t" && prev !== "\r" && prev !== "") {
-                strippedChars.push(" ");
-                map.push(tagStart);
-              }
-              i = end + 1;
-              continue;
-            }
-            strippedChars.push(ch);
-            map.push(i);
-            i++;
-          }
-          const stripped = strippedChars.join("");
-          const collapsed = stripped.replace(/\s+/g, " ");
-          // Build collapsed -> stripped index map (1:1 except runs of ws collapse to 1 space).
-          const collapsedToStripped: number[] = [];
-          {
-            let lastWasWs = false;
-            for (let j = 0; j < stripped.length; j++) {
-              const c = stripped[j];
-              const isWs = /\s/.test(c);
-              if (isWs) {
-                if (!lastWasWs) collapsedToStripped.push(j);
-                lastWasWs = true;
-              } else {
-                collapsedToStripped.push(j);
-                lastWasWs = false;
-              }
-            }
-          }
-          const strippedToOriginal = (sIdx: number): number => {
-            if (sIdx < 0) return 0;
-            if (sIdx >= map.length) return xml.length;
-            return map[sIdx];
+          // Build stripped+collapsed text via BULK segment slicing instead of
+          // a per-character walk. The previous implementation allocated two
+          // ~4M-entry arrays (strippedChars + map) and a third ~4M-entry
+          // collapsedToStripped array on a 4 MB document.xml — the dominant
+          // CPU+heap sink that pushed RE851D over the edge function CPU
+          // limit. The new path uses an Int32Array segment table and emits
+          // one entry per text run (~thousands, not millions).
+          //
+          // CRITICAL: a synthetic single space replaces every tag boundary
+          // so "PROPERTY</w:t>...<w:t>INFORMATION" still anchors via the
+          // anchor regexes below. The synthetic space is mapped back to the
+          // '<' offset so collapsedToOriginal lands at a real XML boundary.
+          //
+          // Each segment carries: collapsedStart (its starting collapsed-text
+          // index), xmlStart (its starting xml offset), and segLen (length in
+          // collapsed text). Synthetic-space segments use segLen=1 with a
+          // sentinel value of 0 in xmlLen (segments are pure text otherwise).
+          const segCap = 4096;
+          let segN = 0;
+          let collapsedCap = 4096;
+          let collapsedParts: string[] = [];
+          let cStart = new Int32Array(segCap);
+          let xStart = new Int32Array(segCap);
+          let sLen = new Int32Array(segCap);
+          const growSeg = () => {
+            const newCap = cStart.length * 2;
+            const a = new Int32Array(newCap); a.set(cStart); cStart = a;
+            const b = new Int32Array(newCap); b.set(xStart); xStart = b;
+            const c = new Int32Array(newCap); c.set(sLen); sLen = c;
           };
+          let collapsedPos = 0;
+          let lastEmittedWasSpace = true; // suppress leading spaces in collapsed
+          const emitText = (xmlOff: number, text: string) => {
+            // Collapse internal whitespace runs to a single space and split
+            // around them so each emitted segment is either pure non-ws text
+            // or a single synthetic space. This keeps offset math exact.
+            let i2 = 0;
+            const len = text.length;
+            while (i2 < len) {
+              const ch = text.charCodeAt(i2);
+              const isWs = ch === 32 || ch === 9 || ch === 10 || ch === 13;
+              if (isWs) {
+                let j = i2 + 1;
+                while (j < len) {
+                  const c2 = text.charCodeAt(j);
+                  if (!(c2 === 32 || c2 === 9 || c2 === 10 || c2 === 13)) break;
+                  j++;
+                }
+                if (!lastEmittedWasSpace) {
+                  if (segN >= cStart.length) growSeg();
+                  cStart[segN] = collapsedPos;
+                  xStart[segN] = xmlOff + i2;
+                  sLen[segN] = 1;
+                  segN++;
+                  collapsedParts.push(" ");
+                  collapsedPos += 1;
+                  lastEmittedWasSpace = true;
+                }
+                i2 = j;
+                continue;
+              }
+              // run of non-ws
+              let j = i2 + 1;
+              while (j < len) {
+                const c2 = text.charCodeAt(j);
+                if (c2 === 32 || c2 === 9 || c2 === 10 || c2 === 13) break;
+                j++;
+              }
+              const part = text.substring(i2, j);
+              if (segN >= cStart.length) growSeg();
+              cStart[segN] = collapsedPos;
+              xStart[segN] = xmlOff + i2;
+              sLen[segN] = part.length;
+              segN++;
+              collapsedParts.push(part);
+              collapsedPos += part.length;
+              lastEmittedWasSpace = false;
+              i2 = j;
+            }
+          };
+          // Walk xml splitting on tags via indexOf (no per-char loop).
+          {
+            let p = 0;
+            const xlen = xml.length;
+            while (p < xlen) {
+              const lt = xml.indexOf("<", p);
+              if (lt === -1) {
+                if (p < xlen) emitText(p, xml.substring(p, xlen));
+                break;
+              }
+              if (lt > p) emitText(p, xml.substring(p, lt));
+              // Synthetic space for tag boundary.
+              if (!lastEmittedWasSpace) {
+                if (segN >= cStart.length) growSeg();
+                cStart[segN] = collapsedPos;
+                xStart[segN] = lt;
+                sLen[segN] = 1;
+                segN++;
+                collapsedParts.push(" ");
+                collapsedPos += 1;
+                lastEmittedWasSpace = true;
+              }
+              const gt = xml.indexOf(">", lt);
+              if (gt === -1) break;
+              p = gt + 1;
+            }
+          }
+          collapsedCap; // suppress unused warning
+          const collapsed = collapsedParts.join("");
+          collapsedParts = []; // free memory
+          // Binary search collapsed-index → xml-offset.
           const collapsedToOriginal = (cIdx: number): number => {
             if (cIdx < 0) return 0;
-            if (cIdx >= collapsedToStripped.length) return xml.length;
-            return strippedToOriginal(collapsedToStripped[cIdx]);
+            if (cIdx >= collapsed.length) return xml.length;
+            let lo = 0, hi = segN - 1, best = 0;
+            while (lo <= hi) {
+              const mid = (lo + hi) >> 1;
+              if (cStart[mid] <= cIdx) { best = mid; lo = mid + 1; } else { hi = mid - 1; }
+            }
+            const off = cIdx - cStart[best];
+            // Synthetic-space segments (sLen===1 spanning a tag) map to xmlStart.
+            return xStart[best] + Math.min(off, Math.max(0, sLen[best] - 1));
           };
           const findOne = (re: RegExp): number => {
             const m = re.exec(collapsed);
