@@ -1501,86 +1501,46 @@ async function generateSingleDocument(
               `(scanned=${lienIndices.size})`
             );
           }
-          // Always publish per-property Expected/Remaining encumbrances —
-          // default to "0.00" when no eligible lien matches so the template
-          // never renders blank for that property row (N-property safe).
-          {
-            const expVal = {
-              rawValue: (lienExpectedHit ? lienExpectedSum : 0).toFixed(2),
-              dataType: "currency" as const,
-            };
-            fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, expVal);
-            const staticExpected = String(
-              fieldValues.get(`${prefix}.expected_senior`)?.rawValue || ""
-            ).trim();
-            if (!staticExpected) {
-              fieldValues.set(`pr_p_expectedSenior_${idx}`, expVal);
-            }
-          }
-          {
-            const remVal = {
-              rawValue: (lienRemainingHit ? lienRemainingSum : 0).toFixed(2),
-              dataType: "currency" as const,
-            };
-            fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, remVal);
-            const staticRemaining = String(
-              fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || ""
-            ).trim();
-            if (!staticRemaining) {
-              fieldValues.set(`pr_p_remainingSenior_${idx}`, remVal);
-            }
-          }
-          // Expose hit flags via locals already in scope; downstream Total
-          // block (lines ~1533+) uses lienRemainingHit/lienExpectedHit.
+          // Always publish per-property Expected/Remaining encumbrances from
+          // the Lien-derived rollup. Authoritative: Lien data wins over any
+          // stale property-level static fields. Defaults to "0.00" when no
+          // eligible lien matches so the template never renders blank.
+          const expVal = {
+            rawValue: lienExpectedSum.toFixed(2),
+            dataType: "currency" as const,
+          };
+          const remVal = {
+            rawValue: lienRemainingSum.toFixed(2),
+            dataType: "currency" as const,
+          };
+          fieldValues.set(`ln_p_expectedEncumbrance_${idx}`, expVal);
+          fieldValues.set(`ln_p_remainingEncumbrance_${idx}`, remVal);
+          fieldValues.set(`pr_p_expectedSenior_${idx}`, expVal);
+          fieldValues.set(`pr_p_remainingSenior_${idx}`, remVal);
         }
 
-        // ── RE851D: per-property total encumbrance (remaining + expected senior) ──
-        // Computed from property{idx}.* components, with fallback to the Lien-derived
-        // sums computed just above. No cross-index fallback.
+        // ── RE851D: per-property TOTAL Senior Encumbrances ──
+        // Total = Lien-derived Remaining + Lien-derived Expected (per spec).
+        // Always published; defaults to 0.00 when no eligible liens exist.
         {
-          let remainingNum = parseFloat(
-            String(fieldValues.get(`${prefix}.remaining_senior`)?.rawValue || "")
-              .replace(/[^0-9.-]/g, "")
-          );
-          let expectedNum = parseFloat(
-            String(fieldValues.get(`${prefix}.expected_senior`)?.rawValue || "")
-              .replace(/[^0-9.-]/g, "")
-          );
-          if (isNaN(remainingNum) && lienRemainingHit) remainingNum = lienRemainingSum;
-          if (isNaN(expectedNum) && lienExpectedHit) expectedNum = lienExpectedSum;
-          const haveRemaining = !isNaN(remainingNum);
-          const haveExpected = !isNaN(expectedNum);
-          // Always publish Total Senior Encumbrances per property — default 0.
+          const total = lienRemainingSum + lienExpectedSum;
+          const totalVal = {
+            rawValue: total.toFixed(2),
+            dataType: "currency" as const,
+          };
+          fieldValues.set(`pr_p_totalEncumbrance_${idx}`, totalVal);
+          fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
+          // RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
           {
-            const total = (haveRemaining ? remainingNum : 0) + (haveExpected ? expectedNum : 0);
-            const totalVal = {
-              rawValue: total.toFixed(2),
+            const loanAmtRaw =
+              fieldValues.get("ln_p_loanAmount")?.rawValue ??
+              fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
+            const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
+            const sum = total + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
+            fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
+              rawValue: sum.toFixed(2),
               dataType: "currency" as const,
-            };
-            if (!fieldValues.has(`pr_p_totalEncumbrance_${idx}`)) {
-              fieldValues.set(`pr_p_totalEncumbrance_${idx}`, totalVal);
-            }
-            // Part 1 LTV table tag — published per property index. Same value
-            // as pr_p_totalEncumbrance_N; separate alias because the template
-            // uses {{ln_p_totalEncumbrance_N}} in the Total Senior Encumbrances
-            // column. Force-set: this is the authoritative computed total.
-            fieldValues.set(`ln_p_totalEncumbrance_${idx}`, totalVal);
-            // RE851D: TOTAL (Total senior encumbrances + loan amount) per property.
-            // Publishes ln_p_totalWithLoan_N = ln_p_totalEncumbrance_N + ln_p_loanAmount.
-            // Null/missing values treated as 0; strings sanitized before parseFloat.
-            {
-              const loanAmtRaw =
-                fieldValues.get("ln_p_loanAmount")?.rawValue ??
-                fieldValues.get("loan_terms.loan_amount")?.rawValue ?? "";
-              const loanAmtNum = parseFloat(String(loanAmtRaw).replace(/[^0-9.\-]/g, ""));
-              const encNum = parseFloat(String(totalVal.rawValue).replace(/[^0-9.\-]/g, ""));
-              const sum = (Number.isFinite(encNum) ? encNum : 0)
-                        + (Number.isFinite(loanAmtNum) ? loanAmtNum : 0);
-              fieldValues.set(`ln_p_totalWithLoan_${idx}`, {
-                rawValue: sum.toFixed(2),
-                dataType: "currency" as const,
-              });
-            }
+            });
           }
         }
 
