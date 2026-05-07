@@ -59,6 +59,14 @@ const BORROWER_CAPACITY_OPTIONS = [
   'Power of Attorney', 'Member', 'Manager', 'Partner', 'Attorney',
 ];
 
+const BORROWER_FORD_OPTIONS = [
+  'Spouse, Kids, Grandkids', 'Big Dream', 'Sports Teams', 'Hobbies / Collections',
+  'Goals / Achievements', 'Favorite Restaurant, Food, Drinks', 'Pet(s)', 'Vacation Spot',
+  'Job / Occupation', 'Music / Bands', 'College', 'Hometown / Childhood',
+  'TV / Movies / Books', 'Anniversary', 'Challenges / Frustrations', 'Charity / Personal Causes',
+  'Upcoming Event - What / When', 'Celebration - What / When',
+];
+
 
 const getInitialForm = (contactType: string): Record<string, string> => {
   if (contactType === 'lender') {
