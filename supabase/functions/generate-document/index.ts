@@ -2657,7 +2657,10 @@ async function generateSingleDocument(
                   ["interestRate", firstNonEmpty("interest_rate", "intRate"), "percent"],
                   ["beneficiary", firstNonEmpty("holder", "lienHolder", "beneficiary"), "text"],
                   ["originalAmount", firstNonEmpty("original_balance", "originalBalance"), "currency"],
-                  ["principalBalance", firstNonEmpty("current_balance", "currentBalance", "new_remaining_balance"), "currency"],
+                  // Per RE851D Part 1 spec: Remaining = current_balance only.
+                  // Drop new_remaining_balance fallback (which previously leaked
+                  // anticipated liens' "Anticipated Balance" into the Remaining column).
+                  ["principalBalance", firstNonEmpty("current_balance", "currentBalance"), "currency"],
                   ["monthlyPayment", firstNonEmpty("regular_payment", "regularPayment"), "currency"],
                   ["maturityDate", firstNonEmpty("maturity_date", "matDate"), "date"],
                   ["balloonAmount", firstNonEmpty("balloon_amount", "balloonAmount"), "currency"],
