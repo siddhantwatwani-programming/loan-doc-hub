@@ -760,7 +760,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </DirtyFieldWrapper>
             {renderCurrencyField(FIELD_KEYS.defaultInterest, "Default Interest")}
-            {renderReadOnlyCurrencyField(calculatedTotalPayment, "Total Payment")}
+            {renderCurrencyField(FIELD_KEYS.totalPayment, "Total Payment")}
           </div>
         </div>
 
