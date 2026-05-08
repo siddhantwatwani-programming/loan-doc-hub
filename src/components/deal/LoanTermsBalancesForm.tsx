@@ -602,9 +602,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.holdDays)}
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
-                  disabled={
-                    disabled || !isChecked(FIELD_KEYS.overrideFundsHeld)
-                  }
+                  disabled={disabled}
                   className="h-8 text-sm flex-1"
                   inputMode="numeric"
                 />
