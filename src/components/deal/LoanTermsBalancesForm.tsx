@@ -417,7 +417,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     id={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`}
                     checked={isChecked(FIELD_KEYS.prepaidPaymentsEnabled)}
                     onCheckedChange={() => toggleCheck(FIELD_KEYS.prepaidPaymentsEnabled)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    disabled={disabled}
                     className="h-3.5 w-3.5"
                   />
                   <Label htmlFor={`${FIELD_KEYS.prepaidPaymentsEnabled}-cb`} className="text-sm">
@@ -431,7 +431,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
                 disabled={
                   disabled ||
-                  !isChecked(FIELD_KEYS.interestSplitEnabled) ||
                   !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)
                 }
                 className="h-8 text-sm flex-1"
@@ -446,7 +445,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     id={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`}
                     checked={isChecked(FIELD_KEYS.impoundedPaymentsEnabled)}
                     onCheckedChange={() => toggleCheck(FIELD_KEYS.impoundedPaymentsEnabled)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    disabled={disabled}
                     className="h-3.5 w-3.5"
                   />
                   <Label htmlFor={`${FIELD_KEYS.impoundedPaymentsEnabled}-cb`} className="text-sm">
@@ -460,7 +459,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
                 disabled={
                   disabled ||
-                  !isChecked(FIELD_KEYS.interestSplitEnabled) ||
                   !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)
                 }
                 className="h-8 text-sm flex-1"
@@ -475,7 +473,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     id={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`}
                     checked={isChecked(FIELD_KEYS.fundingHoldbackEnabled)}
                     onCheckedChange={() => toggleCheck(FIELD_KEYS.fundingHoldbackEnabled)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                    disabled={disabled}
                     className="h-3.5 w-3.5"
                   />
                   <Label htmlFor={`${FIELD_KEYS.fundingHoldbackEnabled}-cb`} className="text-sm">
@@ -489,7 +487,6 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
                 disabled={
                   disabled ||
-                  !isChecked(FIELD_KEYS.interestSplitEnabled) ||
                   !isChecked(FIELD_KEYS.fundingHoldbackEnabled)
                 }
               >
@@ -515,7 +512,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                         id={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`}
                         checked={isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
                         onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsEnabled)}
-                        disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                        disabled={disabled}
                         className="h-3.5 w-3.5"
                       />
                       <Label htmlFor={`${FIELD_KEYS.acceptShortPaymentsEnabled}-cb`} className="text-sm">
@@ -565,7 +562,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.acceptPostMaturity}-cb`}
                   checked={isChecked(FIELD_KEYS.acceptPostMaturity)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptPostMaturity)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  disabled={disabled}
                   className="h-3.5 w-3.5"
                 />
                 <Label
@@ -582,7 +579,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   id={`${FIELD_KEYS.autoPostEnabled}-cb`}
                   checked={isChecked(FIELD_KEYS.autoPostEnabled)}
                   onCheckedChange={() => toggleCheck(FIELD_KEYS.autoPostEnabled)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  disabled={disabled}
                   className="h-3.5 w-3.5"
                 />
                 <Label
@@ -601,7 +598,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       id={`${FIELD_KEYS.overrideFundsHeld}-cb`}
                       checked={isChecked(FIELD_KEYS.overrideFundsHeld)}
                       onCheckedChange={() => toggleCheck(FIELD_KEYS.overrideFundsHeld)}
-                      disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                      disabled={disabled}
                       className="h-3.5 w-3.5"
                     />
                     <Label htmlFor={`${FIELD_KEYS.overrideFundsHeld}-cb`} className="text-sm">
@@ -615,7 +612,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
                   disabled={
-                    disabled || !isChecked(FIELD_KEYS.interestSplitEnabled) || !isChecked(FIELD_KEYS.overrideFundsHeld)
+                    disabled || !isChecked(FIELD_KEYS.overrideFundsHeld)
                   }
                   className="h-8 text-sm flex-1"
                   inputMode="numeric"
