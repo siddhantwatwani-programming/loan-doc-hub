@@ -841,11 +841,11 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
             <div className="pt-2 space-y-2">
               <div>
-                {renderReadOnlyCurrencyField(
-                  calculatedTotalBalanceDue,
-                  "Total Balance Due",
-                  cn(LABEL_CLASS, "text-primary font-medium"),
-                )}
+              {renderCurrencyField(
+                FIELD_KEYS.totalBalanceDue,
+                "Total Balance Due",
+                cn(LABEL_CLASS, "text-primary font-medium"),
+              )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
                 </p>
