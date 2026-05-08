@@ -429,10 +429,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Input
                 value={getValue(FIELD_KEYS.prepaidPaymentsMonths)}
                 onChange={(e) => setValue(FIELD_KEYS.prepaidPaymentsMonths, e.target.value)}
-                disabled={
-                  disabled ||
-                  !isChecked(FIELD_KEYS.prepaidPaymentsEnabled)
-                }
+                disabled={disabled}
                 className="h-8 text-sm flex-1"
               />
             </div>
@@ -457,10 +454,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Input
                 value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
                 onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
-                disabled={
-                  disabled ||
-                  !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)
-                }
+                disabled={disabled}
                 className="h-8 text-sm flex-1"
               />
             </div>
@@ -485,10 +479,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Select
                 value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
                 onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
-                disabled={
-                  disabled ||
-                  !isChecked(FIELD_KEYS.fundingHoldbackEnabled)
-                }
+                disabled={disabled}
               >
                 <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select" />
@@ -537,7 +528,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       }
                       onFocus={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) setFocusedCurrencyField(FIELD_KEYS.acceptShortPaymentsAmount); }}
                       onBlur={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) handleCurrencyBlur(FIELD_KEYS.acceptShortPaymentsAmount); }}
-                      disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                      disabled={disabled}
                       className="h-8 text-sm pl-7"
                       placeholder={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '-' : '0.00'}
                     />
@@ -549,7 +540,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
                     checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
                     onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                    disabled={disabled}
                     className="h-3.5 w-3.5"
                   />
                   <Label className="text-xs text-muted-foreground">Percent</Label>
@@ -611,9 +602,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   value={getValue(FIELD_KEYS.holdDays)}
                   onChange={(e) => setValue(FIELD_KEYS.holdDays, e.target.value.replace(/\D/g, ''))}
                   onKeyDown={(e) => { if (!/\d/.test(e.key) && !['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End'].includes(e.key) && !e.ctrlKey && !e.metaKey) e.preventDefault(); }}
-                  disabled={
-                    disabled || !isChecked(FIELD_KEYS.overrideFundsHeld)
-                  }
+                  disabled={disabled}
                   className="h-8 text-sm flex-1"
                   inputMode="numeric"
                 />
