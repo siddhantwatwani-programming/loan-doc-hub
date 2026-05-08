@@ -479,10 +479,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Select
                 value={getValue(FIELD_KEYS.fundingHoldbackHeldBy)}
                 onValueChange={(value) => setValue(FIELD_KEYS.fundingHoldbackHeldBy, value)}
-                disabled={
-                  disabled ||
-                  !isChecked(FIELD_KEYS.fundingHoldbackEnabled)
-                }
+                disabled={disabled}
               >
                 <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select" />
