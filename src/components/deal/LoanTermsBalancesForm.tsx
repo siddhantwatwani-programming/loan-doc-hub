@@ -454,10 +454,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               <Input
                 value={getValue(FIELD_KEYS.impoundedPaymentsMonths)}
                 onChange={(e) => setValue(FIELD_KEYS.impoundedPaymentsMonths, e.target.value)}
-                disabled={
-                  disabled ||
-                  !isChecked(FIELD_KEYS.impoundedPaymentsEnabled)
-                }
+                disabled={disabled}
                 className="h-8 text-sm flex-1"
               />
             </div>
