@@ -528,7 +528,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                       }
                       onFocus={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) setFocusedCurrencyField(FIELD_KEYS.acceptShortPaymentsAmount); }}
                       onBlur={() => { if (!isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)) handleCurrencyBlur(FIELD_KEYS.acceptShortPaymentsAmount); }}
-                      disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                      disabled={disabled}
                       className="h-8 text-sm pl-7"
                       placeholder={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent) ? '-' : '0.00'}
                     />
@@ -540,7 +540,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     id={`${FIELD_KEYS.acceptShortPaymentsOrPercent}-cb`}
                     checked={isChecked(FIELD_KEYS.acceptShortPaymentsOrPercent)}
                     onCheckedChange={() => toggleCheck(FIELD_KEYS.acceptShortPaymentsOrPercent)}
-                    disabled={disabled || !isChecked(FIELD_KEYS.acceptShortPaymentsEnabled)}
+                    disabled={disabled}
                     className="h-3.5 w-3.5"
                   />
                   <Label className="text-xs text-muted-foreground">Percent</Label>
