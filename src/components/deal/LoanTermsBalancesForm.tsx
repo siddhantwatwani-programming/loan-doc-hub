@@ -381,20 +381,20 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                   onChange={(e) => handleCurrencyChange(FIELD_KEYS.unearnedDiscountBalance, e.target.value)}
                   onFocus={() => setFocusedCurrencyField(FIELD_KEYS.unearnedDiscountBalance)}
                   onBlur={() => handleCurrencyBlur(FIELD_KEYS.unearnedDiscountBalance)}
-                  disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                  disabled={disabled}
                   className="h-8 text-sm pl-7"
                   placeholder="0.00"
                 />
               </div>
             </div>
 
-            {/* Accrual Method - enabled only when Interest Split is checked */}
+            {/* Accrual Method */}
             <div className="flex items-center gap-3">
               <Label className={LABEL_CLASS}>Accrual Method</Label>
               <Select
                 value={getValue(FIELD_KEYS.accrualMethod)}
                 onValueChange={(value) => setValue(FIELD_KEYS.accrualMethod, value)}
-                disabled={disabled || !isChecked(FIELD_KEYS.interestSplitEnabled)}
+                disabled={disabled}
               >
                 <SelectTrigger className="h-8 text-sm flex-1">
                   <SelectValue placeholder="Select method" />
