@@ -348,8 +348,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRateCompany), 2);
                     if (v !== getValue(FIELD_KEYS.soldRateCompany)) setValue(FIELD_KEYS.soldRateCompany, v);
                   }}
-                  disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
-                  className={cn("h-8 text-sm pr-7", !isChecked(FIELD_KEYS.soldRateEnabled) && "bg-muted")}
+                  disabled={disabled}
+                  className="h-8 text-sm pr-7"
                   placeholder="0.00"
                   inputMode="decimal"
                 />
@@ -760,7 +760,7 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
               </div>
             </DirtyFieldWrapper>
             {renderCurrencyField(FIELD_KEYS.defaultInterest, "Default Interest")}
-            {renderReadOnlyCurrencyField(calculatedTotalPayment, "Total Payment")}
+            {renderCurrencyField(FIELD_KEYS.totalPayment, "Total Payment")}
           </div>
         </div>
 
@@ -841,18 +841,18 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
             {/* Section 6: Total Balance Due & Estimated Balloon Payment */}
             <div className="pt-2 space-y-2">
               <div>
-                {renderReadOnlyCurrencyField(
-                  calculatedTotalBalanceDue,
-                  "Total Balance Due",
-                  cn(LABEL_CLASS, "text-primary font-medium"),
-                )}
+              {renderCurrencyField(
+                FIELD_KEYS.totalBalanceDue,
+                "Total Balance Due",
+                cn(LABEL_CLASS, "text-primary font-medium"),
+              )}
                 <p className="text-xs text-muted-foreground mt-0.5" style={{ paddingLeft: "0px" }}>
                   * Does not include Close-out Fees
                 </p>
               </div>
               <div>
-                {renderReadOnlyCurrencyField(
-                  calculatedEstimatedBalloon,
+                {renderCurrencyField(
+                  FIELD_KEYS.estimatedBalloonPayment,
                   "Estimated Balloon Payment",
                   cn(LABEL_CLASS, "text-primary font-medium"),
                 )}
