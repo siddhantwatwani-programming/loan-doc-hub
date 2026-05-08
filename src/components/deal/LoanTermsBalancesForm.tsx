@@ -851,8 +851,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                 </p>
               </div>
               <div>
-                {renderReadOnlyCurrencyField(
-                  calculatedEstimatedBalloon,
+                {renderCurrencyField(
+                  FIELD_KEYS.estimatedBalloonPayment,
                   "Estimated Balloon Payment",
                   cn(LABEL_CLASS, "text-primary font-medium"),
                 )}
