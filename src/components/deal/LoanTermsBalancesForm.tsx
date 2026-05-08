@@ -348,8 +348,8 @@ export const LoanTermsBalancesForm: React.FC<LoanTermsBalancesFormProps> = ({
                     const v = normalizeInterestOnBlur(getValue(FIELD_KEYS.soldRateCompany), 2);
                     if (v !== getValue(FIELD_KEYS.soldRateCompany)) setValue(FIELD_KEYS.soldRateCompany, v);
                   }}
-                  disabled={disabled || !isChecked(FIELD_KEYS.soldRateEnabled)}
-                  className={cn("h-8 text-sm pr-7", !isChecked(FIELD_KEYS.soldRateEnabled) && "bg-muted")}
+                  disabled={disabled}
+                  className="h-8 text-sm pr-7"
                   placeholder="0.00"
                   inputMode="decimal"
                 />
