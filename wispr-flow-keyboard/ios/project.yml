@@ -1,0 +1,52 @@
+# XcodeGen project definition — run `xcodegen generate` in this directory
+# (brew install xcodegen) to produce FlowKeyboard.xcodeproj.
+#
+# Before building, change `bundleIdPrefix` (and the app-group id in
+# Shared/SharedConfig.swift + both .entitlements files) to identifiers that
+# belong to YOUR Apple Developer team.
+
+name: FlowKeyboard
+options:
+  bundleIdPrefix: com.example.flowkeyboard
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    GENERATE_INFOPLIST_FILE: NO
+    CODE_SIGN_STYLE: Automatic
+    # Set your Apple Developer team id here (Xcode > Signing & Capabilities):
+    # DEVELOPMENT_TEAM: ABCDE12345
+
+targets:
+  FlowKeyboardApp:
+    type: application
+    platform: iOS
+    sources:
+      - FlowKeyboardApp
+      - Shared
+    settings:
+      base:
+        INFOPLIST_FILE: FlowKeyboardApp/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.flowkeyboard.app
+        CODE_SIGN_ENTITLEMENTS: FlowKeyboardApp/FlowKeyboardApp.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: FlowKeyboard
+        embed: true
+
+  FlowKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - FlowKeyboard
+      - Shared
+    settings:
+      base:
+        INFOPLIST_FILE: FlowKeyboard/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.flowkeyboard.app.keyboard
+        CODE_SIGN_ENTITLEMENTS: FlowKeyboard/FlowKeyboard.entitlements
+        TARGETED_DEVICE_FAMILY: "1"
+        APPLICATION_EXTENSION_API_ONLY: YES

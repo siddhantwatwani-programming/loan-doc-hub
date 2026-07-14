@@ -8,6 +8,10 @@ into clean written text — then inserted at your cursor.
 Built with **Vite + React + TypeScript + Tailwind**, transcription via a
 **Supabase edge function** calling **OpenAI Whisper**.
 
+> **Want it as a real iPhone keyboard?** A native Swift keyboard-extension
+> version (installable via Settings → Keyboards, usable in any app) lives in
+> [`ios/`](./ios/README.md). It shares the same Supabase `transcribe` function.
+
 ## Features
 
 - 🎹 Pixel-styled iOS keyboard (letters / numbers / symbols, shift, caps)
