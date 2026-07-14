@@ -1,0 +1,4 @@
+project_id = "wispr-flow-keyboard"
+
+[functions.transcribe]
+verify_jwt = false
